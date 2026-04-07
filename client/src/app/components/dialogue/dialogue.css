@@ -1,0 +1,63 @@
+:host {
+  display: block;
+  width: 100%;
+  max-width: 600px;
+}
+
+.dialogue-box {
+  height: 100%;
+  width: 100%;
+  position: relative;
+  /* Override retro-box default padding if needed to be responsive */
+
+  background-color: white;
+  /* Make sure background is opaque so background elements don't bleed through */
+}
+
+.dialogue-text {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.8;
+  color: var(--text-main);
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  overflow: hidden;
+  /* Leave room so the last text line is not hidden under the floating arrow */
+  padding-bottom: 24px;
+}
+
+.measure-container {
+  position: absolute;
+  visibility: hidden;
+  /* Match the width of the parent content area exactly */
+  width: calc(100% - 60px);
+  /* Override dialogue-text padding so scrollHeight measurements are accurate */
+  padding-bottom: 0 !important;
+  z-index: -1;
+}
+
+.continue-indicator {
+  position: absolute;
+  bottom: 12px;
+  right: 20px;
+  /* Make a pixel-art style triangle using border hacks */
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 10px solid var(--pkmn-red);
+  animation: bounce 0.6s infinite alternate steps(2, end);
+  /* Float over the text — no layout impact */
+  pointer-events: none;
+  z-index: 1;
+}
+
+@keyframes bounce {
+  from {
+    transform: translateY(0);
+  }
+
+  to {
+    transform: translateY(6px);
+  }
+}

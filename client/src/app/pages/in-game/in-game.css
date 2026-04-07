@@ -1,0 +1,108 @@
+.in-game-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100%;
+  /* Assuming a standard max-width for the retro feel and centered */
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.battle-scene {
+  flex-grow: 1;
+  background-color: var(--pkmn-gb-light);
+  border: 4px solid var(--border-main);
+  border-radius: 8px;
+  margin-bottom: 20px;
+  position: relative;
+
+  /* Make the scene a responsive grid container for players */
+  display: grid;
+  /* Maximum 2 players per row, wrap on small screens (handled by media query) */
+  grid-template-columns: repeat(2, 1fr);
+  /* Occupy available height, with a minimum height matching the content to trigger scroll if wrapping into single column too much */
+  grid-auto-rows: minmax(min-content, 1fr);
+  gap: 15px;
+  padding: 15px;
+  overflow-y: auto;
+
+  /* Firefox Scrollbar (Retro matching) */
+  scrollbar-width: auto;
+  scrollbar-color: var(--border-main) var(--pkmn-gb-light);
+}
+
+/* Webkit Scrollbar Retro Style */
+.battle-scene::-webkit-scrollbar {
+  width: 16px;
+}
+
+.battle-scene::-webkit-scrollbar-track {
+  background: var(--pkmn-gb-light);
+  border-left: 4px solid var(--border-main);
+}
+
+.battle-scene::-webkit-scrollbar-thumb {
+  background-color: var(--border-main);
+  border: 3px solid var(--pkmn-gb-light);
+}
+
+@media (max-width: 500px) {
+  .battle-scene {
+    grid-template-columns: 1fr;
+  }
+}
+
+.bottom-panel {
+  display: flex;
+  gap: 20px;
+  /* Fixed height enough to accommodate the dialogue and action menu */
+  height: 140px;
+}
+
+/* Actions Menu Grid */
+.actions-menu {
+  /* Smaller width than the dialogue */
+  flex: 0 0 250px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 10px;
+  /* Override padding for smaller buttons */
+  padding: 15px;
+}
+
+.action-btn {
+  /* Make buttons fit inside the grid cell */
+  padding: 5px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Removed margin so they align perfectly in the grid */
+  margin: 0;
+  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.2);
+}
+
+.action-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0px 0px 0px rgba(0, 0, 0, 0.2);
+}
+
+.dialogue-section {
+  flex: 1;
+  /* To properly align the dialogue box which already has internal styles */
+  display: flex;
+  align-items: stretch;
+}
+
+/* Override dialogue margins inside the in-game display */
+::ng-deep .dialogue-section app-dialogue .dialogue-container {
+  margin-top: 0;
+  padding: 0;
+  height: 100%;
+}
+
+::ng-deep .dialogue-section app-dialogue .dialogue-box {
+  height: 100%;
+}

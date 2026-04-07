@@ -1,0 +1,33 @@
+.hp-bar-container {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.hp-label {
+  color: var(--pkmn-yellow, #ffde00);
+  text-shadow: 1px 1px 0 #000;
+  font-size: 8px;
+  font-weight: bold;
+}
+
+.hp-bar-track {
+  flex-grow: 1;
+  height: 6px;
+  background-color: var(--border-main, #222);
+  border-radius: 4px;
+  overflow: hidden;
+  /* Retro border for the inner track */
+  border: 1px solid white;
+  box-shadow: 0 0 0 1px var(--border-main, #222);
+}
+
+.hp-bar-fill {
+  height: 100%;
+  transition: width 0.3s ease-in-out;
+}
+
+/* HP Colors */
+.hp-green { background-color: #58d68d; }
+.hp-yellow { background-color: #f4d03f; }
+.hp-red { background-color: #e74c3c; }

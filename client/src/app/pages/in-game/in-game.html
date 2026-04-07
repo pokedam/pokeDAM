@@ -1,0 +1,24 @@
+<div class="in-game-container">
+  <!-- Top section for battle visuals, etc. -->
+  <div class="battle-scene">
+    @for (player of players; track player.id) {
+      <app-player-tile [player]="player"></app-player-tile>
+    }
+  </div>
+
+  <!-- Bottom panel with retro style UI -->
+  <div class="bottom-panel">
+    <!-- Action Menu (Left) -->
+    <div class="retro-box actions-menu">
+      <button class="retro-btn action-btn">LUCHA</button>
+      <button class="retro-btn action-btn">MOCHILA</button>
+      <button class="retro-btn action-btn">POKÉMON</button>
+      <button class="retro-btn action-btn">HUIR</button>
+    </div>
+
+    <!-- Dialogue Box (Right) -->
+    <div class="dialogue-section">
+      <app-dialogue></app-dialogue>
+    </div>
+  </div>
+</div>

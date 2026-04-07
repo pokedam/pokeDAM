@@ -1,0 +1,26 @@
+<div class="retro-box player-tile" [class.is-turn]="player.isCurrentTurn">
+  <div class="player-header">
+    <div class="player-avatar">
+      <!-- Fallback pixelated avatar if none provided -->
+      @if (player.avatarUrl) {
+        <img [src]="player.avatarUrl" alt="{{ player.name }}">
+      } @else {
+        <div class="avatar-placeholder">👤</div>
+      }
+    </div>
+    <div class="player-info">
+      <span class="player-name">{{ player.name }}</span>
+      <div class="pokeballs-container">
+        @for (state of getFullPokeStates(player.pokeStates); track $index) {
+          <div class="pokeball" [ngClass]="state"></div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <div class="pokemon-team">
+    @for (pokemon of player.activePokemons; track pokemon.id) {
+      <app-pokemon-chip [pokemon]="pokemon"></app-pokemon-chip>
+    }
+  </div>
+</div>

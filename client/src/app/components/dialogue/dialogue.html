@@ -1,0 +1,9 @@
+<div class="retro-box dialogue-box">
+  <!-- Hidden container for calculating text capacity -->
+  <p #measureContainer class="dialogue-text measure-container"></p>
+
+  <p class="dialogue-text">{{ displayedText() }}</p>
+  @if (isPageComplete()) {
+  <div class="continue-indicator"></div>
+  }
+</div>
