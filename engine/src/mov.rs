@@ -1,4 +1,4 @@
-use anyhow::{Result, anyhow};
+use anyhow::{anyhow, Result};
 use derive_more::{Deref, DerefMut};
 
 use crate::*;
