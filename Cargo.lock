@@ -2369,6 +2369,7 @@ dependencies = [
  "actix",
  "actix-web",
  "actix-web-actors",
+ "arrayvec",
  "chrono",
  "derive_more",
  "engine",

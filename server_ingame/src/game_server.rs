@@ -1,4 +1,5 @@
 use actix::prelude::*;
+use arrayvec::ArrayVec;
 use derive_more::{Deref, From};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -8,7 +9,7 @@ use engine::{
     PLAYERS_PER_BOARD, board::Board, history::History, request::PlayerRequest, turn::Turn,
 };
 
-use crate::ws_actor::PlayerSession;
+use crate::player_session::PlayerSession;
 
 const TURN_TIME_LIMIT: std::time::Duration = std::time::Duration::from_secs(60);
 
@@ -126,17 +127,9 @@ impl GameServer {
     fn execute_turn(&mut self, match_id: Uuid, ctx: &mut Context<Self>) {
         if let Some(room) = self.rooms.get_mut(&match_id) {
             if let RoomState::Playing(state) = &mut room.state {
-
-                let mut requests_vec = Vec::with_capacity(PLAYERS_PER_BOARD);
-                for i in 0..PLAYERS_PER_BOARD {
-                    if let Some(req) = state.pending_requests.remove(&i) {
-                        requests_vec.push(req);
-                    } else {
-                        requests_vec.push(PlayerRequest::default());
-                    }
-                }
-
-                if let Ok(requests_arr) = requests_vec.try_into() {
+                let mut vec = ArrayVec::<_, PLAYERS_PER_BOARD>::new();
+                vec.extend(state.pending_requests.drain().map(|(_, req)| req));
+                if let Ok(requests_arr) = vec.into_inner() {
                     if let Some(board) = state.board.take() {
                         let mut turn = Turn {
                             board,
@@ -190,14 +183,13 @@ impl Handler<ClientAction> for GameServer {
                 let room = Room::new(player_id);
                 self.rooms.insert(room_id, room);
                 self.player_rooms.insert(player_id, room_id);
-
             }
             ClientMessage::JoinRoom { room_id } => {
                 if let Some(room) = self.rooms.get_mut(&room_id) {
                     if let RoomState::Waiting { readys, .. } = &mut room.state {
                         readys.insert(player_id, false);
                         self.player_rooms.insert(player_id, room_id);
-                        room.broadcast(&ServerEvent::PlayerJoined { player_id });                        
+                        room.broadcast(&ServerEvent::PlayerJoined { player_id });
                     }
                 }
             }
@@ -226,11 +218,10 @@ impl Handler<ClientAction> for GameServer {
                                     room.broadcast(&ServerEvent::GameStarted);
 
                                     room.state = RoomState::Playing(MatchState {
-                                        board: Some(Board::default()), // Fake init
+                                        board: None, // TODO: perform board request to central server.
                                         pending_requests: HashMap::new(),
                                         turn_id: 1,
                                     });
-
                                 }
                                 let room_id = *room_id;
                                 ctx.run_later(

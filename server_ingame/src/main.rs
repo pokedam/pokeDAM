@@ -3,9 +3,9 @@ use actix_web::{App, Error, HttpRequest, HttpResponse, HttpServer, web};
 use actix_web_actors::ws;
 
 mod game_server;
-mod ws_actor;
+mod player_session;
 
-async fn ws_player_connect(
+async fn connect_player(
     req: HttpRequest,
     stream: web::Payload,
     path: web::Path<usize>,
@@ -13,7 +13,7 @@ async fn ws_player_connect(
 ) -> Result<HttpResponse, Error> {
     let player_id = path.into_inner();
 
-    let player_session = ws_actor::PlayerSession {
+    let player_session = player_session::PlayerSession {
         player_id,
         game_server: srv.get_ref().clone(),
     };
@@ -31,7 +31,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(game_server.clone()))
             .route(
                 "/ws/{player_id}",
-                web::get().to(ws_player_connect),
+                web::get().to(connect_player),
             )
     })
     .bind(("0.0.0.0", 8081))?
