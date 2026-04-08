@@ -1,0 +1,299 @@
+/* ─── Topbar ─── */
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 20px;
+  padding: 15px 20px;
+  background-color: white;
+}
+
+.topbar-logo {
+  font-size: 24px;
+  color: var(--pkmn-red);
+  text-shadow: 2px 2px 0px var(--border-main);
+  letter-spacing: 2px;
+}
+
+.topbar-actions {
+  display: flex;
+  gap: 15px;
+}
+
+.pokedex-btn {
+  background-color: var(--pkmn-yellow);
+}
+
+/* ─── Responsive visibility ─── */
+.desktop-only {
+  display: flex !important;
+}
+
+.mobile-only {
+  display: none !important;
+}
+
+@media (max-width: 640px) {
+  .desktop-only {
+    display: none !important;
+  }
+
+  .mobile-only {
+    display: flex !important;
+  }
+}
+
+/* ─── Hamburger Button ─── */
+.hamburger-btn {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  width: 40px;
+  height: 40px;
+  background: none;
+  border: 4px solid var(--border-main);
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 6px;
+  box-shadow: 3px 3px 0px var(--border-main);
+  transition: box-shadow 0.1s ease, transform 0.1s ease;
+}
+
+.hamburger-btn:hover {
+  box-shadow: 1px 1px 0px var(--border-main);
+  transform: translate(2px, 2px);
+}
+
+.hamburger-btn:active {
+  box-shadow: none;
+  transform: translate(3px, 3px);
+}
+
+.hamburger-line {
+  display: block;
+  width: 18px;
+  height: 3px;
+  background-color: var(--border-main);
+  border-radius: 2px;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  transform-origin: center;
+}
+
+/* Hamburger → X animation */
+.hamburger-line:nth-child(1).open {
+  transform: translateY(8px) rotate(45deg);
+}
+
+.hamburger-line:nth-child(2).open {
+  opacity: 0;
+  transform: scaleX(0);
+}
+
+.hamburger-line:nth-child(3).open {
+  transform: translateY(-8px) rotate(-45deg);
+}
+
+/* ─── Drawer Overlay ─── */
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.45);
+  z-index: 300;
+  animation: fade-in 0.2s ease;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ─── Side Drawer ─── */
+.side-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 280px;
+  height: 100dvh;
+  background-color: white;
+  border-left: 4px solid var(--border-main);
+  box-shadow: -6px 0 0 var(--border-main);
+  z-index: 400;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.side-drawer.open {
+  transform: translateX(0);
+}
+
+/* ─── Drawer Header ─── */
+.drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 4px solid var(--border-main);
+  background-color: var(--pkmn-red-bg);
+  flex-shrink: 0;
+}
+
+.drawer-title {
+  font-size: 18px;
+  color: var(--text-main);
+  letter-spacing: 1px;
+}
+
+.drawer-close-btn {
+  background: none;
+  border: 3px solid var(--border-main);
+  border-radius: 4px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  font-family: var(--font-retro);
+  color: var(--text-main);
+  box-shadow: 2px 2px 0px var(--border-main);
+  transition: box-shadow 0.1s ease, transform 0.1s ease;
+}
+
+.drawer-close-btn:hover {
+  box-shadow: 1px 1px 0px var(--border-main);
+  transform: translate(1px, 1px);
+}
+
+.drawer-close-btn:active {
+  box-shadow: none;
+  transform: translate(2px, 2px);
+}
+
+/* ─── Drawer Nav ─── */
+.drawer-nav {
+  list-style: none;
+  padding: 12px 0;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.drawer-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 14px 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-retro);
+  font-size: 15px;
+  color: var(--text-main);
+  text-align: left;
+  transition: background-color 0.1s ease;
+}
+
+.drawer-nav-item:hover {
+  background-color: var(--pkmn-red-bg);
+}
+
+.drawer-nav-item:active {
+  background-color: var(--pkmn-gb-mid1);
+  color: white;
+}
+
+.drawer-item-icon {
+  font-size: 18px;
+  width: 24px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+/* ─── Drawer Profile Section (pinned to bottom) ─── */
+.drawer-profile-section {
+  margin-top: auto;
+  border-top: 4px solid var(--border-main);
+  background-color: var(--pkmn-red-bg);
+  padding: 12px 0;
+  flex-shrink: 0;
+}
+
+.drawer-section-label {
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--pkmn-gb-dark);
+  padding: 4px 20px 10px;
+}
+
+.drawer-profile-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 20px 14px;
+}
+
+.drawer-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background-color: var(--pkmn-red);
+  border: 3px solid var(--border-main);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.drawer-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.drawer-avatar-initial {
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+  text-shadow: 1px 1px 0px var(--border-main);
+  font-family: var(--font-retro);
+  line-height: 1;
+}
+
+.drawer-username {
+  font-size: 15px;
+  color: var(--text-main);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.drawer-divider {
+  height: 3px;
+  background-color: var(--border-main);
+  margin: 4px 20px 8px;
+  opacity: 0.35;
+}
+
+/* ─── Drawer specific item variants ─── */
+.drawer-logout-item:hover {
+  background-color: #ffe8e8;
+  color: var(--pkmn-red);
+}
+
+.drawer-logout-item:active {
+  background-color: var(--pkmn-red);
+  color: white;
+}
+
+.drawer-login-item:hover {
+  background-color: #e8eeff;
+  color: var(--pkmn-blue);
+}

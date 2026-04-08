@@ -11,8 +11,9 @@
   --pkmn-gb-mid1: #88c070;
   --pkmn-gb-mid2: #346856;
   --pkmn-gb-dark: #081820;
+  --pkmn-red-bg: #ffd9d9;
 
-  --bg-color: #f8f8f8;
+  --bg-color: var(--pkmn-red-bg);
   --text-main: #222;
   --border-main: #222;
   

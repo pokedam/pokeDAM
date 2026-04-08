@@ -1,0 +1,79 @@
+<header class="topbar retro-box">
+  <div class="topbar-logo">PokeDAM</div>
+
+  <!-- Desktop actions -->
+  <div class="topbar-actions desktop-only">
+    <button class="retro-btn menu-btn pokedex-btn" (click)="pokedexClick.emit()">Pokédex</button>
+    <app-user-menu-button [isLoggedIn]="isLoggedIn" [username]="username" [avatarUrl]="avatarUrl"
+      (loginClick)="loginClick.emit()" (logoutClick)="logoutClick.emit()" (settingsClick)="settingsClick.emit()" />
+  </div>
+
+  <!-- Mobile hamburger button -->
+  <button class="hamburger-btn mobile-only" (click)="toggleDrawer()" aria-label="Open menu">
+    <span class="hamburger-line" [class.open]="isDrawerOpen"></span>
+    <span class="hamburger-line" [class.open]="isDrawerOpen"></span>
+    <span class="hamburger-line" [class.open]="isDrawerOpen"></span>
+  </button>
+</header>
+
+<!-- Mobile Drawer Overlay -->
+@if (isDrawerOpen) {
+<div class="drawer-overlay" (click)="closeDrawer()"></div>
+}
+
+<!-- Mobile Drawer -->
+<nav class="side-drawer" [class.open]="isDrawerOpen" aria-hidden="{{ !isDrawerOpen }}">
+  <div class="drawer-header">
+    <span class="drawer-title">Menú</span>
+    <button class="drawer-close-btn" (click)="closeDrawer()" aria-label="Close menu">✕</button>
+  </div>
+
+  <!-- Nav items -->
+  <ul class="drawer-nav">
+    <li>
+      <button class="drawer-nav-item" (click)="onDrawerPokedex()">
+        <span class="drawer-item-icon">📖</span>
+        <span>Pokédex</span>
+      </button>
+    </li>
+  </ul>
+
+  <!-- Profile section -->
+  <div class="drawer-profile-section">
+    <div class="drawer-section-label">Perfil</div>
+
+    @if (isLoggedIn) {
+    <!-- User info -->
+    <div class="drawer-profile-info">
+      <div class="drawer-avatar">
+        @if (avatarUrl) {
+        <img [src]="avatarUrl" [alt]="username" class="drawer-avatar-img" />
+        } @else {
+        <span class="drawer-avatar-initial">{{ avatarInitial }}</span>
+        }
+      </div>
+      <span class="drawer-username">{{ username }}</span>
+    </div>
+
+    <div class="drawer-divider"></div>
+
+    <!-- Settings -->
+    <button class="drawer-nav-item" (click)="onDrawerSettings()">
+      <span class="drawer-item-icon">⚙️</span>
+      <span>Settings</span>
+    </button>
+
+    <!-- Logout -->
+    <button class="drawer-nav-item drawer-logout-item" (click)="onDrawerLogout()">
+      <span class="drawer-item-icon">🚪</span>
+      <span>Log Out</span>
+    </button>
+    } @else {
+    <!-- Not logged in: show login button -->
+    <button class="drawer-nav-item drawer-login-item" (click)="onDrawerLogin()">
+      <span class="drawer-item-icon">🔑</span>
+      <span>Log In</span>
+    </button>
+    }
+  </div>
+</nav>

@@ -1,15 +1,19 @@
-<div class="home-container">
-  <div class="retro-box title-box">
-    <h1 class="logo">PokeDAM</h1>
-    <p class="subtitle">Online Battle Arena</p>
-  </div>
+<div class="home-layout">
+  <!-- Topbar -->
+  <app-topbar [isLoggedIn]="isLoggedIn" [username]="username" [avatarUrl]="avatarUrl" (loginClick)="onLoginClick()"
+    (logoutClick)="logout()" (settingsClick)="onSettings()" />
 
-  <div class="retro-box menu-box">
-    <button class="retro-btn menu-btn">Collection</button>
-    <button class="retro-btn menu-btn">Find Match</button>
-  </div>
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="arena-layout">
+      <!-- Menu/Action Area -->
+      <app-battle-arena />
 
-  <div class="dialogue-container">
-    <app-dialogue [sequence]="dialogueSequence"></app-dialogue>
-  </div>
+    </div>
+  </main>
+
+  <!-- Login Dialog (Modal) -->
+  @if (showLoginDialog) {
+  <app-login-dialog (loginSuccess)="login()" (close)="closeDialog()" />
+  }
 </div>

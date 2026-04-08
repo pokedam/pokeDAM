@@ -1,44 +1,62 @@
 import { Component } from '@angular/core';
+import { LoginDialog } from '../../components/login-dialog/login-dialog';
+import { Topbar } from '../../components/topbar/topbar';
 import { Dialogue, DialogueSequence } from '../../components/dialogue/dialogue';
+import { BattleArena } from '../../components/battle-arena/battle-arena';
 
 @Component({
   selector: 'app-home',
-  imports: [Dialogue],
+  imports: [LoginDialog, Topbar, Dialogue, BattleArena],
   templateUrl: './home.html',
   styleUrl: './home.css',
 })
 export class Home {
-  dialogueSequence: DialogueSequence = [
-    'Este es un ejemplo de diálogo de PokeDAM.',
+  isLoggedIn = false;
+  username = 'Trainer';
+  avatarUrl: string | null = null;
+
+  showLoginDialog = false;
+
+  matchDialogue: DialogueSequence = [
+    '¡Hola, entrenador!',
     { type: 'pause', duration: 400 },
-    'Los dialógos se ajustan al tamaño del contenedor y paran de escribirse cuando llegan al final de este.',
-    { type: 'pause', duration: 400 },
-    'Si pulsas Enter o la barra espaciadora,',
-    { type: 'pause', duration: 100 },
-    'completarás el espacio disponible del cuadro de diálogo con texto.',
-    { type: 'pause', duration: 400 },
-    'Además,',
-    { type: 'pause', duration: 100 },
-    'puedes agregar tus propios saltos de diálogo como desees,',
-    { type: 'pause', duration: 100 },
-    'forzando al sistema a dejar de escribir y pasar a un diálogo en blanco.',
+    'Actualmente el menú de acceso a partidas',
+    { type: 'pause', duration: 200 },
+    'se encuentra en construcción.',
     { type: 'jump' },
-    'Por ejemplo,',
+    'Próximamente podrás buscar rivales y combatir',
+    { type: 'pause', duration: 200 },
+    'al más',
     { type: 'pause', duration: 100 },
-    'este nuevo diálogo empezó y termina prematuramente.',
-    { type: 'jump' },
-    'Por último,',
-    { type: 'pause', duration: 100 },
-    'puedes configurar tus propias pausas y velocidades de texto.',
+    { type: 'text', value: 'puro', speed: 100 },
+    { type: 'pause', duration: 150 },
+    { type: 'text', value: 'estilo', speed: 40 },
     { type: 'pause', duration: 400 },
-    'Permitiendo',
-    { type: 'pause', duration: 500 },
-    'dar',
-    { type: 'pause', duration: 400 },
-    { type: 'text', value: 'dramatismo', speed: 150 },
-    { type: 'pause', duration: 300 },
-    { type: 'text', value: 'a tus', speed: 10 },
-    { type: 'pause', duration: 1000 },
-    { type: 'text', value: 'diálogos.', speed: 300 }
+    { type: 'text', value: 'Pokémon.', speed: 150 }
   ];
+
+  onLoginClick() {
+    this.showLoginDialog = true;
+  }
+
+  login() {
+    this.isLoggedIn = true;
+    this.username = 'Ash';   // TODO: use real username from auth service
+    this.showLoginDialog = false;
+  }
+
+  logout() {
+    this.isLoggedIn = false;
+    this.username = 'Trainer';
+    this.avatarUrl = null;
+  }
+
+  onSettings() {
+    // TODO: navigate to settings
+    console.log('Settings clicked');
+  }
+
+  closeDialog() {
+    this.showLoginDialog = false;
+  }
 }

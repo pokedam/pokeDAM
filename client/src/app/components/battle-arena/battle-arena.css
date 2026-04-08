@@ -1,0 +1,30 @@
+.action-area {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 20px;
+  background-color: white;
+  text-align: center;
+  min-height: 550px;
+}
+
+.action-area h2 {
+  font-size: 28px;
+  margin-bottom: 30px;
+  color: var(--text-main);
+}
+
+.start-match-btn {
+  background-color: var(--pkmn-red);
+  color: white;
+  text-shadow: 1px 1px 0px var(--border-main);
+  font-size: 20px;
+  padding: 20px 40px;
+}
+
+.start-match-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  filter: grayscale(80%);
+}

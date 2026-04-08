@@ -1,0 +1,174 @@
+/* ─── Login Button ─── */
+.login-btn {
+  background-color: var(--pkmn-blue);
+  color: white;
+  text-shadow: 1px 1px 0px var(--border-main);
+  min-width: 120px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-icon {
+  font-size: 14px;
+}
+
+/* ─── User Menu Wrapper ─── */
+.user-menu-wrapper {
+  position: relative;
+}
+
+/* ─── Trigger Button ─── */
+.user-menu-trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: white;
+  border: 4px solid var(--border-main);
+  padding: 8px 14px;
+  cursor: pointer;
+  font-family: var(--font-retro);
+  font-size: 14px;
+  color: var(--text-main);
+  transition: background-color 0.15s ease, box-shadow 0.1s ease;
+  box-shadow: 4px 4px 0px var(--border-main);
+  border-radius: 4px;
+}
+
+.user-menu-trigger:hover {
+  background-color: var(--pkmn-red-bg);
+  box-shadow: 2px 2px 0px var(--border-main);
+  transform: translate(2px, 2px);
+}
+
+.user-menu-trigger:active {
+  box-shadow: none;
+  transform: translate(4px, 4px);
+}
+
+/* ─── Avatar ─── */
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: var(--pkmn-red);
+  border: 3px solid var(--border-main);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-initial {
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  text-shadow: 1px 1px 0px var(--border-main);
+  font-family: var(--font-retro);
+  line-height: 1;
+}
+
+/* ─── Username ─── */
+.user-name {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ─── Dropdown Arrow ─── */
+.dropdown-arrow {
+  font-size: 10px;
+  transition: transform 0.2s ease;
+  display: inline-block;
+}
+
+.dropdown-arrow.open {
+  transform: rotate(180deg);
+}
+
+/* ─── Dropdown Menu ─── */
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 180px;
+  background-color: white;
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  gap: 2px;
+  z-index: 200;
+  /* pixel-art drop shadow */
+  animation: dropdown-open 0.12s ease-out forwards;
+}
+
+@keyframes dropdown-open {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ─── Dropdown Items ─── */
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-retro);
+  font-size: 14px;
+  color: var(--text-main);
+  text-align: left;
+  border-radius: 2px;
+  transition: background-color 0.1s ease;
+}
+
+.dropdown-item:hover {
+  background-color: var(--pkmn-red-bg);
+}
+
+.dropdown-item:active {
+  background-color: var(--pkmn-gb-mid1);
+  color: white;
+}
+
+.item-icon {
+  font-size: 16px;
+  width: 20px;
+  text-align: center;
+}
+
+/* ─── Divider ─── */
+.dropdown-divider {
+  height: 3px;
+  background-color: var(--border-main);
+  margin: 4px 6px;
+  border-radius: 2px;
+}
+
+/* ─── Logout item ─── */
+.logout-item:hover {
+  background-color: #ffe8e8;
+  color: var(--pkmn-red);
+}
+
+.logout-item:active {
+  background-color: var(--pkmn-red);
+  color: white;
+}

@@ -11,7 +11,7 @@
 
 .battle-scene {
   flex-grow: 1;
-  background-color: var(--pkmn-gb-light);
+  background-color: var(--pkmn-red-bg);
   border: 4px solid var(--border-main);
   border-radius: 8px;
   margin-bottom: 20px;
@@ -29,7 +29,7 @@
 
   /* Firefox Scrollbar (Retro matching) */
   scrollbar-width: auto;
-  scrollbar-color: var(--border-main) var(--pkmn-gb-light);
+  scrollbar-color: var(--border-main) var(--pkmn-red-bg);
 }
 
 /* Webkit Scrollbar Retro Style */
@@ -38,13 +38,13 @@
 }
 
 .battle-scene::-webkit-scrollbar-track {
-  background: var(--pkmn-gb-light);
+  background: var(--pkmn-red-bg);
   border-left: 4px solid var(--border-main);
 }
 
 .battle-scene::-webkit-scrollbar-thumb {
   background-color: var(--border-main);
-  border: 3px solid var(--pkmn-gb-light);
+  border: 3px solid var(--pkmn-red-bg);
 }
 
 @media (max-width: 500px) {
