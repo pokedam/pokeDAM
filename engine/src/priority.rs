@@ -7,7 +7,7 @@
 /// Implementa `Ord` de forma que el orden *ascendente* de Rust
 /// corresponde al orden real de ejecución, por lo que basta con ordenar
 /// el slice de mayor a menor (`sort_unstable_by(|a, b| b.cmp(a))`).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct Priority {
     /// Nivel de prioridad del movimiento/acción (-7 a +7).
     pub level: i8,

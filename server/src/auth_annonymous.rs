@@ -2,8 +2,8 @@ use crate::prelude::*;
 use jsonwebtoken::{EncodingKey, Header, encode};
 
 // ── POST /api/auth/anonymous ───────────────────────────────
-pub async fn login_anonymous(
-    config: web::Data<AppConfig>,
+pub async fn login(
+    config: web::Data<Database>,
     repo: web::Data<dyn Repository>,
 ) -> Result<HttpResponse, Error> {
     #[derive(Debug, Serialize)]
@@ -44,7 +44,7 @@ mod tests {
         let repo: web::Data<dyn Repository> =
             web::Data::from(Arc::new(fake) as Arc<dyn Repository>);
 
-        let cfg = crate::config::AppConfig::new(
+        let cfg = crate::db::Database::new(
             Some("host".to_string()),
             Some(20349),
             Some("user".to_string()),
@@ -55,7 +55,7 @@ mod tests {
         let config = web::Data::new(cfg);
 
         // Call handler
-        let resp = login_anonymous(config, repo).await.unwrap();
+        let resp = login(config, repo).await.unwrap();
         assert_eq!(resp.status(), StatusCode::OK);
         let body = actix_web::body::to_bytes(resp.into_body()).await.unwrap();
         let json: serde_json::Value = serde_json::from_slice(&body).unwrap();

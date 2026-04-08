@@ -1,6 +1,6 @@
 use actix::prelude::*;
 use derive_more::{Deref, From};
-use log::{error, info};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use uuid::Uuid;
 
@@ -12,123 +12,151 @@ use crate::ws_actor::PlayerSession;
 
 const TURN_TIME_LIMIT: std::time::Duration = std::time::Duration::from_secs(60);
 
-// Messages
-#[derive(Message, Deref, From)]
-#[rtype(result = "Option<Uuid>")]
-pub struct InitMatch(pub Board);
-
-#[derive(Message)]
-#[rtype(result = "Result<(), String>")]
-pub struct ConnectPlayer {
-    pub match_id: Uuid,
-    pub player_id: usize,
-    pub addr: Addr<PlayerSession>,
+// --- Modelos Cliente-Servidor (JSON) ---
+#[derive(Deserialize)]
+#[serde(tag = "action", content = "payload")]
+pub enum ClientMessage {
+    CreateRoom,
+    JoinRoom { room_id: Uuid },
+    SetReady { is_ready: bool },
+    StartGame,
+    BattleAction(PlayerRequest),
 }
+
+#[derive(Serialize, Clone)]
+#[serde(tag = "event", content = "payload")]
+pub enum ServerEvent {
+    PlayerJoined { player_id: usize },
+    PlayerReady { player_id: usize, is_ready: bool },
+    GameStarted,
+    MatchHistory(History),
+}
+
+// --- Mensajes Internos del Actor ---
+#[derive(Message, Clone, Deref, From)]
+#[rtype(result = "()")]
+pub struct MessageToClient(pub String);
 
 #[derive(Message)]
 #[rtype(result = "()")]
 pub struct DisconnectPlayer {
-    pub match_id: Uuid,
     pub player_id: usize,
 }
 
 #[derive(Message)]
 #[rtype(result = "()")]
-pub struct PlayerInput {
-    pub match_id: Uuid,
+pub struct ClientAction {
     pub player_id: usize,
-    pub request: PlayerRequest,
+    pub msg: ClientMessage,
 }
 
-#[derive(Message, Clone, Deref, From)]
-#[rtype(result = "()")]
-pub struct MatchHistory(pub String);
-
+// --- Estados del Loby / Partida ---
 struct MatchState {
     board: Option<Board>,
-    connected_players: HashMap<usize, Addr<PlayerSession>>,
     pending_requests: HashMap<usize, PlayerRequest>,
     turn_id: u32,
 }
 
+enum RoomState {
+    Waiting {
+        host_id: usize,
+        readys: HashMap<usize, bool>,
+    },
+    Playing(MatchState),
+}
+
+struct Room {
+    state: RoomState,
+    connected_players: HashMap<usize, Addr<PlayerSession>>,
+}
+
+impl Room {
+    fn new(host_id: usize) -> Self {
+        let mut readys = HashMap::new();
+        readys.insert(host_id, false);
+
+        Room {
+            state: RoomState::Waiting { host_id, readys },
+            connected_players: HashMap::new(),
+        }
+    }
+
+    fn broadcast(&self, event: &ServerEvent) {
+        if let Ok(json) = serde_json::to_string(event) {
+            let msg = MessageToClient(json);
+            for addr in self.connected_players.values() {
+                addr.do_send(msg.clone());
+            }
+        }
+    }
+}
+
 pub struct GameServer {
-    matches: HashMap<Uuid, MatchState>,
+    rooms: HashMap<Uuid, Room>,
+    player_rooms: HashMap<usize, Uuid>,
 }
 
 impl Default for GameServer {
+    #[inline]
     fn default() -> Self {
         Self::new()
     }
 }
 
 impl GameServer {
+    #[inline]
     pub fn new() -> GameServer {
-        info!("GameServer initialized");
         GameServer {
-            matches: HashMap::new(),
+            rooms: HashMap::new(),
+            player_rooms: HashMap::new(),
+            //redis_pool,
         }
     }
 
     fn handle_timeout(&mut self, match_id: Uuid, turn_id: u32, ctx: &mut Context<Self>) {
-        if let Some(state) = self.matches.get(&match_id) {
-            if state.turn_id == turn_id {
-                info!("Turn {} timeout for match {}", turn_id, match_id);
-                self.execute_turn(match_id, ctx);
+        if let Some(room) = self.rooms.get_mut(&match_id) {
+            if let RoomState::Playing(state) = &mut room.state {
+                if state.turn_id == turn_id {
+                    self.execute_turn(match_id, ctx);
+                }
             }
         }
     }
 
     fn execute_turn(&mut self, match_id: Uuid, ctx: &mut Context<Self>) {
-        if let Some(state) = self.matches.get_mut(&match_id) {
-            info!("Executing turn {} for match {}", state.turn_id, match_id);
+        if let Some(room) = self.rooms.get_mut(&match_id) {
+            if let RoomState::Playing(state) = &mut room.state {
 
-            let mut requests_vec = Vec::with_capacity(PLAYERS_PER_BOARD);
-            for i in 0..PLAYERS_PER_BOARD {
-                if let Some(req) = state.pending_requests.remove(&i) {
-                    requests_vec.push(req);
-                } else {
-                    requests_vec.push(PlayerRequest::default());
-                }
-            }
-
-            let requests_arr: [PlayerRequest; PLAYERS_PER_BOARD] = match requests_vec.try_into() {
-                Ok(arr) => arr,
-                Err(_) => {
-                    error!("Failed to convert requests to fixed array");
-                    return;
-                }
-            };
-
-            let board = state.board.take().expect("Board should exist");
-
-            let mut turn = Turn {
-                board,
-                requests: requests_arr,
-            };
-
-            let mut history = History::default();
-            turn.execute(&mut history);
-
-            match serde_json::to_string(&history) {
-                Ok(json) => {
-                    let hist_msg = MatchHistory(json);
-                    for (_, addr) in &state.connected_players {
-                        addr.do_send(hist_msg.clone());
+                let mut requests_vec = Vec::with_capacity(PLAYERS_PER_BOARD);
+                for i in 0..PLAYERS_PER_BOARD {
+                    if let Some(req) = state.pending_requests.remove(&i) {
+                        requests_vec.push(req);
+                    } else {
+                        requests_vec.push(PlayerRequest::default());
                     }
                 }
-                Err(e) => {
-                    error!("Failed to serialize history: {}", e);
+
+                if let Ok(requests_arr) = requests_vec.try_into() {
+                    if let Some(board) = state.board.take() {
+                        let mut turn = Turn {
+                            board,
+                            requests: requests_arr,
+                        };
+                        let mut history = History::default();
+                        turn.execute(&mut history);
+
+                        state.board = Some(turn.board);
+                        state.turn_id += 1;
+                        state.pending_requests.clear();
+
+                        let turn_id = state.turn_id;
+                        room.broadcast(&ServerEvent::MatchHistory(history));
+                        ctx.run_later(TURN_TIME_LIMIT, move |act, ctx| {
+                            act.handle_timeout(match_id, turn_id, ctx);
+                        });
+                    }
                 }
             }
-
-            state.board = Some(turn.board);
-            state.turn_id += 1;
-            state.pending_requests.clear();
-
-            let next_turn_id = state.turn_id;
-            ctx.run_later(TURN_TIME_LIMIT, move |act, ctx| {
-                act.handle_timeout(match_id, next_turn_id, ctx);
-            });
         }
     }
 }
@@ -137,78 +165,104 @@ impl Actor for GameServer {
     type Context = Context<Self>;
 }
 
-// Handler for REST API initializing a game
-impl Handler<InitMatch> for GameServer {
-    type Result = Option<Uuid>;
-
-    fn handle(&mut self, msg: InitMatch, ctx: &mut Context<Self>) -> Self::Result {
-        let match_id = Uuid::new_v4();
-        let state = MatchState {
-            board: Some(msg.0),
-            connected_players: HashMap::new(),
-            pending_requests: HashMap::new(),
-            turn_id: 1,
-        };
-        self.matches.insert(match_id, state);
-        info!("Initialized match {}", match_id);
-
-        ctx.run_later(std::time::Duration::from_secs(60), move |act, ctx| {
-            act.handle_timeout(match_id, 1, ctx);
-        });
-
-        Some(match_id)
-    }
-}
-
-impl Handler<ConnectPlayer> for GameServer {
-    type Result = Result<(), String>;
-
-    fn handle(&mut self, msg: ConnectPlayer, _: &mut Context<Self>) -> Self::Result {
-        if let Some(state) = self.matches.get_mut(&msg.match_id) {
-            state.connected_players.insert(msg.player_id, msg.addr);
-            info!("Player {} joined match {}", msg.player_id, msg.match_id);
-            Ok(())
-        } else {
-            Err("Match not found".to_string())
-        }
-    }
-}
-
 impl Handler<DisconnectPlayer> for GameServer {
     type Result = ();
 
     fn handle(&mut self, msg: DisconnectPlayer, _: &mut Context<Self>) {
-        if let Some(state) = self.matches.get_mut(&msg.match_id) {
-            state.connected_players.remove(&msg.player_id);
-            info!(
-                "Player {} disconnected from match {}",
-                msg.player_id, msg.match_id
-            );
+        if let Some(room_id) = self.player_rooms.remove(&msg.player_id) {
+            if let Some(room) = self.rooms.get_mut(&room_id) {
+                room.connected_players.remove(&msg.player_id);
+            }
         }
     }
 }
 
-impl Handler<PlayerInput> for GameServer {
+impl Handler<ClientAction> for GameServer {
     type Result = ();
 
-    fn handle(&mut self, msg: PlayerInput, ctx: &mut Context<Self>) {
-        if let Some(state) = self.matches.get_mut(&msg.match_id) {
-            // Register player request
-            state.pending_requests.insert(msg.player_id, msg.request);
-            info!(
-                "Received request from player {} for match {}",
-                msg.player_id, msg.match_id
-            );
+    fn handle(&mut self, msg: ClientAction, ctx: &mut Context<Self>) {
+        let player_id = msg.player_id;
 
-            // Turn execution logic if all 8 players submitted their actions
-            if state.pending_requests.len() == PLAYERS_PER_BOARD {
-                info!(
-                    "All {} players submitted commands. Executing turn...",
-                    PLAYERS_PER_BOARD
-                );
+        match msg.msg {
+            ClientMessage::CreateRoom => {
+                let room_id = Uuid::new_v4();
 
-                let match_id = msg.match_id;
-                self.execute_turn(match_id, ctx);
+                let room = Room::new(player_id);
+                self.rooms.insert(room_id, room);
+                self.player_rooms.insert(player_id, room_id);
+
+            }
+            ClientMessage::JoinRoom { room_id } => {
+                if let Some(room) = self.rooms.get_mut(&room_id) {
+                    if let RoomState::Waiting { readys, .. } = &mut room.state {
+                        readys.insert(player_id, false);
+                        self.player_rooms.insert(player_id, room_id);
+                        room.broadcast(&ServerEvent::PlayerJoined { player_id });                        
+                    }
+                }
+            }
+            ClientMessage::SetReady { is_ready } => {
+                if let Some(room_id) = self.player_rooms.get(&player_id) {
+                    if let Some(room) = self.rooms.get_mut(room_id) {
+                        if let RoomState::Waiting { readys, .. } = &mut room.state {
+                            readys.insert(player_id, is_ready);
+                            room.broadcast(&ServerEvent::PlayerReady {
+                                player_id,
+                                is_ready,
+                            });
+                        }
+                    }
+                }
+            }
+            ClientMessage::StartGame => {
+                if let Some(room_id) = self.player_rooms.get(&player_id) {
+                    if let Some(room) = self.rooms.get_mut(room_id) {
+                        if let RoomState::Waiting { host_id, readys } = &room.state {
+                            if *host_id == player_id
+                                && readys.len() > 1
+                                && readys.values().all(|r| *r)
+                            {
+                                if let Some(room) = self.rooms.get_mut(&room_id) {
+                                    room.broadcast(&ServerEvent::GameStarted);
+
+                                    room.state = RoomState::Playing(MatchState {
+                                        board: Some(Board::default()), // Fake init
+                                        pending_requests: HashMap::new(),
+                                        turn_id: 1,
+                                    });
+
+                                }
+                                let room_id = *room_id;
+                                ctx.run_later(
+                                    std::time::Duration::from_secs(60),
+                                    move |act: &mut GameServer, ctx| {
+                                        act.handle_timeout(room_id, 1, ctx);
+                                    },
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+            ClientMessage::BattleAction(req) => {
+                let mut run_turn = false;
+                let mut the_room_id = None;
+
+                if let Some(room_id) = self.player_rooms.get(&player_id) {
+                    if let Some(room) = self.rooms.get_mut(room_id) {
+                        if let RoomState::Playing(state) = &mut room.state {
+                            state.pending_requests.insert(player_id, req);
+                            if state.pending_requests.len() == room.connected_players.len() {
+                                run_turn = true;
+                                the_room_id = Some(*room_id);
+                            }
+                        }
+                    }
+                }
+
+                if run_turn {
+                    self.execute_turn(the_room_id.unwrap(), ctx);
+                }
             }
         }
     }

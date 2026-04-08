@@ -12,15 +12,13 @@ struct GoogleTokenInfo {
 }
 
 // ── POST /api/auth/google ──────────────────────────────────
-pub async fn login_google(
+pub async fn login(
     req: HttpRequest,
     repo: web::Data<dyn Repository>,
     body: web::Json<GoogleLoginRequest>,
 ) -> Result<HttpResponse, Error> {
     #[derive(Debug, Deserialize)]
     // Use module-scoped struct for reuse in tests
-    
-
     #[derive(thiserror::Error, Clone, Copy)]
     #[error("Missing claims in request extensions")]
     struct MissingClaimsError;
@@ -66,25 +64,32 @@ async fn verify_google_token(id_token: &str) -> Result<GoogleTokenInfo, Error> {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use actix_web::{test, web, http::StatusCode};
+    use actix_web::{http::StatusCode, test, web};
     use std::sync::Arc;
 
     #[actix_rt::test]
     async fn login_google_ok() {
-        let fake = TestRepository { user_id: 50, user_email: Some("g@e.com".to_string()), user_google_sub: Some("sub50".to_string()), ..Default::default() };
-        let repo: web::Data<dyn Repository> = web::Data::from(Arc::new(fake) as Arc<dyn Repository>);
+        let fake = TestRepository {
+            user_id: 50,
+            user_email: Some("g@e.com".to_string()),
+            user_google_sub: Some("sub50".to_string()),
+            ..Default::default()
+        };
+        let repo: web::Data<dyn Repository> =
+            web::Data::from(Arc::new(fake) as Arc<dyn Repository>);
 
         let claims = crate::jwt::Claims::new(5, chrono::Utc::now().naive_utc());
         let req = test::TestRequest::default().to_http_request();
         req.extensions_mut().insert(claims);
 
-        let body = GoogleLoginRequest { id_token: "sub50|g@e.com".to_string() };
+        let body = GoogleLoginRequest {
+            id_token: "sub50|g@e.com".to_string(),
+        };
 
-        let resp = login_google(req, repo, web::Json(body)).await.unwrap();
+        let resp = login(req, repo, web::Json(body)).await.unwrap();
         assert_eq!(resp.status(), StatusCode::OK);
         let body = actix_web::body::to_bytes(resp.into_body()).await.unwrap();
         let json: serde_json::Value = serde_json::from_slice(&body).unwrap();

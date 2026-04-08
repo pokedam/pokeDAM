@@ -29,7 +29,7 @@ pub async fn jwt_auth(
     req: ServiceRequest,
     next: Next<impl MessageBody + 'static>,
 ) -> Result<ServiceResponse<impl MessageBody>, Error> {
-    let secret = if let Some(cfg) = req.app_data::<actix_web::web::Data<crate::config::AppConfig>>()
+    let secret = if let Some(cfg) = req.app_data::<actix_web::web::Data<crate::db::Database>>()
     {
         cfg.secret.clone()
     } else if let Some(s) = req.app_data::<actix_web::web::Data<String>>() {

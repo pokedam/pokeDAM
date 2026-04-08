@@ -3,22 +3,28 @@ use serde::Deserialize;
 
 use crate::*;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Default)]
 pub struct PlayerRequest {
     pub pokemons: [PokemonRequest; ACTIVE_COUNT],
     pub items: Vec<u8>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Default)]
 pub enum PokemonRequest {
+    #[default]
+    Idle,
     Swap(u8),
-    UseMov { id: u8, descriptor: Vec<u8> },
+    UseMov {
+        id: u8,
+        descriptor: Vec<u8>,
+    },
     ReceiveItem(u8),
 }
 
 impl PokemonRequest {
     pub fn validate(&self, ctx: PokeContext<&Board>) -> Result<Priority> {
         match self {
+            PokemonRequest::Idle => Ok(Default::default()),
             PokemonRequest::Swap(target_id) => {
                 let player = ctx.player();
                 let pokemon = ctx.pokemon();
@@ -72,6 +78,7 @@ impl PokemonRequest {
 
     pub fn execute(&self, mut ctx: PokeContext<&mut Board>) -> Result<()> {
         match self {
+            PokemonRequest::Idle => Ok(()),
             PokemonRequest::Swap(id) => {
                 let idx = ctx.active as usize;
                 ctx.player_mut().active_pokemons[idx] = *id;

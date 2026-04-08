@@ -25,8 +25,7 @@ mod tests {
     pub struct TestRepository {
         pub profile_id: i64,
         pub company_id: i64,
-        pub allowed: bool,
-        pub token_id: uuid::Uuid,
+        pub allowed: bool,        
         pub user_id: i64,
         pub user_email: Option<String>,
         pub user_google_sub: Option<String>,

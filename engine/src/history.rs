@@ -2,7 +2,7 @@ use serde::Serialize;
 
 use crate::*;
 
-#[derive(Serialize)]
+#[derive(Serialize, Default, Clone)]
 pub struct History(Vec<GameEvent>);
 
 impl History {
@@ -11,7 +11,7 @@ impl History {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 pub enum GameEvent {
     PokemonFainted {
         player: u8,
