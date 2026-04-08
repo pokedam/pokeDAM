@@ -19,21 +19,21 @@ export interface MatchRoom {
   styleUrl: './battle-arena.css',
 })
 export class BattleArena {
-  currentUser: string = 'Dariomg'; // Mock user
+  currentUser: string = 'Ash'; // Mock user
   currentView: 'browser' | 'lobby' = 'browser';
   currentMatch: MatchRoom | null = null;
   joinedAsPlayer2: boolean = false;
 
   showCreateModal: boolean = false;
-  newMatchName: string = "Dariomg's Custom Game";
+  newMatchName: string = "Ash's Custom Game";
   requiresPassword: boolean = false;
   newMatchPassword: string = '';
 
   matches: MatchRoom[] = [
-    { id: '1', name: "Dario's Training", host: 'Dariomg', players: 1, maxPlayers: 2, status: 'Waiting' },
+    { id: '1', name: "Ash's Training", host: 'Ash', players: 1, maxPlayers: 2, status: 'Waiting' },
     { id: '2', name: "Noobs only", host: 'AshKetchum', players: 2, maxPlayers: 2, status: 'In Progress' },
     { id: '3', name: "Competitive 1v1", host: 'Red', players: 1, maxPlayers: 2, status: 'Waiting', password: '123' },
-    { id: '4', name: "Testing my new engine", host: 'Dev', players: 1, maxPlayers: 2, status: 'Waiting' },
+    { id: '4', name: "Avilés Tourney", host: 'Dev', players: 1, maxPlayers: 2, status: 'Waiting' },
   ];
 
   openCreateModal() {
