@@ -1,5 +1,7 @@
 # Changelog
 
+Puede encontrar el repositorio completo en: [GitHub - pokeDAM/pokeDAM](https://github.com/pokeDAM/pokeDAM)
+
 ## Desarrollo Inicial del Cliente
 
 ### Core
