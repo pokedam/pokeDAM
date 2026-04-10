@@ -1,4 +1,5 @@
-use anyhow::{anyhow, Result};
+use ::types::PokemonType;
+use anyhow::{Result, anyhow};
 use derive_more::{Deref, DerefMut};
 
 use crate::*;
@@ -104,7 +105,7 @@ impl BasicAttack {
             AttackType::Status => return Err(anyhow!("Status moves don't deal direct damage")),
         } as u32;
         let base_damage = (5 * level / 2 + 2) * self.power as u32 * atk / def.max(1) / 50 + 2;
-        let effectiveness = self.mov_type.effectiveness_against(other_pkm.types);
+        let effectiveness = other_pkm.types.effectiveness_against(self.mov_type);
         let total_power =
             (base_damage * effectiveness.multiplier() / Effectiveness::Regular.multiplier()) as u16;
         if other_pkm.status.contains(PokemonStatus::FAINTED) {

@@ -1,8 +1,7 @@
 [workspace]
-members = [
-    "engine", "server", "server_ingame",
-]
+members = ["dataset","engine", "server", "server_ingame", "types"]
 resolver = "2"
 
 [workspace.dependencies]
-derive_more = {version = "2.1.1", features = ["deref", "deref_mut"] }
+derive_more = { version = "2.1.1", features = ["deref", "deref_mut"] }
+serde = { version = "1.0.228", features = ["derive"] }

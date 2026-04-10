@@ -1,13 +1,13 @@
 pub use actix_cors::Cors;
 use actix_web::{App, HttpServer, middleware};
 
-use server::{*, prelude::*};
+use server::{prelude::*, *};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv::dotenv().ok();
 
-    let database: Database = Database::from_env(); 
+    let database: Database = Database::from_env();
 
     db::init(&database.pool).await.unwrap();
 
@@ -16,7 +16,6 @@ async fn main() -> std::io::Result<()> {
         .as_ref()
         .map(String::as_str)
         .unwrap_or_else(|_| "127.0.0.1:8080");
-
 
     let app_config = web::Data::new(database.clone());
 
@@ -35,12 +34,7 @@ async fn main() -> std::io::Result<()> {
             .service(
                 web::scope("/api/auth")
                     .wrap(middleware::from_fn(jwt::jwt_auth))
-                    .route("/google", web::post().to(auth_google::login)), // .route(
-                                                                           //     "/generate_token",
-                                                                           //     web::post().to(generate_token::generate_token),
-                                                                           // )
-                                                                           // .route("/consume_token", web::post().to(consume_token::consume_token))
-                                                                           // .route("/create_company", web::post().to(create_company::create_company)),
+                    .route("/google", web::post().to(auth_google::login)),
             )
     })
     .bind(&bind_addr)?

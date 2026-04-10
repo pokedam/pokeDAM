@@ -8,6 +8,7 @@ anyhow = "1.0.102"
 arrayvec = { version = "0.7.6", features = ["serde"] }
 bitflags = { version = "2.11.0", features = ["serde"] }
 bytemuck = { version = "1.25.0", features = ["derive", "extern_crate_std"] }
-derive_more = {version = "2.1.1", features = ["deref", "deref_mut"] }
+derive_more = { version = "2.1.1", features = ["deref", "deref_mut"] }
 erased-serde = "0.4.10"
-serde = { version = "1.0.228", features = ["derive",] }
+serde = { workspace = true }
+types = { path = "../types", features = ["serde"] }

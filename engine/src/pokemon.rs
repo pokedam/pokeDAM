@@ -1,4 +1,5 @@
 use arrayvec::ArrayVec;
+use derive_more::{Deref, DerefMut};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -11,15 +12,12 @@ pub struct Pokemon {
     pub movs: ArrayVec<PokemonMov, 4>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Deref, DerefMut)]
 pub struct Stats {
-    pub total_hp: u16,
+    #[deref]
+    #[deref_mut]
+    pub stats: types::Stats,
     pub hp: u16,
-    pub attack: u16,
-    pub defense: u16,
-    pub special_attack: u16,
-    pub special_defense: u16,
-    pub speed: u16,
     pub evasion: u16,
     pub precision: u16,
 }
