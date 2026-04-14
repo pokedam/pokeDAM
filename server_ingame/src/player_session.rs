@@ -10,6 +10,19 @@ pub struct PlayerSession {
 
 impl Actor for PlayerSession {
     type Context = ws::WebsocketContext<Self>;
+
+    fn started(&mut self, ctx: &mut Self::Context) {
+        self.game_server.do_send(crate::game_server::ConnectPlayer {
+            player_id: self.player_id,
+            addr: ctx.address(),
+        });
+    }
+
+    fn stopped(&mut self, _: &mut Self::Context) {
+        self.game_server.do_send(crate::game_server::DisconnectPlayer {
+            player_id: self.player_id,
+        });
+    }
 }
 
 /// Handle messages from WebSocket client

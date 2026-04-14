@@ -1,5 +1,4 @@
 use actix::prelude::*;
-use arrayvec::ArrayVec;
 use derive_more::{Deref, From};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -31,6 +30,10 @@ pub enum ServerEvent {
     PlayerReady { player_id: usize, is_ready: bool },
     GameStarted,
     MatchHistory(History),
+    PlayerDisconnected { player_id: usize },
+    PlayerReconnected { player_id: usize },
+    PlayerEliminated { player_id: usize },
+    GameOver { winner_id: usize },
 }
 
 // --- Mensajes Internos del Actor ---
@@ -40,7 +43,21 @@ pub struct MessageToClient(pub String);
 
 #[derive(Message)]
 #[rtype(result = "()")]
+pub struct ConnectPlayer {
+    pub player_id: usize,
+    pub addr: Addr<PlayerSession>,
+}
+
+#[derive(Message)]
+#[rtype(result = "()")]
 pub struct DisconnectPlayer {
+    pub player_id: usize,
+}
+
+#[derive(Message)]
+#[rtype(result = "()")]
+pub struct HandleDisconnectTimeout {
+    pub match_id: Uuid,
     pub player_id: usize,
 }
 
@@ -56,6 +73,8 @@ struct MatchState {
     board: Option<Board>,
     pending_requests: HashMap<usize, PlayerRequest>,
     turn_id: u32,
+    player_indices: HashMap<usize, usize>,
+    active_players: Vec<usize>,
 }
 
 enum RoomState {
@@ -124,30 +143,50 @@ impl GameServer {
         }
     }
 
+    fn check_and_execute_turn_if_ready(&mut self, match_id: Uuid, ctx: &mut Context<Self>) {
+        let run_turn = {
+            if let Some(room) = self.rooms.get(&match_id) {
+                if let RoomState::Playing(state) = &room.state {
+                    // Check if all active players have submitted requests
+                    state.pending_requests.len() == state.active_players.len()
+                } else { false }
+            } else { false }
+        };
+
+        if run_turn {
+            self.execute_turn(match_id, ctx);
+        }
+    }
+
     fn execute_turn(&mut self, match_id: Uuid, ctx: &mut Context<Self>) {
         if let Some(room) = self.rooms.get_mut(&match_id) {
             if let RoomState::Playing(state) = &mut room.state {
-                let mut vec = ArrayVec::<_, PLAYERS_PER_BOARD>::new();
-                vec.extend(state.pending_requests.drain().map(|(_, req)| req));
-                if let Ok(requests_arr) = vec.into_inner() {
-                    if let Some(board) = state.board.take() {
-                        let mut turn = Turn {
-                            board,
-                            requests: requests_arr,
-                        };
-                        let mut history = History::default();
-                        turn.execute(&mut history);
-
-                        state.board = Some(turn.board);
-                        state.turn_id += 1;
-                        state.pending_requests.clear();
-
-                        let turn_id = state.turn_id;
-                        room.broadcast(&ServerEvent::MatchHistory(history));
-                        ctx.run_later(TURN_TIME_LIMIT, move |act, ctx| {
-                            act.handle_timeout(match_id, turn_id, ctx);
-                        });
+                if let Some(board) = state.board.take() {
+                    let mut requests_arr: [PlayerRequest; PLAYERS_PER_BOARD] = Default::default();
+                    for &pid in &state.active_players {
+                        if let Some(&idx) = state.player_indices.get(&pid) {
+                            if let Some(req) = state.pending_requests.remove(&pid) {
+                                requests_arr[idx] = req;
+                            }
+                        }
                     }
+
+                    let mut turn = Turn {
+                        board,
+                        requests: requests_arr,
+                    };
+                    let mut history = History::default();
+                    turn.execute(&mut history);
+
+                    state.board = Some(turn.board);
+                    state.turn_id += 1;
+                    state.pending_requests.clear();
+
+                    let turn_id = state.turn_id;
+                    room.broadcast(&ServerEvent::MatchHistory(history));
+                    ctx.run_later(TURN_TIME_LIMIT, move |act, ctx| {
+                        act.handle_timeout(match_id, turn_id, ctx);
+                    });
                 }
             }
         }
@@ -158,14 +197,88 @@ impl Actor for GameServer {
     type Context = Context<Self>;
 }
 
+impl Handler<ConnectPlayer> for GameServer {
+    type Result = ();
+
+    fn handle(&mut self, msg: ConnectPlayer, _: &mut Context<Self>) {
+        if let Some(room_id) = self.player_rooms.get(&msg.player_id).copied() {
+            if let Some(room) = self.rooms.get_mut(&room_id) {
+                room.connected_players.insert(msg.player_id, msg.addr.clone());
+
+                if let RoomState::Playing(state) = &room.state {
+                    if state.active_players.contains(&msg.player_id) {
+                        room.broadcast(&ServerEvent::PlayerReconnected {
+                            player_id: msg.player_id,
+                        });
+                    }
+                }
+            }
+        }
+    }
+}
+
 impl Handler<DisconnectPlayer> for GameServer {
     type Result = ();
 
-    fn handle(&mut self, msg: DisconnectPlayer, _: &mut Context<Self>) {
-        if let Some(room_id) = self.player_rooms.remove(&msg.player_id) {
+    fn handle(&mut self, msg: DisconnectPlayer, ctx: &mut Context<Self>) {
+        let player_id = msg.player_id;
+        if let Some(&room_id) = self.player_rooms.get(&player_id) {
             if let Some(room) = self.rooms.get_mut(&room_id) {
-                room.connected_players.remove(&msg.player_id);
+                room.connected_players.remove(&player_id);
+
+                let is_playing = matches!(&room.state, RoomState::Playing(_));
+                if is_playing {
+                    if let RoomState::Playing(state) = &room.state {
+                        if state.active_players.contains(&player_id) {
+                            room.broadcast(&ServerEvent::PlayerDisconnected { player_id });
+                            ctx.run_later(
+                                std::time::Duration::from_secs(30),
+                                move |act, ctx| {
+                                    act.do_send(HandleDisconnectTimeout {
+                                        match_id: room_id,
+                                        player_id,
+                                    });
+                                },
+                            );
+                        }
+                    }
+                } else {
+                    self.player_rooms.remove(&player_id);
+                }
             }
+        }
+    }
+}
+
+impl Handler<HandleDisconnectTimeout> for GameServer {
+    type Result = ();
+
+    fn handle(&mut self, msg: HandleDisconnectTimeout, ctx: &mut Context<Self>) {
+        let mut room_finished = false;
+
+        if let Some(room) = self.rooms.get_mut(&msg.match_id) {
+            if !room.connected_players.contains_key(&msg.player_id) {
+                if let RoomState::Playing(state) = &mut room.state {
+                    if let Some(pos) = state.active_players.iter().position(|&p| p == msg.player_id) {
+                        state.active_players.remove(pos);
+                        room.broadcast(&ServerEvent::PlayerEliminated {
+                            player_id: msg.player_id,
+                        });
+
+                        if state.active_players.len() == 1 {
+                            let winner = state.active_players[0];
+                            room.broadcast(&ServerEvent::GameOver { winner_id: winner });
+                            room_finished = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        if room_finished {
+            self.rooms.remove(&msg.match_id);
+        } else if !room_finished && self.rooms.contains_key(&msg.match_id) {
+            self.check_and_execute_turn_if_ready(msg.match_id, ctx);
         }
     }
 }
@@ -217,10 +330,18 @@ impl Handler<ClientAction> for GameServer {
                                 if let Some(room) = self.rooms.get_mut(&room_id) {
                                     room.broadcast(&ServerEvent::GameStarted);
 
+                                    let mut player_indices = HashMap::new();
+                                    for (i, &pid) in room.connected_players.keys().enumerate() {
+                                        player_indices.insert(pid, i);
+                                    }
+                                    let active_players = room.connected_players.keys().copied().collect();
+
                                     room.state = RoomState::Playing(MatchState {
                                         board: None, // TODO: perform board request to central server.
                                         pending_requests: HashMap::new(),
                                         turn_id: 1,
+                                        player_indices,
+                                        active_players,
                                     });
                                 }
                                 let room_id = *room_id;
@@ -236,23 +357,21 @@ impl Handler<ClientAction> for GameServer {
                 }
             }
             ClientMessage::BattleAction(req) => {
-                let mut run_turn = false;
                 let mut the_room_id = None;
 
                 if let Some(room_id) = self.player_rooms.get(&player_id) {
                     if let Some(room) = self.rooms.get_mut(room_id) {
                         if let RoomState::Playing(state) = &mut room.state {
-                            state.pending_requests.insert(player_id, req);
-                            if state.pending_requests.len() == room.connected_players.len() {
-                                run_turn = true;
+                            if state.active_players.contains(&player_id) {
+                                state.pending_requests.insert(player_id, req);
                                 the_room_id = Some(*room_id);
                             }
                         }
                     }
                 }
 
-                if run_turn {
-                    self.execute_turn(the_room_id.unwrap(), ctx);
+                if let Some(rid) = the_room_id {
+                    self.check_and_execute_turn_if_ready(rid, ctx);
                 }
             }
         }
