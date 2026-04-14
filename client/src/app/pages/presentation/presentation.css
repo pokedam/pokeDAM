@@ -1,0 +1,58 @@
+.home-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: var(--pkmn-red-bg);
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.presentation-container {
+  max-width: 600px;
+  width: 100%;
+  text-align: center;
+  padding: 40px 20px;
+  background-color: white;
+  border: 4px solid var(--pkmn-dark-gray);
+  border-radius: 8px;
+  box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.2);
+}
+
+.presentation-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 3rem;
+  color: var(--pkmn-red);
+  margin-bottom: 20px;
+  text-shadow: 2px 2px 0 var(--pkmn-dark-gray);
+}
+
+.presentation-subtitle {
+  font-size: 1.2rem;
+  color: var(--pkmn-dark-gray);
+  margin-bottom: 40px;
+}
+
+.presentation-actions {
+  display: flex;
+  justify-content: center;
+}
+
+.play-now-btn {
+  font-size: 1.2rem;
+  padding: 15px 30px;
+  background-color: var(--pkmn-yellow);
+  color: var(--pkmn-dark-gray);
+  border: 4px solid var(--pkmn-dark-gray);
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.play-now-btn:active {
+  transform: translateY(2px);
+  box-shadow: none;
+}

@@ -1,109 +1,105 @@
-import { Component } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-
-export interface MatchRoom {
-  id: string;
-  name: string;
-  host: string;
-  players: number;
-  maxPlayers: number;
-  status: 'Waiting' | 'In Progress';
-  password?: string;
-}
+import { Component, OnDestroy, OnInit, ChangeDetectorRef } from '@angular/core';
+import { LobbySocketService, Lobby } from '../../services/lobby-socket.service';
+import { Subscription } from 'rxjs';
+import { GameBrowser } from './game-browser/game-browser';
+import { MatchLobby } from './match-lobby/match-lobby';
+import { CreateMatch } from './create-match/create-match';
 
 @Component({
   selector: 'app-battle-arena',
   standalone: true,
-  imports: [FormsModule],
+  imports: [GameBrowser, MatchLobby, CreateMatch],
   templateUrl: './battle-arena.html',
   styleUrl: './battle-arena.css',
 })
-export class BattleArena {
-  currentUser: string = 'Ash'; // Mock user
-  currentView: 'browser' | 'lobby' = 'browser';
-  currentMatch: MatchRoom | null = null;
-  joinedAsPlayer2: boolean = false;
+export class BattleArena implements OnInit, OnDestroy {
+  currentUser: string = 'Player_' + Math.floor(Math.random() * 1000); // Simulando un ID de usuario único
+  currentView: 'browser' | 'lobby' | 'create' = 'browser';
+  currentLobby: Lobby | null = null;
+  currentLobbyId: string | null = null;
 
   showCreateModal: boolean = false;
-  newMatchName: string = "Ash's Custom Game";
-  requiresPassword: boolean = false;
-  newMatchPassword: string = '';
+  matches: Map<string, Lobby> = new Map();
 
-  matches: MatchRoom[] = [
-    { id: '1', name: "Ash's Training", host: 'Ash', players: 1, maxPlayers: 2, status: 'Waiting' },
-    { id: '2', name: "Noobs only", host: 'AshKetchum', players: 2, maxPlayers: 2, status: 'In Progress' },
-    { id: '3', name: "Competitive 1v1", host: 'Red', players: 1, maxPlayers: 2, status: 'Waiting', password: '123' },
-    { id: '4', name: "Avilés Tourney", host: 'Dev', players: 1, maxPlayers: 2, status: 'Waiting' },
-  ];
+  private lobbiesSub?: Subscription;
+  private roomSub?: Subscription;
+
+  constructor(private lobbySocket: LobbySocketService, private cdr: ChangeDetectorRef) { }
+
+  ngOnInit() {
+    // Suscribirse a la lista global de partidas activas
+    this.lobbiesSub = this.lobbySocket.lobbies$.subscribe(rooms => {
+      this.matches = rooms;
+      this.cdr.detectChanges();
+    });
+
+    // Suscribirse al estado de la partida actual
+    this.roomSub = this.lobbySocket.currentLobby.subscribe(lobby => {
+      if (lobby) {
+        this.currentLobbyId = lobby[0];
+        this.currentLobby = lobby[1];
+        this.currentView = 'lobby';
+        this.lobbySocket.subscribeToRoom(this.currentLobbyId);
+      } else {
+        this.currentLobby = null;
+        this.currentLobbyId = null;
+        this.currentView = 'browser';
+      }
+      this.cdr.detectChanges();
+    });
+  }
+
+  ngOnDestroy() {
+    this.lobbiesSub?.unsubscribe();
+    this.roomSub?.unsubscribe();
+  }
 
   openCreateModal() {
-    this.showCreateModal = true;
+    this.currentView = 'create';
   }
 
   closeCreateModal() {
-    this.showCreateModal = false;
-    this.newMatchPassword = '';
-  }
-
-  createMatch() {
-    const id = Math.random().toString(36).substring(2, 9);
-    const newMatch: MatchRoom = {
-      id,
-      name: this.newMatchName || `${this.currentUser}'s Custom Game`,
-      host: this.currentUser,
-      players: 1,
-      maxPlayers: 2,
-      status: 'Waiting',
-      password: this.requiresPassword ? this.newMatchPassword : undefined
-    };
-    this.matches.push(newMatch);
-    this.currentMatch = newMatch;
-    this.joinedAsPlayer2 = false;
-    this.showCreateModal = false;
-    this.currentView = 'lobby';
-
-    // Reset password so it doesn't stay if matching is created uniquely
-    this.newMatchPassword = '';
-  }
-
-  joinMatch(match: MatchRoom) {
-    if (match.password && match.host !== this.currentUser) {
-      const pswd = prompt('This room is password protected. Enter password:');
-      if (pswd !== match.password) {
-        alert('Incorrect password!');
-        return;
-      }
-    }
-
-    if (match.players < match.maxPlayers || match.host === this.currentUser) {
-      if (match.host !== this.currentUser) {
-        match.players++;
-        this.joinedAsPlayer2 = true;
-      } else {
-        this.joinedAsPlayer2 = false;
-      }
-      this.currentMatch = match;
-      this.currentView = 'lobby';
-    }
-  }
-
-  leaveMatch() {
-    if (this.currentMatch) {
-      if (this.currentMatch.host === this.currentUser) {
-        this.matches = this.matches.filter(m => m.id !== this.currentMatch!.id);
-      } else if (this.joinedAsPlayer2) {
-        this.currentMatch.players--;
-      }
-    }
-    this.currentMatch = null;
-    this.joinedAsPlayer2 = false;
     this.currentView = 'browser';
   }
 
+  createMatch(config: { name: string, password?: string }) {
+    this.lobbySocket.createRoom(
+      this.currentUser,
+      config.name || `${this.currentUser}'s Game`,
+      config.password
+    );
+    this.currentView = 'lobby';
+  }
+
+  joinMatch(matchId: string, match: Lobby) {
+    let pwd = undefined;
+    if (match.hasPassword) {
+      const input = prompt('Sala con contraseña. Introdúcela:');
+      if (input === null) return;
+      pwd = input;
+    }
+
+    // Al unirse, suscribimos a los eventos específicos de la sala
+    this.lobbySocket.subscribeToRoom(matchId);
+    this.lobbySocket.joinRoom(matchId, this.currentUser, pwd);
+  }
+
+  leaveMatch() {
+    if (this.currentLobby) {
+      this.lobbySocket.leaveRoom(this.currentUser);
+    }
+  }
+
+  toggleReady() {
+    if (this.currentLobby) {
+      const isCurrentlyReady = this.currentLobby.readys[this.currentUser] || false;
+      this.lobbySocket.setReady(this.currentUser, !isCurrentlyReady);
+    }
+  }
+
   startMatch() {
-    if (this.currentMatch && this.currentMatch.host === this.currentUser) {
-      this.currentMatch.status = 'In Progress';
-      alert('Match starts! Integrating with engine...');
+    if (this.currentLobby && this.currentLobby.hostId === this.currentUser) {
+      this.lobbySocket.startGame(this.currentUser);
     }
   }
 }

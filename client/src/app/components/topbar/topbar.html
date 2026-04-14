@@ -1,8 +1,9 @@
 <header class="topbar retro-box">
-  <div class="topbar-logo">PokeDAM</div>
+  <div class="topbar-logo" routerLink="/" style="cursor: pointer;">PokeDAM</div>
 
   <!-- Desktop actions -->
   <div class="topbar-actions desktop-only">
+    <button class="retro-btn menu-btn play-btn" routerLink="/play">Jugar</button>
     <button class="retro-btn menu-btn pokedex-btn" (click)="pokedexClick.emit()">Pokédex</button>
     <app-user-menu-button [isLoggedIn]="isLoggedIn" [username]="username" [avatarUrl]="avatarUrl"
       (loginClick)="loginClick.emit()" (logoutClick)="logoutClick.emit()" (settingsClick)="settingsClick.emit()" />
@@ -30,6 +31,12 @@
 
   <!-- Nav items -->
   <ul class="drawer-nav">
+    <li>
+      <button class="drawer-nav-item" routerLink="/play" (click)="closeDrawer()">
+        <span class="drawer-item-icon">🎮</span>
+        <span>Jugar</span>
+      </button>
+    </li>
     <li>
       <button class="drawer-nav-item" (click)="onDrawerPokedex()">
         <span class="drawer-item-icon">📖</span>

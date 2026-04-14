@@ -1,5 +1,7 @@
 /* Container */
-.match-browser, .match-lobby {
+.match-browser,
+.match-lobby,
+.create-match-container {
   display: flex;
   flex-direction: column;
   padding: 20px;
@@ -29,7 +31,8 @@
   gap: 15px;
 }
 
-.refresh-btn, .leave-btn {
+.refresh-btn,
+.leave-btn {
   background-color: white;
 }
 
@@ -51,9 +54,11 @@
 .table-container::-webkit-scrollbar {
   width: 12px;
 }
+
 .table-container::-webkit-scrollbar-track {
   background: var(--pkmn-gb-dark);
 }
+
 .table-container::-webkit-scrollbar-thumb {
   background: var(--pkmn-gb-mid1);
   border: 2px solid var(--border-main);
@@ -118,7 +123,7 @@
   border: 2px solid var(--border-main);
   border-radius: 4px;
   font-size: 10px;
-  text-shadow: 1px 1px 0px rgba(0,0,0,0.5);
+  text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.5);
 }
 
 .status-badge.in-progress {
@@ -144,7 +149,7 @@
   border-color: #999;
   cursor: not-allowed;
   transform: none;
-  box-shadow: 4px 4px 0px rgba(0,0,0,0.2);
+  box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.2);
   filter: grayscale(100%);
 }
 
@@ -165,17 +170,19 @@
   flex-grow: 1;
 }
 
-.players-list, .lobby-settings {
+.players-list,
+.lobby-settings {
   flex: 1;
   background-color: var(--pkmn-gb-light);
   border: 4px solid var(--border-main);
   border-radius: 8px;
   padding: 20px;
-  box-shadow: inset 4px 4px 0px rgba(0,0,0,0.05);
+  box-shadow: inset 4px 4px 0px rgba(0, 0, 0, 0.05);
   position: relative;
 }
 
-.players-list h3, .lobby-settings h3 {
+.players-list h3,
+.lobby-settings h3 {
   margin-top: 0;
   margin-bottom: 20px;
   border-bottom: 4px solid var(--border-main);
@@ -202,7 +209,7 @@
   margin-bottom: 15px;
   border: 4px solid var(--border-main);
   border-radius: 4px;
-  box-shadow: 4px 4px 0px rgba(0,0,0,0.1);
+  box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.1);
 }
 
 .retro-list li:hover {
@@ -227,7 +234,8 @@
   height: 50px;
   background-color: var(--pkmn-red);
   border: 4px solid var(--border-main);
-  border-radius: 4px; /* blocky instead of circular */
+  border-radius: 4px;
+  /* blocky instead of circular */
 }
 
 .player2-ph {
@@ -280,7 +288,7 @@
   cursor: not-allowed;
   transform: none;
   text-shadow: none;
-  box-shadow: 4px 4px 0px rgba(0,0,0,0.2);
+  box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.2);
 }
 
 .waiting-host {
@@ -288,21 +296,37 @@
   font-weight: bold;
   animation: blink 1.5s infinite;
   padding: 20px;
-  background-color: rgba(255,255,255,0.5);
+  background-color: rgba(255, 255, 255, 0.5);
   border: 4px dashed var(--pkmn-gb-dark);
   border-radius: 4px;
 }
 
 @keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.05);
+  }
+
+  100% {
+    transform: scale(1);
+  }
 }
 
 @keyframes blink {
-  0% { opacity: 1; }
-  50% { opacity: 0.5; }
-  100% { opacity: 1; }
+  0% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+
+  100% {
+    opacity: 1;
+  }
 }
 
 /* ============================
@@ -327,7 +351,7 @@
   background-color: var(--pkmn-gb-light);
   border: 4px solid var(--border-main);
   padding: 30px;
-  box-shadow: 8px 8px 0px rgba(0,0,0,0.5);
+  box-shadow: 8px 8px 0px rgba(0, 0, 0, 0.5);
   display: flex;
   flex-direction: column;
 }
@@ -363,7 +387,7 @@
   font-size: 14px;
   background-color: white;
   color: var(--text-main);
-  box-shadow: inset 4px 4px 0px rgba(0,0,0,0.05);
+  box-shadow: inset 4px 4px 0px rgba(0, 0, 0, 0.05);
 }
 
 .retro-input:focus {
@@ -397,7 +421,7 @@
   cursor: not-allowed;
   transform: none;
   text-shadow: none;
-  box-shadow: 4px 4px 0px rgba(0,0,0,0.2);
+  box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.2);
 }
 
 .checkbox-group {

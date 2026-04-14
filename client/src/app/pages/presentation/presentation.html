@@ -5,13 +5,12 @@
 
   <!-- Main Content -->
   <main class="main-content">
-    <div class="arena-layout">
-      <!-- Menu/Action Area -->
-      <app-battle-arena />
-
-      <div class="tokens-info retro-box" style="margin-top: 20px; font-size: 0.8rem; word-break: break-all;">
-        <p><strong>ID Token:</strong> {{ authService.idToken$ | async }}</p>
-        <p><strong>Refresh Token:</strong> {{ authService.refreshToken$ | async }}</p>
+    <div class="presentation-container retro-box">
+      <h1 class="presentation-title">PokeDAM</h1>
+      <p class="presentation-subtitle">¡Bienvenido al mejor simulador de batallas!</p>
+      
+      <div class="presentation-actions">
+        <button class="retro-btn primary-btn play-now-btn" routerLink="/play">COMENZAR A JUGAR</button>
       </div>
     </div>
   </main>

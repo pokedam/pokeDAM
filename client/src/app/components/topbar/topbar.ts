@@ -1,9 +1,10 @@
 import { Component, EventEmitter, HostListener, Input, Output } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { UserMenuButton } from '../user-menu-button/user-menu-button';
 
 @Component({
   selector: 'app-topbar',
-  imports: [UserMenuButton],
+  imports: [UserMenuButton, RouterLink],
   templateUrl: './topbar.html',
   styleUrl: './topbar.css',
 })

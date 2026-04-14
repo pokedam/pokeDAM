@@ -1,16 +1,18 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { AsyncPipe } from '@angular/common';
 import { LoginDialog } from '../../components/login-dialog/login-dialog';
 import { Topbar } from '../../components/topbar/topbar';
 import { Dialogue, DialogueSequence } from '../../components/dialogue/dialogue';
 import { BattleArena } from '../../components/battle-arena/battle-arena';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-home',
-  imports: [LoginDialog, Topbar, Dialogue, BattleArena],
+  imports: [LoginDialog, Topbar, BattleArena, AsyncPipe],
   templateUrl: './home.html',
   styleUrl: './home.css',
 })
-export class Home {
+export class Home implements OnInit {
   isLoggedIn = false;
   username = 'Trainer';
   avatarUrl: string | null = null;
@@ -34,6 +36,12 @@ export class Home {
     { type: 'pause', duration: 400 },
     { type: 'text', value: 'Pokémon.', speed: 150 }
   ];
+
+  constructor(public authService: AuthService) {}
+
+  ngOnInit() {
+    this.authService.loginAnonymous();
+  }
 
   onLoginClick() {
     this.showLoginDialog = true;
