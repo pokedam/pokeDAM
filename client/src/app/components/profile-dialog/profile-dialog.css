@@ -1,0 +1,132 @@
+/* ==============================
+   Profile Dialog Component Styles
+   ============================== */
+
+@import '../login-dialog/login-dialog.css';
+
+.profile-dialog {
+  max-width: 480px;
+}
+
+.profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ─── Avatar Preview ─────────────────────────── */
+.avatar-preview-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.avatar-circle {
+  width: 80px;
+  height: 80px;
+  background-color: white;
+  border: 4px solid var(--border-main);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  box-shadow: inset 2px 2px 0px rgba(0,0,0,0.1);
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: pixelated; /* Essential for retro pokemon sprites */
+}
+
+.avatar-initial {
+  font-family: var(--font-retro);
+  font-size: 32px;
+  color: var(--pkmn-gb-mid2);
+  text-transform: uppercase;
+}
+
+/* ─── Avatar Grid ────────────────────────────── */
+.avatar-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 8px;
+  max-height: 160px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.avatar-grid::-webkit-scrollbar {
+  width: 8px;
+}
+
+.avatar-grid::-webkit-scrollbar-track {
+  background: var(--pkmn-red-bg);
+  border-left: 2px solid var(--border-main);
+}
+
+.avatar-grid::-webkit-scrollbar-thumb {
+  background-color: var(--border-main);
+}
+
+.avatar-option {
+  background-color: white;
+  border: 3px solid var(--border-main);
+  border-radius: 4px;
+  padding: 4px;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: transform 0.1s, border-color 0.1s;
+  height: 56px;
+  box-shadow: 2px 2px 0px rgba(0,0,0,0.1);
+}
+
+.avatar-option img {
+  width: 48px;
+  height: 48px;
+  image-rendering: pixelated;
+}
+
+.avatar-option:hover {
+  transform: translateY(-2px);
+  border-color: var(--pkmn-blue);
+}
+
+.avatar-option.selected {
+  border-color: var(--pkmn-yellow);
+  background-color: #fffae6;
+  box-shadow: inset 0 0 0 2px var(--pkmn-yellow), 2px 2px 0px rgba(0,0,0,0.1);
+}
+
+/* ─── Actions ────────────────────────────────── */
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.save-btn {
+  background-color: var(--pkmn-gb-mid2);
+  color: white;
+  text-shadow: 1px 1px 0px var(--border-main);
+  font-size: 13px;
+  padding: 12px 24px;
+  letter-spacing: 1px;
+  transition: background-color 0.15s, transform 0.1s;
+  width: 100%;
+}
+
+.save-btn:hover:not(:disabled) {
+  background-color: var(--pkmn-gb-mid1);
+}
+
+.save-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

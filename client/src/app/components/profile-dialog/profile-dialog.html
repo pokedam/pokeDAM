@@ -1,0 +1,70 @@
+<div class="modal-overlay" (click)="onClose()">
+  <div class="retro-box profile-dialog" (click)="$event.stopPropagation()">
+
+    <!-- Header -->
+    <div class="dialog-header">
+      <div class="pokeball-icon" aria-hidden="true">
+        <div class="pokeball-top"></div>
+        <div class="pokeball-band"></div>
+        <div class="pokeball-bottom"></div>
+        <div class="pokeball-button"></div>
+      </div>
+      <h2 class="dialog-title">Trainer Profile</h2>
+      <button class="close-btn retro-btn" (click)="onClose()" aria-label="Close dialog">✕</button>
+    </div>
+
+    <!-- Form -->
+    <div class="profile-form">
+      
+      <!-- Current Avatar Preview -->
+      <div class="avatar-preview-section">
+        <div class="avatar-circle">
+          @if (selectedAvatar) {
+            <img [src]="selectedAvatar" alt="Current Avatar" class="avatar-img" />
+          } @else {
+            <span class="avatar-initial">{{ username ? username.charAt(0).toUpperCase() : '?' }}</span>
+          }
+        </div>
+      </div>
+
+      <!-- Username Input -->
+      <div class="form-group">
+        <label for="profile-username" class="retro-label">Trainer Name</label>
+        <input
+          id="profile-username"
+          type="text"
+          class="retro-input"
+          placeholder="New Name"
+          [(ngModel)]="username"
+          name="username"
+          autocomplete="off"
+        />
+      </div>
+
+      <!-- Avatar Selection -->
+      <div class="form-group">
+        <label class="retro-label">Choose your Pokémon</label>
+        <div class="avatar-grid">
+          @for (avatar of availableAvatars; track avatar.id) {
+            <button 
+              class="avatar-option" 
+              [class.selected]="selectedAvatar === avatar.url"
+              (click)="selectAvatar(avatar.url)"
+              [title]="avatar.name"
+            >
+              <img [src]="avatar.url" [alt]="avatar.name" />
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="dialog-actions">
+        <button class="retro-btn save-btn" (click)="onSave()" [disabled]="!username.trim()">
+          ▶ Save Changes
+        </button>
+      </div>
+      
+    </div>
+  </div>
+</div>

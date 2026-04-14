@@ -3,10 +3,11 @@ import { LoginDialog } from '../../components/login-dialog/login-dialog';
 import { Topbar } from '../../components/topbar/topbar';
 import { Dialogue, DialogueSequence } from '../../components/dialogue/dialogue';
 import { BattleArena } from '../../components/battle-arena/battle-arena';
+import { ProfileDialog, ProfileData } from '../../components/profile-dialog/profile-dialog';
 
 @Component({
   selector: 'app-home',
-  imports: [LoginDialog, Topbar, Dialogue, BattleArena],
+  imports: [LoginDialog, Topbar, Dialogue, BattleArena, ProfileDialog],
   templateUrl: './home.html',
   styleUrl: './home.css',
 })
@@ -16,6 +17,7 @@ export class Home {
   avatarUrl: string | null = null;
 
   showLoginDialog = false;
+  showProfileDialog = false;
 
   matchDialogue: DialogueSequence = [
     '¡Hola, entrenador!',
@@ -52,8 +54,17 @@ export class Home {
   }
 
   onSettings() {
-    // TODO: navigate to settings
-    console.log('Settings clicked');
+    this.showProfileDialog = true;
+  }
+
+  saveProfile(data: ProfileData) {
+    this.username = data.username;
+    this.avatarUrl = data.avatarUrl;
+    this.showProfileDialog = false;
+  }
+
+  closeProfileDialog() {
+    this.showProfileDialog = false;
   }
 
   closeDialog() {

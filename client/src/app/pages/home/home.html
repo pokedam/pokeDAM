@@ -16,4 +16,13 @@
   @if (showLoginDialog) {
   <app-login-dialog (loginSuccess)="login()" (close)="closeDialog()" />
   }
+
+  <!-- Profile Dialog (Modal) -->
+  @if (showProfileDialog) {
+  <app-profile-dialog 
+    [initialUsername]="username" 
+    [initialAvatarUrl]="avatarUrl"
+    (save)="saveProfile($event)" 
+    (close)="closeProfileDialog()" />
+  }
 </div>
