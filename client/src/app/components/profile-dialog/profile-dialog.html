@@ -1,5 +1,5 @@
-<div class="modal-overlay" (click)="onClose()">
-  <div class="retro-box profile-dialog" (click)="$event.stopPropagation()">
+<div class="modal-overlay">
+  <div class="retro-box profile-dialog">
 
     <!-- Header -->
     <div class="dialog-header">
@@ -44,6 +44,19 @@
       <!-- Avatar Selection -->
       <div class="form-group">
         <label class="retro-label">Choose your Pokémon</label>
+        
+        <!-- Search Input -->
+        <input
+          type="text"
+          class="retro-input"
+          placeholder="Search by name or ID..."
+          [(ngModel)]="searchTerm"
+          (ngModelChange)="filterAvatars()"
+          name="pokemonSearch"
+          autocomplete="off"
+          style="margin-bottom: 8px;"
+        />
+
         <div class="avatar-grid">
           @for (avatar of availableAvatars; track avatar.id) {
             <button 
