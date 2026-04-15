@@ -20,7 +20,11 @@
 
   <div class="pokemon-team">
     @for (pokemon of player.activePokemons; track pokemon.id) {
-      <app-pokemon-chip [pokemon]="pokemon"></app-pokemon-chip>
+      <app-pokemon-chip 
+        [pokemon]="pokemon"
+        [isSelected]="isPokemonSelected(pokemon)"
+        (pokemonClick)="onPokemonClick($event)">
+      </app-pokemon-chip>
     }
   </div>
 </div>

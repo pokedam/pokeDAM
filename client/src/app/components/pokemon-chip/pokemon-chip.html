@@ -1,4 +1,4 @@
-<div class="pokemon-entry">
+<div class="pokemon-entry" [class.selected]="isSelected" (click)="onClick()" [class.clickable]="pokemonClick.observed">
   <div class="pokemon-content">
     <div class="pokemon-avatar">
       <img [src]="pokemon.avatarUrl" [alt]="pokemon.name" />

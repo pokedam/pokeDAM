@@ -3,6 +3,23 @@
   flex-direction: column;
   gap: 2px;
   font-size: 8px;
+  border: 2px solid transparent;
+  border-radius: 4px;
+  padding: 2px;
+  transition: all 0.2s ease;
+}
+
+.pokemon-entry.clickable {
+  cursor: pointer;
+}
+
+.pokemon-entry.clickable:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.pokemon-entry.selected {
+  border-color: #ff0000;
+  background-color: rgba(255, 0, 0, 0.1);
 }
 
 .pokemon-content {
