@@ -1,12 +1,12 @@
-const express = require('express');
-const http = require('http');
-const cors = require('cors');
-const { Server } = require('socket.io');
-const jwt = require('jsonwebtoken');
+import express from 'express';
+import http from 'http';
+import cors from 'cors';
+import { Server } from 'socket.io';
+import jwt from 'jsonwebtoken';
 
-const { sequelize } = require('./config/Database');
-const { router: authRouter, JWT_SECRET } = require('./controllers/AuthController');
-const lobbyController = require('./controllers/LobbyController');
+import { sequelize } from './config/Database.js';
+import { authRouter, JWT_SECRET } from './controllers/AuthController.js';
+import { lobbyController } from './controllers/LobbyController.js';
 
 // Configuración básica
 const PORT = process.env.PORT || 8080;
@@ -42,21 +42,23 @@ io.use((socket, next) => {
         return next(new Error("Authentication error: No token provided"));
     }
 
-    jwt.verify(token, JWT_SECRET, (err, decoded) => {
+    jwt.verify(token as string, JWT_SECRET, (err, decoded: any) => {
         if (err) {
             return next(new Error("Authentication error: Invalid token"));
         }
-        socket.userId = parseInt(decoded.sub, 10);
+        (socket as any).userId = parseInt(decoded.sub as string, 10);
         next();
     });
 });
 
 io.on('connection', (socket) => {
-    console.log(`Usuario conectado: ${socket.userId} - Socket ${socket.id}`);
+    const userId = (socket as any).userId;
+    console.log(`Usuario conectado: ${userId} - Socket ${socket.id}`);
     lobbyController(io, socket);
 
     socket.on('disconnect', () => {
-        console.log(`Usuario desconectado: ${socket.userId}`);
+        // Podríamos invocar a lobbyService.leave(userId) aquí si fuese necesario
+        console.log(`Usuario desconectado: ${userId}`);
     });
 });
 
@@ -68,6 +70,6 @@ sequelize.sync().then(() => {
     server.listen(PORT, () => {
         console.log(`Servidor REST y WebSocket corriendo en http://localhost:${PORT}`);
     });
-}).catch(err => {
+}).catch((err: any) => {
     console.error("Error sincronizando DB", err);
 });

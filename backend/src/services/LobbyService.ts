@@ -1,13 +1,31 @@
-const { v4: uuidv4 } = require('uuid');
-const { User } = require('../config/Database');
+import { v4 as uuidv4 } from 'uuid';
+import { User } from '../config/Database.js';
+
+export interface Player {
+    isReady: boolean;
+    nickname: string | null;
+}
+
+export interface Lobby {
+    name: string;
+    password?: string | null;
+    hostId: number;
+    hostNickname: string | null;
+    state: 'WAITING' | 'IN_GAME';
+    joiners: Map<number, Player>;
+    maxPlayers: number;
+}
 
 class LobbyService {
+    private lobbies: Map<string, Lobby>;
+    private playerRooms: Map<number, string>;
+
     constructor() {
         this.lobbies = new Map();
         this.playerRooms = new Map();
     }
 
-    async getPlayerNickname(playerId) {
+    private async getPlayerNickname(playerId: number): Promise<string | null> {
         const user = await User.findByPk(playerId) ?? await User.create({ 
             nickname: `Trainer${String(playerId).padStart(4, '0')}`,
             refreshToken: uuidv4(),
@@ -15,7 +33,7 @@ class LobbyService {
         return user.nickname;
     }
 
-    async create(playerId, name, password) {
+    public async create(playerId: number, name: string, password?: string) {
         // Si ya está en una sala antes, lo sacamos
         this.leave(playerId);
 
@@ -23,7 +41,7 @@ class LobbyService {
         // Al crear ya deberíamos tener el name desde el UserDB para no hacer query síncrona aquí si se puede evitar
         const nickname = await this.getPlayerNickname(playerId);
 
-        const lobby = {
+        const lobby: Lobby = {
             name,
             password: password || null,
             hostId: playerId,
@@ -39,7 +57,7 @@ class LobbyService {
         return { key: roomId, value: lobby };
     }
 
-    async join(lobbyId, playerId, passwordInput) {
+    public async join(lobbyId: string, playerId: number, passwordInput?: string) {
         const lobby = this.lobbies.get(lobbyId);
 
         if (lobby) {
@@ -49,7 +67,7 @@ class LobbyService {
 
             const nickname = await this.getPlayerNickname(playerId);
 
-            const player = {
+            const player: Player = {
                 isReady: false,
                 nickname: nickname
             };
@@ -62,7 +80,7 @@ class LobbyService {
         return null;
     }
 
-    setReady(playerId, isReady) {
+    public setReady(playerId: number, isReady: boolean) {
         const roomId = this.playerRooms.get(playerId);
         if (roomId) {
             const room = this.lobbies.get(roomId);
@@ -77,7 +95,7 @@ class LobbyService {
         return null;
     }
 
-    startGame(playerId) {
+    public startGame(playerId: number) {
         const roomId = this.playerRooms.get(playerId);
         if (roomId) {
             const room = this.lobbies.get(roomId);
@@ -95,12 +113,13 @@ class LobbyService {
         return null;
     }
 
-    leave(playerId) {
+    public leave(playerId: number) {
         const roomId = this.playerRooms.get(playerId);
         if (!roomId) return null;
 
         this.playerRooms.delete(playerId);
         const room = this.lobbies.get(roomId);
+        if (!room) return null;
 
         if (room.hostId === playerId) {
             if (room.joiners.size === 0) {
@@ -109,6 +128,8 @@ class LobbyService {
             } else {
                 // Nuevo host al azar del primer elemento
                 const firstEntry = room.joiners.entries().next().value;
+                if (!firstEntry) return null;
+
                 const newHostId = firstEntry[0];
                 const newHostData = firstEntry[1];
 
@@ -126,7 +147,7 @@ class LobbyService {
         }
     }
 
-    getAll() {
+    public getAll() {
         const all = [];
         for (const [id, lobby] of this.lobbies.entries()) {
             all.push({
@@ -140,12 +161,12 @@ class LobbyService {
         return all;
     }
 
-    get(roomId) {
+    public get(roomId: string) {
         const lobby = this.lobbies.get(roomId);
         if (!lobby) return null;
 
         // Convertir el Map de joiners a object literal para el JSON
-        const joinersObj = {};
+        const joinersObj: Record<number, Player> = {};
         for (const [pid, player] of lobby.joiners.entries()) {
             joinersObj[pid] = player;
         }
@@ -162,4 +183,4 @@ class LobbyService {
 }
 
 // Exportamos una única instancia (Singleton pattern, como el @Service de Spring)
-module.exports = new LobbyService();
+export const lobbyService = new LobbyService();

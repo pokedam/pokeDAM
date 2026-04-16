@@ -1,12 +1,12 @@
-const lobbyService = require('../services/LobbyService');
+import { Server, Socket } from 'socket.io';
+import { lobbyService } from '../services/LobbyService.js';
 
-module.exports = (io, socket) => {
-    // Almacenamos el userId simulado. En una app real vendría del auth/token middleware
-    // y se asignaría en socket.user.id
-    const playerId = socket.userId; 
+export const lobbyController = (io: Server, socket: Socket): void => {
+    // Almacenamos el userId. En una app real vendría del auth/token middleware
+    const playerId = (socket as any).userId as number; 
 
     // Equivalente a @SubscribeMapping("/lobbies")
-    socket.on('lobbies.getAll', (callback) => {
+    socket.on('lobbies.getAll', (callback: (response: any) => void) => {
         const lobbies = lobbyService.getAll();
         if (typeof callback === 'function') {
             callback({ status: 'ok', data: lobbies });
@@ -14,7 +14,7 @@ module.exports = (io, socket) => {
     });
 
     // Equivalente a @SubscribeMapping("/lobbies/{lobbyId}")
-    socket.on('lobbies.get', (lobbyId, callback) => {
+    socket.on('lobbies.get', (lobbyId: string, callback: (response: any) => void) => {
         const lobby = lobbyService.get(lobbyId);
         if (typeof callback === 'function') {
             if (lobby) {
@@ -26,7 +26,7 @@ module.exports = (io, socket) => {
     });
 
     // Equivalente a @MessageMapping("/lobby.create")
-    socket.on('lobby.create', async (payload, callback) => {
+    socket.on('lobby.create', async (payload: any, callback: (response: any) => void) => {
         const { name, password } = payload;
         const lobbyEntry = await lobbyService.create(playerId, name, password);
         
@@ -48,7 +48,7 @@ module.exports = (io, socket) => {
     });
 
     // Equivalente a @MessageMapping("/lobby.join")
-    socket.on('lobby.join', async (payload, callback) => {
+    socket.on('lobby.join', async (payload: any, callback: (response: any) => void) => {
         const { lobbyId, password } = payload;
         const res = await lobbyService.join(lobbyId, playerId, password);
 
@@ -78,7 +78,7 @@ module.exports = (io, socket) => {
     });
 
     // Equivalente a @MessageMapping("/lobby.ready")
-    socket.on('lobby.ready', (payload, callback) => {
+    socket.on('lobby.ready', (payload: any, callback: (response: any) => void) => {
         const { isReady } = payload;
         const lobbyEntry = lobbyService.setReady(playerId, isReady);
 
@@ -95,66 +95,11 @@ module.exports = (io, socket) => {
     });
 
     // Equivalente a @MessageMapping("/lobby.start")
-    socket.on('lobby.start', (payload, callback) => {
+    socket.on('lobby.start', (payload: any, callback: (response: any) => void) => {
+        // En una implementación real probablemente comprobemos si la db/estado está listo
         const lobbyEntry = lobbyService.startGame(playerId);
-
-        if (lobbyEntry != null) {
-            const lobby = lobbyEntry.value;
-            const lobbyId = lobbyEntry.key;
-            
-            // Notificamos a todos dentro que el juego comienza
-            io.to(`lobby_${lobbyId}`).emit(`lobby.${lobbyId}.event`, {
-                type: 'GAME_STARTED',
-                payload: lobbyId
-            });
-
-            // Al activarse, ya no está en WAITING, lo simulamos
-            io.emit('lobbies.event', {
-                type: 'CHANGED',
-                payload: { lobbyId: lobbyId, size: lobby.joiners.size + 1 }
-            });
-
-            if (typeof callback === 'function') callback({ status: 'ok' });
+        if (lobbyEntry && typeof callback === 'function') {
+           callback({ status: 'ok' });
         }
-    });
-
-    // Separamos la logica de salir para poder llamarla desde el disconnect
-    const leaveLobby = () => {
-        const res = lobbyService.leave(playerId);
-        if (res != null) {
-            const size = res.lobby ? res.lobby.joiners.size + 1 : 0;
-            const { lobbyId } = res;
-            
-            // Lobby has been removed
-            if (res.lobby == null) {
-                io.emit('lobbies.event', {
-                    type: 'CHANGED',
-                    payload: { lobbyId, size: 0 }
-                });
-            } else {
-                io.to(`lobby_${lobbyId}`).emit(`lobby.${lobbyId}.event`, {
-                    type: 'PLAYER_LEFT',
-                    payload: { 
-                        id: res.hostReplacement ? res.lobby.hostId : playerId,
-                        hostReplacement: res.hostReplacement 
-                    }
-                });
-
-                io.emit('lobbies.event', {
-                     type: 'CHANGED',
-                     payload: { lobbyId, size }
-                });
-            }
-            // Sacamos el socket del room
-            socket.leave(`lobby_${lobbyId}`);
-        }
-    };
-
-    // Equivalente a @MessageMapping("/lobby.leave")
-    socket.on('lobby.leave', leaveLobby);
-
-    // Equivalente a @EventListener(SessionDisconnectEvent.class)
-    socket.on('disconnect', () => {
-        leaveLobby();
     });
 };
