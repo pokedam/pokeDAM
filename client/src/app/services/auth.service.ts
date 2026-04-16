@@ -32,12 +32,19 @@ export class AuthService {
     const idToken = localStorage.getItem('idToken');
     const refreshToken = localStorage.getItem('refreshToken');
     if (idToken && refreshToken) {
-      this.http.post<User>(`${this.apiUrl}auth/user`, {}).subscribe({
+      this.http.get<User>(`${this.apiUrl}auth/user`).subscribe({
         next: (user) => this.authSubject.next({
           idToken: localStorage.getItem('idToken') || idToken,
           user
         }),
-        error: (err) => console.error('Error in user POST http request:', err)
+        error: (err) => {
+          console.error('Error in user POST http request:', err);
+          localStorage.removeItem('idToken');
+          localStorage.removeItem('refreshToken');
+          this.loginAnonymous().subscribe({
+            error: (err) => console.error('Error in anonymous login fallback:', err)
+          });
+        }
       });
     } else {
       this.loginAnonymous().subscribe({

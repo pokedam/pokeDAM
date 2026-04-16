@@ -10,14 +10,14 @@ export interface LobbyInfo {
 }
 
 export interface ServerEvent {
-  event: string;
+  type: string;
   payload: any;
 }
 
 @Injectable({ providedIn: 'root' })
 export class LobbiesService {
 
-  private socket = inject(LobbySocketClient);
+  private socketService = inject(LobbySocketClient);
   private zone = inject(NgZone);
 
   private lobbiesSubject = new BehaviorSubject<Map<string, LobbyInfo>>(new Map());
@@ -32,38 +32,36 @@ export class LobbiesService {
   }
 
   private init() {
-    this.socket.connected$.subscribe(() => {
-      this.socket.client.subscribe('/app/lobbies', msg => {
-
-        const data: any[] = JSON.parse(msg.body);
-        const map = new Map<string, LobbyInfo>();
-
-        for (const lobby of data) {
-          map.set(lobby.id, lobby as LobbyInfo);
+    this.socketService.connected$.subscribe(() => {
+      
+      this.socketService.socket.emit('lobbies.getAll', (response: any) => {
+        if (response.status === 'ok') {
+          const map = new Map<string, LobbyInfo>();
+          for (const lobby of response.data) {
+            map.set(lobby.id, lobby as LobbyInfo);
+          }
+          this.zone.run(() => {
+            this.lobbiesSubject.next(map);
+          });
         }
-
-        this.zone.run(() => {
-          this.lobbiesSubject.next(map);
-        });
       });
 
-      this.socket.client.subscribe('/topic/lobbies', msg => {
-
-        const event: ServerEvent = JSON.parse(msg.body);
+      this.socketService.socket.on('lobbies.event', (event: ServerEvent) => {
 
         this.zone.run(() => {
 
-          switch (event.event) {
+          switch (event.type) {
 
             case 'ADDED':
               this.lobbies.set(event.payload.id, event.payload);
               break;
 
             case 'CHANGED': {
-              if (event.payload.playerCount == 0) {
-                this.lobbies.delete(event.payload.id);
+              if (event.payload.size == 0) {
+                this.lobbies.delete(event.payload.lobbyId);
               } else {
-                this.lobbies.get(event.payload.id)!.playerCount = event.payload.playerCount;
+                const l = this.lobbies.get(event.payload.lobbyId);
+                if (l) l.playerCount = event.payload.size;
               }
               break;
             }

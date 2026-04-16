@@ -17,14 +17,14 @@ export interface Joiner {
 }
 
 export interface ServerEvent {
-    event: string;
+    type: string;
     payload: any;
 }
 
 @Injectable({ providedIn: 'root' })
 export class CurrentLobbyService {
 
-    private socket = inject(LobbySocketClient);
+    private socketService = inject(LobbySocketClient);
     private zone = inject(NgZone);
 
     private lobbySubject = new BehaviorSubject<Lobby | null>(null);
@@ -32,14 +32,12 @@ export class CurrentLobbyService {
 
     get lobby(): Lobby | null {
         return this.lobbySubject.getValue();
-
     }
 
-
-    private roomSub: any = null;
+    private roomSubName: string | null = null;
 
     constructor() {
-        this.socket.connected$.subscribe(() => {
+        this.socketService.connected$.subscribe(() => {
             const savedLobbyId = sessionStorage.getItem('currentLobbyId');
             if (savedLobbyId) {
                 this.setupSubscriptions(savedLobbyId);
@@ -48,45 +46,41 @@ export class CurrentLobbyService {
     }
 
     create(name: string, password?: string) {
-        const sub = this.socket.client.subscribe('/user/queue/lobby-created', msg => {
-            const newLobbyId = msg.body.replace(/"/g, '');
-            sub.unsubscribe();
-            this.zone.run(() => {
-                this.setupSubscriptions(newLobbyId);
-            });
-        });
-
-        this.socket.client.publish({
-            destination: '/app/lobby.create',
-            body: JSON.stringify({ name, password })
+        this.socketService.socket.emit('lobby.create', { name, password }, (response: any) => {
+            if (response.status === 'ok') {
+                const newLobbyId = response.data;
+                this.zone.run(() => {
+                    this.setupSubscriptions(newLobbyId);
+                });
+            }
         });
     }
 
     join(lobbyId: string, password?: string) {
-        this.socket.client.publish({
-            destination: '/app/lobby.join',
-            body: JSON.stringify({ lobbyId, password })
+        this.socketService.socket.emit('lobby.join', { lobbyId, password }, (response: any) => {
+            if (response.status === 'ok') {
+                this.zone.run(() => {
+                    this.setupSubscriptions(lobbyId);
+                });
+            } else {
+                alert('No se pudo unir a la sala: ' + response.message);
+            }
         });
-
-        this.setupSubscriptions(lobbyId);
     }
 
     private setupSubscriptions(lobbyId: string) {
         sessionStorage.setItem('currentLobbyId', lobbyId);
 
-        if (this.roomSub) {
-            this.roomSub.unsubscribe();
+        if (this.roomSubName) {
+            this.socketService.socket.off(this.roomSubName);
         }
 
-        //let currentLobby: Lobby | null = null;
+        this.roomSubName = `lobby.${lobbyId}.event`;
 
-        this.roomSub = this.socket.client.subscribe(`/topic/lobby/${lobbyId}`, msg => {
-
-            const event: ServerEvent = JSON.parse(msg.body);
-
+        this.socketService.socket.on(this.roomSubName, (event: ServerEvent) => {
             this.zone.run(() => {
                 let lobby = this.lobby;
-                switch (event.event) {
+                switch (event.type) {
 
                     case 'PLAYER_JOINED':
                         if (lobby) {
@@ -126,15 +120,16 @@ export class CurrentLobbyService {
             });
         });
 
-        this.socket.client.subscribe(`/app/lobbies/${lobbyId}`, msg => {
-
-            if (!msg.body || msg.body === 'null') {
+        // Equivalent logic to fetching the initial lobby data instead of a direct subscribe mapping
+        this.socketService.socket.emit('lobbies.get', lobbyId, (response: any) => {
+            if (response.status === 'error' || !response.data) {
                 this.leave();
                 return;
             }
 
-            const lobby: Lobby = JSON.parse(msg.body);
-            console.log("Received lobby update:", msg.body);
+            const lobby: Lobby = response.data;
+            lobby.id = lobbyId;
+            console.log("Received lobby update:", response.data);
             this.zone.run(() => {
                 this.lobbySubject.next(lobby);
             });
@@ -144,27 +139,20 @@ export class CurrentLobbyService {
     leave() {
         sessionStorage.removeItem('currentLobbyId');
 
-        this.socket.client.publish({
-            destination: '/app/lobby.leave',
-            body: JSON.stringify({})
-        });
+        this.socketService.socket.emit('lobby.leave', {});
 
-        this.roomSub?.unsubscribe();
-        this.roomSub = null;
+        if (this.roomSubName) {
+            this.socketService.socket.off(this.roomSubName);
+            this.roomSubName = null;
+        }
         this.lobbySubject.next(null);
     }
 
     setReady(isReady: boolean) {
-        this.socket.client.publish({
-            destination: '/app/lobby.ready',
-            body: JSON.stringify({ isReady })
-        });
+        this.socketService.socket.emit('lobby.ready', { isReady });
     }
 
     startGame() {
-        this.socket.client.publish({
-            destination: '/app/lobby.start',
-            body: JSON.stringify({})
-        });
+        this.socketService.socket.emit('lobby.start', {});
     }
 }
