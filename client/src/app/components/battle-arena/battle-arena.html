@@ -1,12 +1,19 @@
-@if (currentView === 'browser') {
-<app-game-browser [matches]="matches" [currentUser]="currentUser" (onCreateMatch)="openCreateModal()"
-  (onJoinMatch)="joinMatch($event.matchId, $event.match)">
-</app-game-browser>
-} @else if (currentView === 'create') {
-<app-create-match (onCancel)="closeCreateModal()" (onCreateMatch)="createMatch($event)">
-</app-create-match>
-} @else if (currentView === 'lobby' && currentMatch) {
-<app-match-lobby [currentMatch]="currentMatch" [currentUser]="currentUser" (onLeaveMatch)="leaveMatch()"
-  (onToggleReady)="toggleReady()" (onStartMatch)="startMatch()">
-</app-match-lobby>
-}
+<div class="retro-box lobby-box">@if (auth.auth) {
+  @if (currLobby.lobby$ | async; as lobby) {
+  <app-in-lobby [currentLobby]="lobby" [userIndex]="auth.auth!.user.id" (onLeaveMatch)="leaveLobby()"
+    (onToggleReady)="toggleReady()" (onStartMatch)="startGame()">
+  </app-in-lobby>
+  } @else if (!inCreateLobbyMenu) {
+  <app-lobbies-browser [lobbies]="(lobbies.lobbies$ | async)!" [currentUser]="auth.auth!.user.nickname"
+    (onCreateLobby)="openCreateModal()" (onJoinLobby)="joinLobby($event.lobbyId, $event.lobby)">
+  </app-lobbies-browser>
+  } @else {
+  <app-create-lobby (onCancel)="closeCreateModal()" (onCreateLobby)="createLobby($event)">
+  </app-create-lobby>
+  }
+  } @else {
+  <div class="loading-container">
+    Loading arena...
+  </div>
+  }
+</div>

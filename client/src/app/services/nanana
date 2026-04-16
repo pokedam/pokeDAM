@@ -1,0 +1,221 @@
+import { Injectable, inject, NgZone } from '@angular/core';
+import { Client, Message } from '@stomp/stompjs';
+import SockJS from 'sockjs-client';
+import { BehaviorSubject, Observable } from 'rxjs';
+import { AuthService } from './auth.service';
+
+export interface Lobby {
+  name: string;
+  hostId: number;
+  players: Record<number, boolean>;
+}
+
+export interface LobbyInfo {
+  name: string,
+  hasPassword: boolean,
+  playerCount: number,
+  maxPlayers: number,
+}
+
+export interface ServerEvent {
+  event: string;
+  payload: any;
+}
+
+@Injectable({
+  providedIn: 'root'
+})
+export class LobbySocketService {
+  private client!: Client;
+
+  // RXJS Subjects para que Angular se actualice de forma reactiva
+  private lobbiesSubject = new BehaviorSubject<Map<string, LobbyInfo>>(new Map());
+  public lobbies$: Observable<Map<string, LobbyInfo>> = this.lobbiesSubject.asObservable();
+
+  public get lobbies(): Map<string, LobbyInfo> {
+    return this.lobbiesSubject.getValue();
+  }
+
+  private currentLobbySubject = new BehaviorSubject<[string, Lobby] | null>(null);
+  public currentLobby: Observable<[string, Lobby] | null> = this.currentLobbySubject.asObservable();
+
+  private authService = inject(AuthService);
+  private ngZone = inject(NgZone);
+
+  constructor() {
+    // Al instanciar, nos suscribimos al idToken$ de AuthService. 
+    // Solo cuando devuelva un token valido, iniciamos el handshake de Websockets/STOMP.
+    this.authService.auth$.subscribe(auth => {
+
+      this.client = new Client({
+        webSocketFactory: () => new SockJS(`http://localhost:8080/ws?token=${auth?.idToken}`),
+        debug: (str) => console.log('STOMP: ' + str),
+        reconnectDelay: 5000,
+        heartbeatIncoming: 4000,
+        heartbeatOutgoing: 4000,
+      });
+
+
+      this.client.onConnect = () => {
+        console.log('Conectado a STOMP');
+
+        // 1. Nos suscribimos al topic para escuchar actualizaciones en tiempo real
+        this.client.subscribe('/topic/lobbies', (updateMessage: Message) => {
+          const event: ServerEvent = JSON.parse(updateMessage.body);
+          const currentLobbies = new Map(this.lobbiesSubject.getValue());
+
+          // // Extraemos el id (en este caso el hostId)
+          // const roomId = event.payload?.hostId || event.payload?.id;
+          // if (event.payload) delete event.payload.id;
+          // const roomPayload = event.payload as Lobby;
+          const lobbyId = event.payload.id;
+          this.ngZone.run(() => {
+            switch (event.event) {
+              case 'ADDED':
+                const lobbyInfo = event.payload as LobbyInfo;
+                currentLobbies.set(lobbyId, lobbyInfo);
+                console.log(`Lobby added: ${lobbyId}`, lobbyInfo);
+                this.lobbiesSubject.next(currentLobbies);
+                break;
+              case 'CHANGED':
+                const playerCount = event.payload.playerCount;
+                console.log(`Lobby updated: ${lobbyId}, new player count: ${playerCount}`);
+                let lobby = currentLobbies.get(lobbyId);
+
+                if (lobby) {
+                  lobby.playerCount = playerCount;
+                  this.lobbiesSubject.next(currentLobbies);
+                } else console.error(`Lobby with id ${lobbyId} not found for update.`);
+
+                break;
+            }
+          });
+        });
+
+        // 2. Pedimos el estado inicial de la lista de salas en paralelo al controlador
+        this.client.subscribe('/app/lobbies', (message: Message) => {
+          const lobbies: any[] = JSON.parse(message.body);
+          const initialMap = new Map<string, LobbyInfo>();
+
+          for (const r of lobbies) {
+            const id = r.id;
+            initialMap.set(id, r as LobbyInfo);
+          }
+
+          this.ngZone.run(() => {
+            this.lobbiesSubject.next(initialMap);
+          });
+        });
+      };
+
+      this.client.onStompError = (frame) => {
+        console.error('Broker reported error: ' + frame.headers['message']);
+        console.error('Additional details: ' + frame.body);
+      };
+
+      this.client.activate();
+    });
+  }
+
+  // --- ACCIONES DEL USUARIO ---
+  createLobby(name: string, password?: string) {
+    this.client.publish({
+      destination: '/app/lobby.create',
+      body: JSON.stringify({ name, password })
+    });
+  }
+
+  joinLobby(roomId: string, password?: string) {
+    this.client.publish({
+      destination: '/app/lobby.join',
+      body: JSON.stringify({ roomId, password })
+    });
+    this.subscribeToRoom(roomId);
+  }
+
+  setReady(isReady: boolean) {
+    this.client.publish({
+      destination: '/app/lobby.ready',
+      body: JSON.stringify({ isReady })
+    });
+  }
+
+  startGame() {
+    this.client.publish({
+      destination: '/app/lobby.start',
+      body: JSON.stringify({})
+    });
+  }
+
+  leaveLobby() {
+    this.client.publish({
+      destination: '/app/lobby.leave',
+      body: JSON.stringify({})
+    });
+    this.leaveCurrentRoomSubscription();
+  }
+
+  // --- MANEJO DE LA SALA ACTUAL ---
+
+  private roomSubscription: any = null;
+
+  private subscribeToRoom(roomId: string) {
+    if (this.roomSubscription) {
+      this.roomSubscription.unsubscribe();
+    }
+
+    var currentLobby: Lobby | null = null;
+
+    this.roomSubscription = this.client.subscribe('/topic/room/' + roomId, (message: Message) => {
+      const event: ServerEvent = JSON.parse(message.body);
+
+      this.ngZone.run(() => {
+        switch (event.event) {
+          case 'PLAYER_JOINED':
+            if (currentLobby) {
+              currentLobby.players[event.payload] = false;
+            } else {
+              console.error("Received PLAYER_JOINED event but currentLobby is null. This should not happen if the backend sends the initial room state correctly on subscription.");
+            }
+            break;
+          case 'PLAYER_LEFT':
+            if (currentLobby) {
+              delete currentLobby.players[event.payload];
+            } else {
+              console.error("Received PLAYER_JOINED event but currentLobby is null. This should not happen if the backend sends the initial room state correctly on subscription.");
+            }
+            break;
+          case 'PLAYER_READY': {
+            if (currentLobby) {
+              currentLobby.players[event.payload.playerId] = event.payload.isReady;
+            } else {
+              console.error("Received PLAYER_JOINED event but currentLobby is null. This should not happen if the backend sends the initial room state correctly on subscription.");
+            }
+            break;
+          }
+          case 'GAME_STARTED': {
+            alert('¡La partida ha comenzado!');
+            //TODO: Actually start game
+            break;
+          }
+        }
+      });
+    });
+
+    this.client.subscribe('/app/rooms/' + roomId, (message: Message) => {
+      const lobby: Lobby = JSON.parse(message.body);
+
+      this.ngZone.run(() => {
+        this.currentLobbySubject.next(["perico palotes", lobby]);
+      });
+    });
+  }
+
+  private leaveCurrentRoomSubscription() {
+    if (this.roomSubscription) {
+      this.roomSubscription.unsubscribe();
+      this.roomSubscription = null;
+    }
+    this.currentLobbySubject.next(null);
+  }
+}

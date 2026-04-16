@@ -1,7 +1,5 @@
 /* Container */
-.match-browser,
-.match-lobby,
-.create-match-container {
+.lobby-box {
   display: flex;
   flex-direction: column;
   padding: 20px;
@@ -11,7 +9,7 @@
 }
 
 /* Header */
-.browser-header {
+.lobby-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -20,7 +18,7 @@
   border-bottom: 4px solid var(--border-main);
 }
 
-.browser-header h2 {
+.lobby-header h2 {
   font-size: 24px;
   color: var(--text-main);
   margin: 0;
@@ -31,12 +29,7 @@
   gap: 15px;
 }
 
-.refresh-btn,
-.leave-btn {
-  background-color: white;
-}
-
-.create-btn {
+.create-lobby-btn {
   background-color: var(--pkmn-red);
   color: white;
   text-shadow: 1px 1px 0px var(--border-main);
@@ -64,13 +57,13 @@
   border: 2px solid var(--border-main);
 }
 
-.match-table {
+.lobby-table {
   width: 100%;
   border-collapse: collapse;
   text-align: left;
 }
 
-.match-table th {
+.lobby-table th {
   background-color: var(--pkmn-gb-light);
   color: var(--text-main);
   padding: 15px;
@@ -81,27 +74,27 @@
   z-index: 1;
 }
 
-.match-table td {
+.lobby-table td {
   padding: 15px;
   border-bottom: 2px solid var(--border-main);
   font-size: 12px;
   vertical-align: middle;
 }
 
-.match-table tr {
+.lobby-table tr {
   background-color: white;
   transition: background-color 0.1s;
 }
 
-.match-table tr:hover {
+.lobby-table tr:hover {
   background-color: #e8f4f8;
 }
 
-.match-table tr:last-child td {
+.lobby-table tr:last-child td {
   border-bottom: none;
 }
 
-.room-name {
+.lobby-name {
   font-weight: bold;
   color: var(--pkmn-blue);
   font-size: 14px !important;
@@ -268,37 +261,9 @@
   text-align: center;
 }
 
-.start-match-btn {
-  background-color: var(--pkmn-yellow);
-  color: var(--text-main);
-  text-shadow: 1px 1px 0px white;
-  font-size: 20px;
-  padding: 20px;
-  width: 100%;
-}
-
 .start-match-btn:not(:disabled) {
-  animation: pulse 2s infinite;
-}
-
-.start-match-btn:disabled {
-  background-color: var(--pkmn-gb-mid1);
-  color: var(--pkmn-gb-dark);
-  border-color: var(--border-main);
-  cursor: not-allowed;
-  transform: none;
-  text-shadow: none;
-  box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.2);
-}
-
-.waiting-host {
-  color: var(--pkmn-gb-dark);
-  font-weight: bold;
-  animation: blink 1.5s infinite;
-  padding: 20px;
-  background-color: rgba(255, 255, 255, 0.5);
-  border: 4px dashed var(--pkmn-gb-dark);
-  border-radius: 4px;
+  animation: pulse 1s infinite;
+  background-color: var(--pkmn-yellow);
 }
 
 @keyframes pulse {
@@ -306,8 +271,16 @@
     transform: scale(1);
   }
 
+  15% {
+    transform: scale(1);
+  }
+
   50% {
     transform: scale(1.05);
+  }
+
+  85% {
+    transform: scale(1);
   }
 
   100% {

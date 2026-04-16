@@ -8,15 +8,11 @@ import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-home',
-  imports: [LoginDialog, Topbar, BattleArena, AsyncPipe],
+  imports: [LoginDialog, Topbar, BattleArena],
   templateUrl: './home.html',
   styleUrl: './home.css',
 })
-export class Home implements OnInit {
-  isLoggedIn = false;
-  username = 'Trainer';
-  avatarUrl: string | null = null;
-
+export class Home {
   showLoginDialog = false;
 
   matchDialogue: DialogueSequence = [
@@ -37,30 +33,13 @@ export class Home implements OnInit {
     { type: 'text', value: 'Pokémon.', speed: 150 }
   ];
 
-  constructor(public authService: AuthService) {}
-
-  ngOnInit() {
-    this.authService.loginAnonymous();
-  }
+  constructor() { }
 
   onLoginClick() {
     this.showLoginDialog = true;
   }
 
-  login() {
-    this.isLoggedIn = true;
-    this.username = 'Ash';   // TODO: use real username from auth service
-    this.showLoginDialog = false;
-  }
-
-  logout() {
-    this.isLoggedIn = false;
-    this.username = 'Trainer';
-    this.avatarUrl = null;
-  }
-
   onSettings() {
-    // TODO: navigate to settings
     console.log('Settings clicked');
   }
 

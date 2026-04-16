@@ -1,38 +1,25 @@
-<!-- Login button (not logged in) -->
-@if (!isLoggedIn) {
-  <button class="retro-btn menu-btn login-btn" (click)="onLoginClick()">
-    <span class="btn-icon">🔑</span>
-    <span>Log In</span>
+<div class="user-menu-wrapper">
+  @if (auth && auth.user) {
+  <button class="user-menu-trigger" (click)="toggleDropdown($event)">
+    <div class="user-avatar">
+      <span class="avatar-initial">{{ getAvatarInitial(auth.user.nickname) }}</span>
+    </div>
+    <span class="user-name">{{ auth.user.nickname }}</span>
+    <span class="dropdown-arrow" [class.open]="isDropdownOpen">▼</span>
   </button>
-}
+  }
 
-<!-- User menu button (logged in) -->
-@if (isLoggedIn) {
-  <div class="user-menu-wrapper">
-    <button class="user-menu-trigger" (click)="toggleDropdown($event)">
-      <div class="user-avatar">
-        @if (avatarUrl) {
-          <img [src]="avatarUrl" [alt]="username" class="avatar-img" />
-        } @else {
-          <span class="avatar-initial">{{ avatarInitial }}</span>
-        }
-      </div>
-      <span class="user-name">{{ username }}</span>
-      <span class="dropdown-arrow" [class.open]="isDropdownOpen">▼</span>
+  @if (isDropdownOpen) {
+  <div class="dropdown-menu retro-box">
+    <button class="dropdown-item" (click)="onSettings()">
+      <span class="item-icon">⚙️</span>
+      <span>Settings</span>
     </button>
-
-    @if (isDropdownOpen) {
-      <div class="dropdown-menu retro-box">
-        <button class="dropdown-item" (click)="onSettings()">
-          <span class="item-icon">⚙️</span>
-          <span>Settings</span>
-        </button>
-        <div class="dropdown-divider"></div>
-        <button class="dropdown-item logout-item" (click)="onLogout()">
-          <span class="item-icon">🚪</span>
-          <span>Log Out</span>
-        </button>
-      </div>
-    }
+    <div class="dropdown-divider"></div>
+    <button class="dropdown-item logout-item">
+      <span class=" item-icon">🚪</span>
+      <span>Log Out</span>
+    </button>
   </div>
-}
+  }
+</div>

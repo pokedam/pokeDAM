@@ -2,11 +2,13 @@ package org.cifpaviles.pokedam.rest_server.controller;
 
 import org.cifpaviles.pokedam.rest_server.models.AuthResponse;
 import org.cifpaviles.pokedam.rest_server.models.TokenRefreshRequest;
+import org.cifpaviles.pokedam.rest_server.models.UserChangeRequest;
 import org.cifpaviles.pokedam.rest_server.entity.User;
 import org.cifpaviles.pokedam.rest_server.repository.UserRepository;
 import org.cifpaviles.pokedam.rest_server.security.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
@@ -23,21 +25,55 @@ public class AuthController {
 
     @PostMapping("/anonymous")
     public ResponseEntity<AuthResponse> loginAnonymous() {
-        // Create new anonymous user
         User user = new User();
         userRepository.save(user);
 
-        String idToken = tokenProvider.generateToken(user.getId());
-        String refreshToken = tokenProvider.generateRefreshToken();
-
-        user.setRefreshToken(refreshToken);
+        user.setNickname("Trainer" + String.format("%04d", user.getId()));
+        user.setRefreshToken(tokenProvider.generateRefreshToken());
         userRepository.save(user);
 
-        return ResponseEntity.ok(new AuthResponse(idToken, refreshToken));
+        return ResponseEntity.ok(new AuthResponse(tokenProvider.generateToken(user.getId()), user));
+    }
+
+    @GetMapping("/user")
+    public ResponseEntity<User> getUser(Authentication authentication) {
+        if (authentication == null || authentication.getPrincipal() == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        Long id = (Long) authentication.getPrincipal();
+
+        return getUserById(id);
+    }
+
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<User> getUserById(@PathVariable("userId") Long userId) {
+        return userRepository.findById(userId)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/user")
+    public ResponseEntity<User> updateUser(Authentication authentication, @RequestBody UserChangeRequest request) {
+        if (authentication == null || authentication.getPrincipal() == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        Long id = (Long) authentication.getPrincipal();
+
+        return userRepository.findById(id)
+                .map(user -> {
+                    if (request.nickname != null) {
+                        user.setNickname(request.nickname);
+                        userRepository.save(user);
+                    }
+                    return ResponseEntity.ok(user);
+                })
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<?> refreshUserToken(@RequestBody TokenRefreshRequest request) {
+    public ResponseEntity<AuthResponse> refreshUserToken(@RequestBody TokenRefreshRequest request) {
         String requestRefreshToken = request.getRefresh_token();
 
         Optional<User> userOptional = userRepository.findByRefreshToken(requestRefreshToken);
@@ -51,9 +87,9 @@ public class AuthController {
             user.setRefreshToken(newRefreshToken);
             userRepository.save(user);
 
-            return ResponseEntity.ok(new AuthResponse(newIdToken, newRefreshToken));
+            return ResponseEntity.ok(new AuthResponse(newIdToken, user));
         }
 
-        return ResponseEntity.badRequest().body("Invalid refresh token");
+        return ResponseEntity.badRequest().build();
     }
 }

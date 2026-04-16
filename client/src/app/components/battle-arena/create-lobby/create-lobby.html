@@ -1,0 +1,37 @@
+<div class="lobby-header">
+    <h2>Create Custom Match</h2>
+    <div class="header-actions">
+        <button class="retro-btn cancel-btn" (click)="cancel()">Back</button>
+    </div>
+</div>
+
+<div class="form-container"
+    style="flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+    <div class="retro-box form-box"
+        style="width: 450px; background-color: var(--pkmn-gb-light); padding: 30px; box-shadow: 4px 4px 0px rgba(0,0,0,0.1);">
+        <div class="form-group">
+            <label>Room Name:</label>
+            <input type="text" class="retro-input" [(ngModel)]="newMatchName" placeholder="Enter room name..." />
+        </div>
+
+        <div class="form-group checkbox-group">
+            <label class="retro-checkbox-label">
+                <input type="checkbox" [(ngModel)]="requiresPassword" />
+                <span>Require Password</span>
+            </label>
+        </div>
+
+        @if (requiresPassword) {
+        <div class="form-group">
+            <label>Password:</label>
+            <input type="password" class="retro-input" [(ngModel)]="newMatchPassword"
+                placeholder="Enter room password..." />
+        </div>
+        }
+
+        <div class="modal-actions">
+            <button class="retro-btn confirm-btn" [disabled]="requiresPassword && !newMatchPassword"
+                (click)="createLobby()">Create</button>
+        </div>
+    </div>
+</div>

@@ -1,7 +1,6 @@
 package org.cifpaviles.pokedam.rest_server.security;
 
 import io.jsonwebtoken.*;
-import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Component;
 
 import jakarta.annotation.PostConstruct;

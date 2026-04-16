@@ -1,17 +1,17 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { MatchLobby } from './match-lobby';
+import { LobbiesBrowser } from './lobbies-browser';
 
-describe('MatchLobby', () => {
-  let component: MatchLobby;
-  let fixture: ComponentFixture<MatchLobby>;
+describe('LobbiesBrowser', () => {
+  let component: LobbiesBrowser;
+  let fixture: ComponentFixture<LobbiesBrowser>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [MatchLobby],
+      imports: [LobbiesBrowser],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(MatchLobby);
+    fixture = TestBed.createComponent(LobbiesBrowser);
     component = fixture.componentInstance;
     await fixture.whenStable();
   });

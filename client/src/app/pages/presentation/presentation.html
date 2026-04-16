@@ -1,14 +1,13 @@
 <div class="home-layout">
   <!-- Topbar -->
-  <app-topbar [isLoggedIn]="isLoggedIn" [username]="username" [avatarUrl]="avatarUrl" (loginClick)="onLoginClick()"
-    (logoutClick)="logout()" (settingsClick)="onSettings()" />
+  <app-topbar (loginClick)="onLoginClick()" (settingsClick)="onSettings()" />
 
   <!-- Main Content -->
   <main class="main-content">
     <div class="presentation-container retro-box">
       <h1 class="presentation-title">PokeDAM</h1>
       <p class="presentation-subtitle">¡Bienvenido al mejor simulador de batallas!</p>
-      
+
       <div class="presentation-actions">
         <button class="retro-btn primary-btn play-now-btn" routerLink="/play">COMENZAR A JUGAR</button>
       </div>
@@ -17,6 +16,6 @@
 
   <!-- Login Dialog (Modal) -->
   @if (showLoginDialog) {
-  <app-login-dialog (loginSuccess)="login()" (close)="closeDialog()" />
+  <app-login-dialog (close)="closeDialog()" />
   }
 </div>

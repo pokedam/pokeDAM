@@ -1,0 +1,42 @@
+<div class="lobby-header">
+  <h2>Custom Matches</h2>
+  <div class="header-actions">
+    <button class="retro-btn">Refresh</button>
+    <button class="retro-btn create-lobby-btn" (click)="createLobby()">Create Match</button>
+  </div>
+</div>
+
+<div class="table-container">
+  <table class="lobby-table">
+    <thead>
+      <tr>
+        <th>Room Name</th>
+        <th>Players</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (item of lobbies | keyvalue; track item.key) {
+      <tr>
+        <td class="lobby-name">
+          @if (item.value.hasPassword) {
+          <span class="lock-icon">🔒</span>
+          }
+          {{ item.value.name }}
+        </td>
+        <td class="players-count">{{ item.value.playerCount }}/{{ item.value.maxPlayers }}</td>
+        <td>
+          <button class="retro-btn join-btn" [disabled]="item.value.playerCount >= item.value.maxPlayers"
+            (click)="joinLobby(item.key, item.value)">
+            Join
+          </button>
+        </td>
+      </tr>
+      } @empty {
+      <tr>
+        <td colspan="4" class="empty-msg">No matches found. Create one!</td>
+      </tr>
+      }
+    </tbody>
+  </table>
+</div>

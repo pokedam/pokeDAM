@@ -2,15 +2,15 @@ import { Component, EventEmitter, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 @Component({
-  selector: 'app-create-match',
+  selector: 'app-create-lobby',
   standalone: true,
   imports: [FormsModule],
-  templateUrl: './create-match.html',
+  templateUrl: './create-lobby.html',
   styleUrl: '../battle-arena.css',
 })
-export class CreateMatch {
+export class CreateLobby {
   @Output() onCancel = new EventEmitter<void>();
-  @Output() onCreateMatch = new EventEmitter<{ name: string, password?: string }>();
+  @Output() onCreateLobby = new EventEmitter<{ name: string, password?: string }>();
 
   newMatchName: string = "Custom Game";
   requiresPassword: boolean = false;
@@ -20,8 +20,8 @@ export class CreateMatch {
     this.onCancel.emit();
   }
 
-  createMatch() {
-    this.onCreateMatch.emit({
+  createLobby() {
+    this.onCreateLobby.emit({
       name: this.newMatchName,
       password: this.requiresPassword ? this.newMatchPassword : undefined
     });

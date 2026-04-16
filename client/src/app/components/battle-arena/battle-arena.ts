@@ -1,105 +1,101 @@
-import { Component, OnDestroy, OnInit, ChangeDetectorRef } from '@angular/core';
-import { LobbySocketService, Lobby } from '../../services/lobby-socket.service';
+import { Component, OnDestroy, OnInit, ChangeDetectorRef, inject } from '@angular/core';
+import { AsyncPipe } from '@angular/common';
 import { Subscription } from 'rxjs';
-import { GameBrowser } from './game-browser/game-browser';
-import { MatchLobby } from './match-lobby/match-lobby';
-import { CreateMatch } from './create-match/create-match';
+import { LobbiesBrowser } from './lobbies-browser/lobbies-browser';
+import { InLobby } from './in-lobby/in-lobby';
+import { CreateLobby } from './create-lobby/create-lobby';
+import { AuthService } from '../../services/auth.service';
+import { LobbiesService, LobbyInfo } from '../../services/lobbies.service';
+import { CurrentLobbyService } from '../../services/current-lobby.service';
 
 @Component({
   selector: 'app-battle-arena',
   standalone: true,
-  imports: [GameBrowser, MatchLobby, CreateMatch],
+  imports: [LobbiesBrowser, InLobby, CreateLobby, AsyncPipe],
   templateUrl: './battle-arena.html',
   styleUrl: './battle-arena.css',
 })
-export class BattleArena implements OnInit, OnDestroy {
-  currentUser: string = 'Player_' + Math.floor(Math.random() * 1000); // Simulando un ID de usuario único
-  currentView: 'browser' | 'lobby' | 'create' = 'browser';
-  currentLobby: Lobby | null = null;
-  currentLobbyId: string | null = null;
+export class BattleArena {
+  //  currentLobby: Lobby | null = null;
+  //currentLobbyId: string | null = null;
 
-  showCreateModal: boolean = false;
-  matches: Map<string, Lobby> = new Map();
+  inCreateLobbyMenu: boolean = false;
+  //lobbies: Map<string, LobbyInfo> = new Map();
 
-  private lobbiesSub?: Subscription;
-  private roomSub?: Subscription;
+  // private lobbiesSub?: Subscription;
+  // private roomSub?: Subscription;
 
-  constructor(private lobbySocket: LobbySocketService, private cdr: ChangeDetectorRef) { }
+  lobbies = inject(LobbiesService);
+  currLobby = inject(CurrentLobbyService);
+  auth = inject(AuthService);
+  //private cdr = inject(ChangeDetectorRef);
 
-  ngOnInit() {
-    // Suscribirse a la lista global de partidas activas
-    this.lobbiesSub = this.lobbySocket.lobbies$.subscribe(rooms => {
-      this.matches = rooms;
-      this.cdr.detectChanges();
-    });
+  // ngOnInit() {
+  //   // Suscribirse a la lista global de partidas activas
+  //   this.lobbiesSub = this.lobbies.lobbies$.subscribe(lobbies => {
+  //     //this.lobbies = lobbies;
+  //     this.cdr.detectChanges();
+  //   });
 
-    // Suscribirse al estado de la partida actual
-    this.roomSub = this.lobbySocket.currentLobby.subscribe(lobby => {
-      if (lobby) {
-        this.currentLobbyId = lobby[0];
-        this.currentLobby = lobby[1];
-        this.currentView = 'lobby';
-        this.lobbySocket.subscribeToRoom(this.currentLobbyId);
-      } else {
-        this.currentLobby = null;
-        this.currentLobbyId = null;
-        this.currentView = 'browser';
-      }
-      this.cdr.detectChanges();
-    });
-  }
+  //   // Suscribirse al estado de la partida actual
+  //   this.roomSub = this.lobbies.currentLobby.subscribe(lobby => {
+  //     if (lobby) {
+  //       this.currentLobbyId = lobby[0];
+  //       this.currentLobby = lobby[1];
+  //     } else {
+  //       this.currentLobby = null;
+  //       this.currentLobbyId = null;
+  //     }
+  //     this.cdr.detectChanges();
+  //   });
+  // }
 
-  ngOnDestroy() {
-    this.lobbiesSub?.unsubscribe();
-    this.roomSub?.unsubscribe();
-  }
+  // ngOnDestroy() {
+  //   this.lobbiesSub?.unsubscribe();
+  //   this.roomSub?.unsubscribe();
+  // }
 
   openCreateModal() {
-    this.currentView = 'create';
+    this.inCreateLobbyMenu = true;
   }
 
   closeCreateModal() {
-    this.currentView = 'browser';
+    this.inCreateLobbyMenu = false;
   }
 
-  createMatch(config: { name: string, password?: string }) {
-    this.lobbySocket.createRoom(
-      this.currentUser,
-      config.name || `${this.currentUser}'s Game`,
+  createLobby(config: { name: string, password?: string }) {
+    this.currLobby.create(
+      config.name,
       config.password
     );
-    this.currentView = 'lobby';
+    this.inCreateLobbyMenu = false;
   }
 
-  joinMatch(matchId: string, match: Lobby) {
+  joinLobby(lobbyId: string, lobby: LobbyInfo) {
     let pwd = undefined;
-    if (match.hasPassword) {
+    if (lobby.hasPassword) {
       const input = prompt('Sala con contraseña. Introdúcela:');
       if (input === null) return;
       pwd = input;
     }
-
+    console.log(`Intentando unirse a la sala ${lobbyId} con contraseña: ${pwd ? 'Sí' : 'No'}`);
     // Al unirse, suscribimos a los eventos específicos de la sala
-    this.lobbySocket.subscribeToRoom(matchId);
-    this.lobbySocket.joinRoom(matchId, this.currentUser, pwd);
+    //this.lobbySocket.subscribeToRoom(matchId);
+    this.currLobby.join(lobbyId, pwd);
   }
 
-  leaveMatch() {
-    if (this.currentLobby) {
-      this.lobbySocket.leaveRoom(this.currentUser);
-    }
+  leaveLobby() {
+    this.currLobby.leave();
+
   }
 
   toggleReady() {
-    if (this.currentLobby) {
-      const isCurrentlyReady = this.currentLobby.readys[this.currentUser] || false;
-      this.lobbySocket.setReady(this.currentUser, !isCurrentlyReady);
-    }
+    let userId = this.auth.auth!.user.id;
+    let isReady = this.currLobby.lobby!.joiners[userId].isReady;
+    this.currLobby.setReady(!isReady);
   }
 
-  startMatch() {
-    if (this.currentLobby && this.currentLobby.hostId === this.currentUser) {
-      this.lobbySocket.startGame(this.currentUser);
-    }
+  startGame() {
+    this.currLobby.startGame();
   }
 }

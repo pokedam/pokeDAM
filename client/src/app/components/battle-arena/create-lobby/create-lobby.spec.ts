@@ -1,17 +1,17 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { GameBrowser } from './game-browser';
+import { CreateLobby } from './create-lobby';
 
-describe('GameBrowser', () => {
-  let component: GameBrowser;
-  let fixture: ComponentFixture<GameBrowser>;
+describe('CreateLobby', () => {
+  let component: CreateLobby;
+  let fixture: ComponentFixture<CreateLobby>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [GameBrowser],
+      imports: [CreateLobby],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(GameBrowser);
+    fixture = TestBed.createComponent(CreateLobby);
     component = fixture.componentInstance;
     await fixture.whenStable();
   });

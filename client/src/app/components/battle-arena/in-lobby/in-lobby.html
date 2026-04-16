@@ -1,0 +1,42 @@
+<div class="lobby-header">
+    <h2>{{ displayName }}</h2>
+    <div class="header-actions">
+        @if (player != null){
+        <button class="retro-btn" (click)="toggleReady()">
+            {{ player.isReady ? 'Cancel Ready' : 'Set Ready' }}
+        </button>
+        } @else {
+        <button class="retro-btn start-match-btn" [disabled]="Object.keys(currentLobby.joiners).length < 1"
+            (click)="startMatch()">
+            Start Match
+        </button>
+        }
+        <button class="retro-btn" (click)="leaveMatch()" title="Leave Room">X</button>
+    </div>
+</div>
+
+<div class="lobby-content">
+    <div class="players-list">
+        <h3>Players ({{ Object.keys(currentLobby.joiners).length + 1 }}/ {{ currentLobby.maxPlayers }})</h3>
+        <ul class="retro-list">
+            <li>
+                <div class="avatar-ph"></div>
+                <span class="player-name">
+                    {{ currentLobby.hostNickname }}
+                    <span>[HOST]</span>
+                </span>
+            </li>
+            @for (joiner of Object.values(currentLobby.joiners); track joiner) {
+            <li>
+                <div class="avatar-ph"></div>
+                <span class="player-name">
+                    {{ joiner.nickname }}
+                    @if (joiner.isReady) {
+                    <span>[READY]</span>
+                    }
+                </span>
+            </li>
+            }
+        </ul>
+    </div>
+</div>

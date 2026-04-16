@@ -1,11 +1,6 @@
-import {
-  Component,
-  EventEmitter,
-  HostListener,
-  Input,
-  Output,
-} from '@angular/core';
+import { Component, EventEmitter, HostListener, Output, Input, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-user-menu-button',
@@ -14,22 +9,15 @@ import { CommonModule } from '@angular/common';
   styleUrl: './user-menu-button.css',
 })
 export class UserMenuButton {
-  @Input() isLoggedIn = false;
-  @Input() username = 'Trainer';
-  @Input() avatarUrl: string | null = null;
+  private authService = inject(AuthService);
 
-  @Output() loginClick = new EventEmitter<void>();
-  @Output() logoutClick = new EventEmitter<void>();
+  @Input({ required: true }) auth: any;
   @Output() settingsClick = new EventEmitter<void>();
 
   isDropdownOpen = false;
 
-  get avatarInitial(): string {
-    return this.username.charAt(0).toUpperCase();
-  }
-
-  onLoginClick() {
-    this.loginClick.emit();
+  getAvatarInitial(username: string | undefined): string {
+    return username ? username.charAt(0).toUpperCase() : '?';
   }
 
   toggleDropdown(event: Event) {
@@ -40,11 +28,6 @@ export class UserMenuButton {
   onSettings() {
     this.isDropdownOpen = false;
     this.settingsClick.emit();
-  }
-
-  onLogout() {
-    this.isDropdownOpen = false;
-    this.logoutClick.emit();
   }
 
   @HostListener('document:click')

@@ -5,8 +5,9 @@
   <div class="topbar-actions desktop-only">
     <button class="retro-btn menu-btn play-btn" routerLink="/play">Jugar</button>
     <button class="retro-btn menu-btn pokedex-btn" (click)="pokedexClick.emit()">Pokédex</button>
-    <app-user-menu-button [isLoggedIn]="isLoggedIn" [username]="username" [avatarUrl]="avatarUrl"
-      (loginClick)="loginClick.emit()" (logoutClick)="logoutClick.emit()" (settingsClick)="settingsClick.emit()" />
+    @if (authService.auth$ | async; as auth) {
+    <app-user-menu-button [auth]="auth" settingsClick="settingsClick.emit()" />
+    }
   </div>
 
   <!-- Mobile hamburger button -->
@@ -49,17 +50,14 @@
   <div class="drawer-profile-section">
     <div class="drawer-section-label">Profile</div>
 
-    @if (isLoggedIn) {
+    @if (authService.auth$ | async; as auth) {
+    <!-- @if (auth.user.email) { -->
     <!-- User info -->
     <div class="drawer-profile-info">
       <div class="drawer-avatar">
-        @if (avatarUrl) {
-        <img [src]="avatarUrl" [alt]="username" class="drawer-avatar-img" />
-        } @else {
-        <span class="drawer-avatar-initial">{{ avatarInitial }}</span>
-        }
+        <span class="drawer-avatar-initial">{{ getAvatarInitial(auth.user.nickname) }}</span>
       </div>
-      <span class="drawer-username">{{ username }}</span>
+      <span class="drawer-username">{{ auth.user.nickname }}</span>
     </div>
 
     <div class="drawer-divider"></div>
@@ -71,16 +69,17 @@
     </button>
 
     <!-- Logout -->
-    <button class="drawer-nav-item drawer-logout-item" (click)="onDrawerLogout()">
+    <button class="drawer-nav-item drawer-logout-item">
       <span class="drawer-item-icon">🚪</span>
       <span>Log Out</span>
     </button>
-    } @else {
-    <!-- Not logged in: show login button -->
+    <!-- } @else {
+    Not logged in: show login button
     <button class="drawer-nav-item drawer-login-item" (click)="onDrawerLogin()">
       <span class="drawer-item-icon">🔑</span>
       <span>Log In</span>
     </button>
+    } -->
     }
   </div>
 </nav>

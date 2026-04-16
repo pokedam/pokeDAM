@@ -10,18 +10,10 @@ import { RouterLink } from '@angular/router';
   styleUrl: './presentation.css',
 })
 export class Presentation {
-  isLoggedIn = false;
-  username = 'Trainer';
-  avatarUrl: string | null = null;
   showLoginDialog = false;
 
   onLoginClick() {
     this.showLoginDialog = true;
-  }
-
-  logout() {
-    this.isLoggedIn = false;
-    this.username = 'Trainer';
   }
 
   onSettings() {
@@ -29,8 +21,6 @@ export class Presentation {
   }
 
   login() {
-    this.isLoggedIn = true;
-    this.username = 'Ash Ketchum';
     this.showLoginDialog = false;
   }
 

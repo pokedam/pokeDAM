@@ -1,74 +1,98 @@
 package org.cifpaviles.pokedam.rest_server.game.service;
 
-import org.cifpaviles.pokedam.rest_server.models.Room;
-import org.cifpaviles.pokedam.rest_server.models.RoomState;
-import org.springframework.stereotype.Service;
-
 import java.util.Collection;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+
+import org.cifpaviles.pokedam.rest_server.models.Lobby;
+import org.cifpaviles.pokedam.rest_server.models.LobbyInfo;
+import org.cifpaviles.pokedam.rest_server.models.LobbyJoined;
+import org.cifpaviles.pokedam.rest_server.models.LobbyLeft;
+import org.cifpaviles.pokedam.rest_server.models.Joiner;
+import org.cifpaviles.pokedam.rest_server.entity.User;
+import org.cifpaviles.pokedam.rest_server.repository.UserRepository;
+import org.springframework.stereotype.Service;
 
 @Service
 public class LobbyService {
     // Almacena todas las partidas por ID
-    private final Map<String, Room> rooms = new ConcurrentHashMap<>();
+    private final Map<String, Lobby> lobbies = new ConcurrentHashMap<>();
 
     // Rastrea a qué partida pertenece cada jugador
-    private final Map<String, String> playerRooms = new ConcurrentHashMap<>();
+    private final Map<Long, String> playerRooms = new ConcurrentHashMap<>();
 
-    public Map.Entry<String, Room> createRoom(String playerId, String name, String password) {
-        // Si ya está en una sala antes, lo sacamos
-        leaveRoom(playerId);
+    private final UserRepository userRepository;
 
-        Room room = new Room(name, password, playerId);
-
-        rooms.put(playerId, room);
-        playerRooms.put(playerId, playerId);
-        return Map.entry(playerId, room);
+    public LobbyService(UserRepository userRepository) {
+        this.userRepository = userRepository;
     }
 
-    public Room joinRoom(String roomId, String playerId, String passwordInput) {
-        Room room = rooms.get(roomId);
-        if (room != null && room.getState() == RoomState.WAITING) {
+    private String getPlayerNickname(Long playerId) {
+        return userRepository.findById(playerId)
+                .map(User::getNickname)
+                .orElse("????");
+    }
+
+    public Map.Entry<String, Lobby> create(Long playerId, String name, String password) {
+        // Si ya está en una sala antes, lo sacamos
+
+        leave(playerId);
+
+        String roomId = UUID.randomUUID().toString();
+
+        Lobby lobby = new Lobby(name, password, playerId, getPlayerNickname(playerId));
+
+        lobbies.put(roomId, lobby);
+        playerRooms.put(playerId, roomId);
+        return Map.entry(roomId, lobby);
+    }
+
+    public LobbyJoined join(String lobbyId, Long playerId, String passwordInput) {
+        Lobby lobby = lobbies.get(lobbyId);
+
+        if (lobby != null) {
 
             // Verificación simple de contraseña. Si hay y no coincide, falla.
-            if (room.hasPassword() && !room.getPassword().equals(passwordInput)) {
+            if (lobby.password != null && !lobby.password.equals(passwordInput)) {
                 return null;
             }
+            var player = new Joiner(false, getPlayerNickname(playerId));
 
-            leaveRoom(playerId);
-            room.getReadys().put(playerId, false);
-            playerRooms.put(playerId, roomId);
-            return room;
+            lobby.joiners.put(playerId, player);
+            playerRooms.put(playerId, lobbyId);
+            return new LobbyJoined(lobby, player);
         }
         return null;
     }
 
-    public Map.Entry<String, Room> setReady(String playerId, boolean isReady) {
+    public Map.Entry<String, Lobby> setReady(Long playerId, boolean isReady) {
         String roomId = playerRooms.get(playerId);
         if (roomId != null) {
-            Room room = rooms.get(roomId);
-            if (room != null && room.getState() == RoomState.WAITING) {
-                room.getReadys().put(playerId, isReady);
+            Lobby room = lobbies.get(roomId);
+            if (room != null) {
+                var player = room.joiners.get(playerId);
+                if (player != null) {
+                    player.isReady = isReady;
+                }
                 return Map.entry(roomId, room);
             }
         }
         return null;
     }
 
-    public Map.Entry<String, Room> startGame(String playerId) {
+    public Map.Entry<String, Lobby> startGame(Long playerId) {
         String roomId = playerRooms.get(playerId);
         if (roomId != null) {
-            Room room = rooms.get(roomId);
+            Lobby room = lobbies.get(roomId);
 
             // Revisa que sea el host y esté WAITING
-            if (room != null && room.getState() == RoomState.WAITING && room.getHostId().equals(playerId)) {
+            if (room != null && room.hostId.equals(playerId)) {
                 // Validación para iniciar: ejemplo, al menos 2 en partida, y todos readys =
                 // true
-                Collection<Boolean> allReadyStates = room.getReadys().values();
-                if (allReadyStates.size() > 1 && allReadyStates.stream().allMatch(ready -> ready)) {
-                    room.setState(RoomState.PLAYING);
+                Collection<Joiner> allReadyStates = room.joiners.values();
+                if (allReadyStates.size() > 1 && allReadyStates.stream().allMatch(player -> player.isReady)) {
                     return Map.entry(roomId, room);
                 }
             }
@@ -76,34 +100,40 @@ public class LobbyService {
         return null;
     }
 
-    public Map.Entry<String, Room> leaveRoom(String playerId) {
+    public LobbyLeft leave(Long playerId) {
         String roomId = playerRooms.remove(playerId);
-        if (roomId != null) {
-            Room room = rooms.get(roomId);
-            if (room != null) {
-                room.getReadys().remove(playerId);
+        if (roomId == null)
+            return null;
 
-                // Limpieza: si la sala queda vacía, la eliminamos
-                if (room.getReadys().isEmpty()) {
-                    rooms.remove(roomId);
-                } else if (room.getHostId().equals(playerId)) {
-                    // Si el host sale, por ahora destruimos la sala
-                    // (alternativa: rotar el host al siguiente jugador)
-                    rooms.remove(roomId);
-                    // Para simplificar, asumiremos que los demás manejarán el estado
-                    // 'Lobby Destroyed' en el Frontend. En la vida real, se debería disolver
-                    // formalmente informando a todos.
-                }
-                return Map.entry(roomId, room); // Retornamos para notificar la sala si sobrevive
+        Lobby room = lobbies.get(roomId);
+        if (room.hostId == playerId) {
+            if (room.joiners.isEmpty()) {
+                lobbies.remove(roomId);
+                return new LobbyLeft(roomId, null);
+            } else {
+                Map.Entry<Long, Joiner> newHostEntry = room.joiners.entrySet().iterator().next();
+                room.hostId = newHostEntry.getKey();
+                room.hostNickname = newHostEntry.getValue().nickname;
+                room.joiners.remove(newHostEntry.getKey());
             }
+            return new LobbyLeft(roomId, room, true);
+        } else {
+            if (room.joiners.remove(playerId) == null)
+                return null;
+
+            return new LobbyLeft(roomId, room);
         }
-        return null;
     }
 
-    public Collection<Room> getAvailableRooms() {
-        // Retornar solo las que están en WAITING
-        return rooms.values().stream()
-                .filter(r -> r.getState() == RoomState.WAITING)
-                .collect(Collectors.toList());
+    public Collection<LobbyInfo> getAll() {
+        return lobbies.entrySet().stream().map(entry -> {
+            String roomId = entry.getKey();
+            Lobby lobby = entry.getValue();
+            return new LobbyInfo(roomId, lobby);
+        }).collect(Collectors.toList());
+    }
+
+    public Lobby get(String roomId) {
+        return lobbies.get(roomId);
     }
 }

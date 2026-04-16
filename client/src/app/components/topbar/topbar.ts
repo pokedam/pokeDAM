@@ -1,27 +1,25 @@
-import { Component, EventEmitter, HostListener, Input, Output } from '@angular/core';
+import { Component, EventEmitter, HostListener, Output, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { UserMenuButton } from '../user-menu-button/user-menu-button';
+import { AuthService } from '../../services/auth.service';
+import { AsyncPipe } from '@angular/common';
 
 @Component({
   selector: 'app-topbar',
-  imports: [UserMenuButton, RouterLink],
+  imports: [UserMenuButton, RouterLink, AsyncPipe],
   templateUrl: './topbar.html',
   styleUrl: './topbar.css',
 })
 export class Topbar {
-  @Input() isLoggedIn = false;
-  @Input() username = 'Trainer';
-  @Input() avatarUrl: string | null = null;
+  constructor(public authService: AuthService) { }
 
-  @Output() loginClick = new EventEmitter<void>();
-  @Output() logoutClick = new EventEmitter<void>();
   @Output() settingsClick = new EventEmitter<void>();
   @Output() pokedexClick = new EventEmitter<void>();
 
   isDrawerOpen = false;
 
-  get avatarInitial(): string {
-    return this.username.charAt(0).toUpperCase();
+  getAvatarInitial(username: string | undefined): string {
+    return username ? username.charAt(0).toUpperCase() : '?';
   }
 
   toggleDrawer() {
@@ -30,16 +28,6 @@ export class Topbar {
 
   closeDrawer() {
     this.isDrawerOpen = false;
-  }
-
-  onDrawerLogin() {
-    this.closeDrawer();
-    this.loginClick.emit();
-  }
-
-  onDrawerLogout() {
-    this.closeDrawer();
-    this.logoutClick.emit();
   }
 
   onDrawerSettings() {

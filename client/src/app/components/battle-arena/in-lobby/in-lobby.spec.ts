@@ -1,17 +1,17 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { CreateMatch } from './create-match';
+import { InLobby } from './in-lobby';
 
-describe('CreateMatch', () => {
-  let component: CreateMatch;
-  let fixture: ComponentFixture<CreateMatch>;
+describe('InLobby', () => {
+  let component: InLobby;
+  let fixture: ComponentFixture<InLobby>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [CreateMatch],
+      imports: [InLobby],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(CreateMatch);
+    fixture = TestBed.createComponent(InLobby);
     component = fixture.componentInstance;
     await fixture.whenStable();
   });

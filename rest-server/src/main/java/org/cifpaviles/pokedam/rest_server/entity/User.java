@@ -12,6 +12,17 @@ public class User {
     @Column(length = 500)
     private String refreshToken;
 
+    @Column(length = 100)
+    private String nickname;
+
+    public String getNickname() {
+        return nickname;
+    }
+
+    public void setNickname(String nickname) {
+        this.nickname = nickname;
+    }
+
     public Long getId() {
         return id;
     }
