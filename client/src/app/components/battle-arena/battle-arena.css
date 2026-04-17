@@ -123,20 +123,15 @@
   background-color: var(--pkmn-red);
 }
 
-.join-btn {
+.action-btn {
   padding: 8px 15px;
   font-size: 12px;
-  background-color: var(--pkmn-yellow);
   border-color: var(--border-main);
   color: var(--text-main);
   min-width: 80px;
 }
 
-.join-btn:hover:not(:disabled) {
-  background-color: var(--pkmn-gold);
-}
-
-.join-btn:disabled {
+.action-btn:disabled {
   background-color: #ccc;
   color: #888;
   border-color: #999;
@@ -144,6 +139,23 @@
   transform: none;
   box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.2);
   filter: grayscale(100%);
+}
+
+.join-btn {
+  background-color: var(--pkmn-yellow);
+}
+
+.join-btn:hover:not(:disabled) {
+  background-color: var(--pkmn-gold);
+}
+
+.kick-btn {
+  margin-left: auto;
+  background-color: var(--pkmn-red);
+}
+
+.kick-btn:hover:not(:disabled) {
+  background-color: var(--pkmn-dark-red);
 }
 
 .empty-msg {
@@ -222,17 +234,24 @@
   box-shadow: none;
 }
 
-.avatar-ph {
+.player-state {
   width: 50px;
   height: 50px;
-  background-color: var(--pkmn-red);
   border: 4px solid var(--border-main);
   border-radius: 4px;
   /* blocky instead of circular */
 }
 
-.player2-ph {
-  background-color: var(--pkmn-blue);
+.player-state.host {
+  background-color: var(--pkmn-black);
+}
+
+.player-state.ready {
+  background-color: var(--pkmn-green);
+}
+
+.player-state.not-ready {
+  background-color: var(--pkmn-red);
 }
 
 .player-name {
@@ -350,22 +369,6 @@
   font-weight: bold;
   margin-bottom: 10px;
   color: var(--border-main);
-}
-
-.retro-input {
-  font-family: inherit;
-  padding: 12px;
-  border: 4px solid var(--border-main);
-  border-radius: 4px;
-  font-size: 14px;
-  background-color: white;
-  color: var(--text-main);
-  box-shadow: inset 4px 4px 0px rgba(0, 0, 0, 0.05);
-}
-
-.retro-input:focus {
-  outline: none;
-  border-color: var(--pkmn-red);
 }
 
 .modal-actions {

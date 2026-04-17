@@ -1,8 +1,10 @@
 :root {
   /* Retro Pokemon Color Palette */
+  --pkmn-black: #111;
   --pkmn-red: #ff0000;
   --pkmn-dark-red: #cc0000;
   --pkmn-blue: #0000ff;
+  --pkmn-green: #00ff00;
   --pkmn-yellow: #ffde00;
   --pkmn-gold: #b3a125;
   --pkmn-gb-light: #e0f8d0;
@@ -72,4 +74,27 @@ body {
 .retro-btn:active {
   transform: translate(4px, 4px);
   box-shadow: 0px 0px 0px rgba(0, 0, 0, 0.2);
+}
+
+.retro-input {
+  font-family: inherit;
+  padding: 12px;
+  border: 4px solid var(--border-main);
+  border-radius: 4px;
+  font-size: 14px;
+  background-color: white;
+  color: var(--text-main);
+  box-shadow: inset 4px 4px 0px rgba(0, 0, 0, 0.05);
+  transition: background-color 0.3s ease, border-color 0.3s ease, cursor 0.3s ease;
+}
+
+.retro-input:disabled {
+  background-color: #e0e0e0;
+  color: #888;
+  cursor: not-allowed;
+}
+
+.retro-input:focus {
+  outline: none;
+  border-color: var(--pkmn-red);
 }

@@ -1,7 +1,6 @@
 <div class="lobby-header">
   <h2>Custom Matches</h2>
   <div class="header-actions">
-    <button class="retro-btn">Refresh</button>
     <button class="retro-btn create-lobby-btn" (click)="createLobby()">Create Match</button>
   </div>
 </div>
@@ -26,7 +25,7 @@
         </td>
         <td class="players-count">{{ item.value.playerCount }}/{{ item.value.maxPlayers }}</td>
         <td>
-          <button class="retro-btn join-btn" [disabled]="item.value.playerCount >= item.value.maxPlayers"
+          <button class="retro-btn action-btn join-btn" [disabled]="item.value.playerCount >= item.value.maxPlayers"
             (click)="joinLobby(item.key, item.value)">
             Join
           </button>

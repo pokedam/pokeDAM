@@ -6,35 +6,38 @@
             {{ player.isReady ? 'Cancel Ready' : 'Set Ready' }}
         </button>
         } @else {
-        <button class="retro-btn start-match-btn" [disabled]="Object.keys(currentLobby.joiners).length < 1"
-            (click)="startMatch()">
+        <button class="retro-btn start-match-btn" [disabled]="!canStartMatch()" (click)="startGame()">
             Start Match
         </button>
         }
-        <button class="retro-btn" (click)="leaveMatch()" title="Leave Room">X</button>
+        <button class="retro-btn" (click)="leaveLobby()" title="Leave Room">X</button>
     </div>
 </div>
-
 <div class="lobby-content">
     <div class="players-list">
-        <h3>Players ({{ Object.keys(currentLobby.joiners).length + 1 }}/ {{ currentLobby.maxPlayers }})</h3>
+        <h3>Players ({{ currentLobby.joiners.size + 1 }}/{{ currentLobby.maxPlayers }})</h3>
         <ul class="retro-list">
             <li>
-                <div class="avatar-ph"></div>
+                <div class="player-state host"></div>
                 <span class="player-name">
-                    {{ currentLobby.hostNickname }}
-                    <span>[HOST]</span>
+                    {{ currentLobby.hostNickname }} <span>[HOST]</span>
                 </span>
             </li>
-            @for (joiner of Object.values(currentLobby.joiners); track joiner) {
+            @for (entry of currentLobby.joiners.entries(); track entry[0]) {
             <li>
-                <div class="avatar-ph"></div>
+                <div class="player-state" [class.ready]="entry[1].isReady" [class.not-ready]="!entry[1].isReady"></div>
                 <span class="player-name">
-                    {{ joiner.nickname }}
-                    @if (joiner.isReady) {
+                    {{ entry[1].nickname }}
+                    @if (entry[1].isReady) {
                     <span>[READY]</span>
                     }
                 </span>
+                <!-- Kick button only visible if the current user is the host (player == null) -->
+                @if (player == null) {
+                <button class="retro-btn action-btn kick-btn" (click)="kick(entry[0])" title="Kick Player">
+                    Kick
+                </button>
+                }
             </li>
             }
         </ul>

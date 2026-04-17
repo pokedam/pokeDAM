@@ -48,7 +48,6 @@ export const lobbyController = (io: Server, socket: Socket): void => {
         }
     });
 
-    // Equivalente a @SubscribeMapping("/lobbies/{lobbyId}")
     socket.on('lobbies.get', (lobbyId: string, callback: (response: any) => void) => {
         const lobby = lobbies.get(lobbyId);
         if (typeof callback === 'function') {
@@ -60,7 +59,10 @@ export const lobbyController = (io: Server, socket: Socket): void => {
                         password: lobby.password,
                         hostId: lobby.hostId,
                         hostNickname: lobby.hostNickname,
-                        joiners: Object.fromEntries(lobby.joiners.entries()),
+                        joiners: Array.from(lobby.joiners.entries()).map(([id, player]) => ({
+                            id,
+                            ...player
+                        })),
                         maxPlayers: lobby.maxPlayers,
                     }
                 });
@@ -160,17 +162,16 @@ export const lobbyController = (io: Server, socket: Socket): void => {
         }
     });
 
-    function handleLeave() {
-        const lobbyId = players.get(playerId);
+    async function handleLeave(targetPlayerId: number = playerId) {
+        const lobbyId = players.get(targetPlayerId);
         if (!lobbyId) {
             return { status: 'error', message: 'Player is not in a lobby' };
         }
 
-        players.delete(playerId);
+        players.delete(targetPlayerId);
         const lobby: Lobby | undefined = lobbies.get(lobbyId)!;
-        socket.leave(`lobby_${lobbyId}`);
 
-        if (lobby.hostId === playerId) {
+        if (lobby.hostId === targetPlayerId) {
             const entry = lobby.joiners.entries().next().value;
             if (!entry) {
                 lobbies.delete(lobbyId);
@@ -201,10 +202,10 @@ export const lobbyController = (io: Server, socket: Socket): void => {
                 });
             }
         } else {
-            lobby.joiners.delete(playerId);
+            lobby.joiners.delete(targetPlayerId);
             io.to(`lobby_${lobbyId}`).emit(`lobby.${lobbyId}.event`, {
                 type: 'PLAYER_LEFT',
-                payload: { id: playerId, hostReplacement: false },
+                payload: { id: targetPlayerId, hostReplacement: false },
             });
             io.emit('lobbies.event', {
                 type: 'CHANGED',
@@ -214,19 +215,53 @@ export const lobbyController = (io: Server, socket: Socket): void => {
                 }
             });
         }
+        // Remove the appropriate socket from the room
+        if (targetPlayerId === playerId) {
+            socket.leave(`lobby_${lobbyId}`);
+        } else {
+            const targetSocket = (await io.in(`lobby_${lobbyId}`).fetchSockets()).find(s => (s as any).userId === targetPlayerId);
+            if (targetSocket) {
+                targetSocket.leave(`lobby_${lobbyId}`);
+            }
+        }
         return { status: 'ok' };
     };
 
     socket.on('lobby.leave', async (_: any, callback: (response: any) => void) => {
-        const out = handleLeave();
-
-        if (typeof callback === 'function') {
-            callback(out);
-        }
+        const out = await handleLeave();
+        if (typeof callback === 'function') callback(out);
     });
 
-    socket.on('disconnect', () => {
-        handleLeave();
+    socket.on('lobby.kick', async (payload: any, callback: (response: any) => void) => {
+        const { targetId } = payload;
+        const lobbyId = players.get(playerId);
+
+        if (!lobbyId) {
+            if (typeof callback === 'function') {
+                callback({ status: 'error', message: 'Player is not in a lobby' });
+            }
+            return;
+        }
+
+        const lobby = lobbies.get(lobbyId);
+        if (lobby?.hostId !== playerId) {
+            if (typeof callback === 'function') {
+                callback({ status: 'error', message: 'Only the host can kick players' });
+            }
+            return;
+        }
+
+        if (!lobby.joiners.has(targetId)) {
+            if (typeof callback === 'function') callback({ status: 'error', message: 'Target player not found in this lobby' });
+            return;
+        }
+
+        let out = await handleLeave(targetId);
+        if (typeof callback === 'function') callback(out);
+    });
+
+    socket.on('disconnect', async () => {
+        await handleLeave();
     });
 
     socket.on('lobby.ready', (payload: any, callback: (response: any) => void) => {

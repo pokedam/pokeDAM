@@ -1,14 +1,13 @@
 <div class="retro-box lobby-box">@if (auth.auth) {
   @if (currLobby.lobby$ | async; as lobby) {
-  <app-in-lobby [currentLobby]="lobby" [userIndex]="auth.auth!.user.id" (onLeaveMatch)="leaveLobby()"
-    (onToggleReady)="toggleReady()" (onStartMatch)="startGame()">
-  </app-in-lobby>
+  <app-in-lobby />
   } @else if (!inCreateLobbyMenu) {
   <app-lobbies-browser [lobbies]="(lobbies.lobbies$ | async)!" [currentUser]="auth.auth!.user.nickname"
-    (onCreateLobby)="openCreateModal()" (onJoinLobby)="joinLobby($event.lobbyId, $event.lobby)">
+    (onCreateLobby)="openCreateMenu()" (onJoinLobby)="joinLobby($event.lobbyId, $event.lobby)">
   </app-lobbies-browser>
   } @else {
-  <app-create-lobby (onCancel)="closeCreateModal()" (onCreateLobby)="createLobby($event)">
+  <app-create-lobby [userName]="auth.auth!.user.nickname" [initialName]="savedLobbyName"
+    (onCancel)="closeCreateMenu($event)" (onCreateLobby)="createLobby($event)">
   </app-create-lobby>
   }
   } @else {

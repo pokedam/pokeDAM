@@ -1,5 +1,6 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { Lobby, Joiner as Joiner } from '../../../services/current-lobby.service';
+import { Component, EventEmitter, inject, Input, Output } from '@angular/core';
+import { Lobby, Joiner as Joiner, CurrentLobbyService } from '../../../services/current-lobby.service';
+import { AuthService } from '../../../services/auth.service';
 
 
 @Component({
@@ -10,35 +11,57 @@ import { Lobby, Joiner as Joiner } from '../../../services/current-lobby.service
 })
 
 export class InLobby {
-  @Input() currentLobby!: Lobby;
-  @Input() userIndex!: number;
+  lobbyService = inject(CurrentLobbyService);
+  authService = inject(AuthService);
 
-  @Output() onLeaveMatch = new EventEmitter<void>();
-  @Output() onToggleReady = new EventEmitter<void>();
-  @Output() onStartMatch = new EventEmitter<void>();
+  get currentLobby(): Lobby {
+    return this.lobbyService.lobby!;
+  }
+
+  get userIndex(): number {
+    return this.authService.auth!.user.id;
+  }
 
   get player(): Joiner | null {
-    return this.userIndex in this.currentLobby.joiners
-      ? this.currentLobby.joiners[this.userIndex]
-      : null;
+    return this.currentLobby.joiners.get(this.userIndex) || null;
   }
 
   protected Object = Object;
 
-  leaveMatch() {
-    this.onLeaveMatch.emit();
-  }
-
-  toggleReady() {
-    this.onToggleReady.emit();
-  }
-
-  startMatch() {
-    this.onStartMatch.emit();
+  kick(targetId: number) {
+    this.lobbyService.kick(targetId);
   }
 
   get displayName(): string {
     const name = this.currentLobby.name;
     return name.length > 30 ? name.substring(0, 27) + '...' : name;
+  }
+
+  canStartMatch(): boolean {
+    const joiners = this.currentLobby.joiners;
+    if (joiners.size === 0) {
+      return false;
+    }
+    for (let joiner of joiners.values()) {
+      if (!joiner.isReady) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  leaveLobby() {
+    this.lobbyService.leave();
+
+  }
+
+  toggleReady() {
+    let userId = this.authService.auth!.user.id;
+    let isReady = this.lobbyService.lobby!.joiners.get(userId)!.isReady;
+    this.lobbyService.setReady(!isReady);
+  }
+
+  startGame() {
+    this.lobbyService.startGame();
   }
 }

@@ -20,6 +20,9 @@ export class BattleArena {
   //currentLobbyId: string | null = null;
 
   inCreateLobbyMenu: boolean = false;
+  savedLobbyName: string = '';
+  savedRequiresPassword: boolean = false;
+
   //lobbies: Map<string, LobbyInfo> = new Map();
 
   // private lobbiesSub?: Subscription;
@@ -55,15 +58,19 @@ export class BattleArena {
   //   this.roomSub?.unsubscribe();
   // }
 
-  openCreateModal() {
+  openCreateMenu() {
     this.inCreateLobbyMenu = true;
   }
 
-  closeCreateModal() {
+  closeCreateMenu(state: { name: string, requiresPassword: boolean }) {
+    this.savedLobbyName = state.name;
+    this.savedRequiresPassword = state.requiresPassword;
     this.inCreateLobbyMenu = false;
   }
 
-  createLobby(config: { name: string, password?: string }) {
+  createLobby(config: { name: string, password: string | null }) {
+    this.savedLobbyName = config.name;
+    this.savedRequiresPassword = config.password != null;
     this.currLobby.create(
       config.name,
       config.password
@@ -91,7 +98,7 @@ export class BattleArena {
 
   toggleReady() {
     let userId = this.auth.auth!.user.id;
-    let isReady = this.currLobby.lobby!.joiners[userId].isReady;
+    let isReady = this.currLobby.lobby!.joiners.get(userId)!.isReady;
     this.currLobby.setReady(!isReady);
   }
 
