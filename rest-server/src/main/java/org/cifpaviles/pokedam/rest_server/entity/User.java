@@ -15,6 +15,9 @@ public class User {
     @Column(length = 100)
     private String nickname;
 
+    @Column
+    private int avatarIndex;
+
     public String getNickname() {
         return nickname;
     }
@@ -37,5 +40,13 @@ public class User {
 
     public void setRefreshToken(String refreshToken) {
         this.refreshToken = refreshToken;
+    }
+
+    public int getAvatarIndex() {
+        return avatarIndex;
+    }
+
+    public void setAvatarIndex(int avatarIndex) {
+        this.avatarIndex = avatarIndex;
     }
 }

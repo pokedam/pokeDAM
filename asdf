@@ -1,0 +1,25 @@
+{
+    id: 54,
+    exp: 19:45 17/04/2026
+} -> dasfast5ew4a56dgbvasf43 -> IdToken
+
+alidsfhasifuhawreaser -> RefreshToken
+
+User | RefrershToken
+54   | alidsfhasifuhawreaser
+
+{
+    idToken: dasfast5ew4a56dgbvasf43,
+    refreshToken: alidsfhasifuhawreaser
+}
+
+
+
+
+Authorization: Bearer asdf87geraou7fdasirb3897rhyao8fues -> {
+    id: 54,
+    exp: 19:39 17/04/2026
+} -> 401
+auth/refresh -> {
+    refreshToken: iuasdfhsdauifhasuilrhsaeuifdasg,
+}
