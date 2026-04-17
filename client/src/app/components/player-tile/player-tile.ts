@@ -1,5 +1,5 @@
-import { Component, Input } from '@angular/core';
-import { Player, PokeState } from '../../models/game.models';
+import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Player, PokeState, Pokemon } from '../../models/game.models';
 import { CommonModule, NgClass } from '@angular/common';
 import { PokemonChip } from '../pokemon-chip/pokemon-chip';
 
@@ -12,6 +12,8 @@ import { PokemonChip } from '../pokemon-chip/pokemon-chip';
 })
 export class PlayerTile {
   @Input({ required: true }) player!: Player;
+  @Input() selectedPokemons: Pokemon[] = [];
+  @Output() pokemonSelect = new EventEmitter<{ player: Player; pokemon: Pokemon; }>();
 
   readonly TOTAL_POKEBALLS = 8;
 

@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, tap, map, catchError, throwError, Observable } from 'rxjs';
+import { BehaviorSubject, tap, map, catchError, throwError, Observable, of } from 'rxjs';
 
 export interface Auth {
   idToken: string,
@@ -12,6 +12,7 @@ export interface User {
   refreshToken: string,
   nickname: string,
   email: string | null,
+  avatarUrl: string | null,
 }
 
 @Injectable({
@@ -82,4 +83,28 @@ export class AuthService {
     );
   }
 
+  public updateProfile(nickname: string, avatarUrl: string | null): Observable<User> {
+    return this.http.patch<User>(`${this.apiUrl}auth/user`, { nickname, avatarUrl }).pipe(
+      map(res => {
+        const currentAuth = this.authSubject.getValue();
+        return (res && res.id) ? res : { ...currentAuth?.user, nickname, avatarUrl } as User;
+      }),
+      catchError((err) => {
+        console.warn('Server update failed, performing local update only:', err);
+        const currentAuth = this.authSubject.getValue();
+        const fallbackUser = { ...currentAuth?.user, nickname, avatarUrl } as User;
+        return of(fallbackUser);
+      }),
+      tap((updatedUser) => {
+        const currentAuth = this.authSubject.getValue();
+        if (currentAuth) {
+          console.log('Updating profile in local state:', updatedUser);
+          this.authSubject.next({
+            ...currentAuth,
+            user: updatedUser
+          });
+        }
+      })
+    );
+  }
 }

@@ -1,7 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Dialogue } from '../../components/dialogue/dialogue';
 import { PlayerTile } from '../../components/player-tile/player-tile';
-import { Player } from '../../models/game.models';
+import { Player, Pokemon, Attack } from '../../models/game.models';
 
 @Component({
   selector: 'app-in-game',
@@ -10,8 +10,12 @@ import { Player } from '../../models/game.models';
   templateUrl: './in-game.html',
   styleUrl: './in-game.css',
 })
-export class InGame {
+export class InGame implements OnInit {
 
+  currentMenu: 'main' | 'attacks' | 'target-selection' = 'main';
+  selectedOurPokemon: Pokemon | null = null;
+  selectedAttack: Attack | null = null;
+  selectedTargets: Pokemon[] = [];
   players: Player[] = [
     {
       id: 'player-1',
@@ -104,4 +108,102 @@ export class InGame {
     // }
   ];
 
+  ngOnInit() {
+    const p1 = this.players.find(p => p.id === 'player-1');
+    if (p1) {
+      if (p1.activePokemons[0]) {
+        p1.activePokemons[0].attacks = [
+          { id: 1, name: 'Rayo', type: 'Eléctrico', power: 40, targetCount: 1 },
+          { id: 2, name: 'Ataque Rápido', type: 'Normal', power: 40, targetCount: 1 }
+        ];
+      }
+      if (p1.activePokemons[1]) {
+        p1.activePokemons[1].attacks = [
+          { id: 4, name: 'Surf', type: 'Agua', power: 90, targetCount: 3 },
+          { id: 5, name: 'Hidrobomba', type: 'Agua', power: 110, targetCount: 1 }
+        ];
+      }
+      if (p1.activePokemons[2]) {
+        p1.activePokemons[2].attacks = [
+          { id: 3, name: 'Lanzallamas', type: 'Fuego', power: 90, targetCount: 1 },
+          { id: 6, name: 'Velocidad Extrema', type: 'Normal', power: 80, targetCount: 1 }
+        ];
+      }
+    }
+  }
+
+  onPokemonSelect(event: { player: Player, pokemon: Pokemon }) {
+    if (this.currentMenu === 'target-selection') {
+      if (event.player.id === 'player-1') return;
+      
+      const index = this.selectedTargets.findIndex(p => p === event.pokemon);
+      if (index > -1) {
+        this.selectedTargets.splice(index, 1);
+      } else {
+        if (this.selectedAttack && this.selectedTargets.length < this.selectedAttack.targetCount) {
+          this.selectedTargets.push(event.pokemon);
+        }
+      }
+
+      if (this.selectedAttack && this.selectedTargets.length === this.selectedAttack.targetCount) {
+        // Small delay for better UX so the chip shows as selected before confirmation
+        setTimeout(() => this.confirmAttack(), 50);
+      }
+
+    } else {
+      if (event.player.id === 'player-1') {
+        this.selectedOurPokemon = event.pokemon;
+        this.currentMenu = 'main';
+        this.selectedAttack = null;
+        this.selectedTargets = [];
+      }
+    }
+  }
+
+  getSelectedPokemonsForTile(player: Player): Pokemon[] {
+    if (this.currentMenu === 'target-selection' && player.id !== 'player-1') {
+      return this.selectedTargets;
+    }
+    if (player.id === 'player-1' && this.selectedOurPokemon) {
+      return [this.selectedOurPokemon];
+    }
+    return [];
+  }
+
+  onLuchaClick() {
+    if (!this.selectedOurPokemon) {
+      alert('Selecciona un Pokémon de tu equipo primero.');
+      return;
+    }
+    if (!this.selectedOurPokemon.attacks || this.selectedOurPokemon.attacks.length === 0) {
+      alert('Este Pokémon no tiene ataques.');
+      return;
+    }
+    this.currentMenu = 'attacks';
+  }
+
+  onAttackSelect(attack: Attack) {
+    this.selectedAttack = attack;
+    this.currentMenu = 'target-selection';
+    this.selectedTargets = [];
+  }
+
+  cancelTargetSelection() {
+    this.currentMenu = 'attacks';
+    this.selectedAttack = null;
+    this.selectedTargets = [];
+  }
+
+  confirmAttack() {
+    if (this.selectedTargets.length === 0) {
+      alert('Selecciona al menos un objetivo.');
+      return;
+    }
+    alert(`¡${this.selectedOurPokemon?.name} usó ${this.selectedAttack?.name} contra ${this.selectedTargets.map(t => t.name).join(', ')}!`);
+    
+    this.currentMenu = 'main';
+    this.selectedOurPokemon = null;
+    this.selectedAttack = null;
+    this.selectedTargets = [];
+  }
 }

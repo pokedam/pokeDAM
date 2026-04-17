@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
+import { Router, ActivatedRoute, RouterOutlet } from '@angular/router';
 import { AsyncPipe } from '@angular/common';
 import { LoginDialog } from '../../components/login-dialog/login-dialog';
 import { Topbar } from '../../components/topbar/topbar';
@@ -8,7 +9,7 @@ import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-home',
-  imports: [LoginDialog, Topbar, BattleArena],
+  imports: [LoginDialog, Topbar, BattleArena, RouterOutlet],
   templateUrl: './home.html',
   styleUrl: './home.css',
 })
@@ -35,12 +36,15 @@ export class Home {
 
   constructor() { }
 
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
+
   onLoginClick() {
     this.showLoginDialog = true;
   }
 
   onSettings() {
-    console.log('Settings clicked');
+    this.router.navigate(['settings'], { relativeTo: this.route });
   }
 
   closeDialog() {
