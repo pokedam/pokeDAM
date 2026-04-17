@@ -33,7 +33,7 @@ export class LobbiesService {
 
   private init() {
     this.socketService.connected$.subscribe(() => {
-      
+
       this.socketService.socket.emit('lobbies.getAll', (response: any) => {
         if (response.status === 'ok') {
           const map = new Map<string, LobbyInfo>();

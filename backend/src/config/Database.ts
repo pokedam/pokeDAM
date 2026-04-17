@@ -1,5 +1,6 @@
 import { Sequelize, DataTypes, Model } from 'sequelize';
 import type { InferAttributes, InferCreationAttributes, CreationOptional } from 'sequelize';
+import { v4 as uuidv4 } from 'uuid';
 
 // Usamos SQLite en memoria igual que la H2 de Spring.
 const sequelize = new Sequelize({
@@ -13,6 +14,14 @@ export interface UserModel extends Model<InferAttributes<UserModel>, InferCreati
     id: CreationOptional<number>;
     refreshToken: string | null;
     nickname: string | null;
+}
+
+export async function getUser(playerId: number): Promise<UserModel> {
+    const user = await User.findByPk(playerId) ?? await User.create({
+        nickname: `Trainer${String(playerId).padStart(4, '0')}`,
+        refreshToken: uuidv4(),
+    });
+    return user;
 }
 
 const User = sequelize.define<UserModel>('User', {

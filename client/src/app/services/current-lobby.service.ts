@@ -80,6 +80,7 @@ export class CurrentLobbyService {
         this.socketService.socket.on(this.roomSubName, (event: ServerEvent) => {
             this.zone.run(() => {
                 let lobby = this.lobby;
+                console.log("Received lobby event:", event);
                 switch (event.type) {
 
                     case 'PLAYER_JOINED':
@@ -127,7 +128,14 @@ export class CurrentLobbyService {
                 return;
             }
 
-            const lobby: Lobby = response.data;
+            const lobby: Lobby = {
+                id: lobbyId,
+                name: response.data.name,
+                hostId: response.data.hostId,
+                hostNickname: response.data.hostNickname,
+                joiners: response.data.joiners,
+                maxPlayers: response.data.maxPlayers
+            };
             lobby.id = lobbyId;
             console.log("Received lobby update:", response.data);
             this.zone.run(() => {

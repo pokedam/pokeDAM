@@ -8,6 +8,8 @@ const PUBLIC_ENDPOINTS = [
   '/auth/refresh'
 ];
 
+
+
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const token = localStorage.getItem('idToken');
   const injector = inject(Injector);

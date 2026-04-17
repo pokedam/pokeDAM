@@ -31,6 +31,8 @@ export class AuthService {
   constructor() {
     const idToken = localStorage.getItem('idToken');
     const refreshToken = localStorage.getItem('refreshToken');
+
+    console.log("AuthService initialized. ID Token:", idToken, "Refresh Token:", refreshToken);
     if (idToken && refreshToken) {
       this.http.get<User>(`${this.apiUrl}auth/user`).subscribe({
         next: (user) => this.authSubject.next({
