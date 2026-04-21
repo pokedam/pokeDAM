@@ -47,7 +47,7 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
 };
 
 // @PostMapping("/anonymous")
-router.post('/anonymous', async (req: Request, res: Response): Promise<void> => {
+router.post('/anonymous', async (_: Request, res: Response, next): Promise<void> => {
     let user = await User.create({
         refreshToken: generateRefreshToken(),
         nickname: null
