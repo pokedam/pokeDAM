@@ -1,9 +1,9 @@
-import { Component, OnDestroy, OnInit, ChangeDetectorRef, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { AsyncPipe } from '@angular/common';
-import { Subscription } from 'rxjs';
 import { LobbiesBrowser } from './lobbies-browser/lobbies-browser';
 import { InLobby } from './in-lobby/in-lobby';
 import { CreateLobby } from './create-lobby/create-lobby';
+import { JoinLobbyPassword } from './join-lobby-password/join-lobby-password';
 import { AuthService } from '../../services/auth.service';
 import { LobbiesService, LobbyInfo } from '../../services/lobbies.service';
 import { CurrentLobbyService } from '../../services/current-lobby.service';
@@ -11,7 +11,7 @@ import { CurrentLobbyService } from '../../services/current-lobby.service';
 @Component({
   selector: 'app-battle-arena',
   standalone: true,
-  imports: [LobbiesBrowser, InLobby, CreateLobby, AsyncPipe],
+  imports: [LobbiesBrowser, InLobby, CreateLobby, JoinLobbyPassword, AsyncPipe],
   templateUrl: './battle-arena.html',
   styleUrl: './battle-arena.css',
 })
@@ -22,6 +22,8 @@ export class BattleArena {
   inCreateLobbyMenu: boolean = false;
   savedLobbyName: string = '';
   savedRequiresPassword: boolean = false;
+  joiningLobbyId: string | null = null;
+  joiningLobbyName: string | null = null;
 
   //lobbies: Map<string, LobbyInfo> = new Map();
 
@@ -79,16 +81,27 @@ export class BattleArena {
   }
 
   joinLobby(lobbyId: string, lobby: LobbyInfo) {
-    let pwd = undefined;
     if (lobby.hasPassword) {
-      const input = prompt('Sala con contraseña. Introdúcela:');
-      if (input === null) return;
-      pwd = input;
+      this.joiningLobbyId = lobbyId;
+      this.joiningLobbyName = lobby.name;
+    } else {
+      console.log(`Intentando unirse a la sala ${lobbyId}`);
+      this.currLobby.join(lobbyId);
     }
-    console.log(`Intentando unirse a la sala ${lobbyId} con contraseña: ${pwd ? 'Sí' : 'No'}`);
-    // Al unirse, suscribimos a los eventos específicos de la sala
-    //this.lobbySocket.subscribeToRoom(matchId);
-    this.currLobby.join(lobbyId, pwd);
+  }
+
+  confirmJoin(password: string) {
+    if (this.joiningLobbyId) {
+      console.log(`Intentando unirse a la sala ${this.joiningLobbyId} con contraseña`);
+      this.currLobby.join(this.joiningLobbyId, password);
+      this.joiningLobbyId = null;
+      this.joiningLobbyName = null;
+    }
+  }
+
+  cancelJoin() {
+    this.joiningLobbyId = null;
+    this.joiningLobbyName = null;
   }
 
   leaveLobby() {
