@@ -11,7 +11,7 @@ import { AuthService } from '../../services/auth.service';
     @if (authService.auth$ | async; as auth) {
       <app-profile-dialog 
         [initialUsername]="auth.user.nickname" 
-        [initialAvatarUrl]="auth.user.avatarUrl"
+        [initialAvatarUrl]="auth.user.avatarUrl ?? null"
         (save)="onSave($event)"
         (close)="onClose()"
       />
