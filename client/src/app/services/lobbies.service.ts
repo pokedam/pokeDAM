@@ -1,6 +1,7 @@
 import { Injectable, inject, NgZone } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { LobbySocketClient } from './lobby-socket-client.service';
+import { ErrorService } from './error.service';
 
 export interface LobbyInfo {
   name: string;
@@ -19,6 +20,7 @@ export class LobbiesService {
 
   private socketService = inject(LobbySocketClient);
   private zone = inject(NgZone);
+  private errorService = inject(ErrorService);
 
   private lobbiesSubject = new BehaviorSubject<Map<string, LobbyInfo>>(new Map());
   lobbies$ = this.lobbiesSubject.asObservable();
@@ -43,6 +45,8 @@ export class LobbiesService {
           this.zone.run(() => {
             this.lobbiesSubject.next(map);
           });
+        } else {
+          this.errorService.showError('Error al obtener la lista de salas: ' + response.message);
         }
       });
 

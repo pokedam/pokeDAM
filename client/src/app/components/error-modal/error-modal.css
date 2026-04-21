@@ -1,0 +1,47 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+}
+
+.modal-content {
+  min-width: 300px;
+  max-width: 80%;
+  border-color: var(--pkmn-red, red);
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  animation: popIn 0.2s ease-out forwards;
+}
+
+.error-header h2 {
+  margin: 0;
+  color: var(--pkmn-red, red);
+  text-align: center;
+  font-size: 1.2rem;
+}
+
+.error-body {
+  text-align: center;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  word-wrap: break-word;
+}
+
+.error-footer {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+@keyframes popIn {
+  0% { transform: scale(0.8); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}

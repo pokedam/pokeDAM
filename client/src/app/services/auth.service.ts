@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, tap, map, catchError, throwError, Observable } from 'rxjs';
+import { ErrorService } from './error.service';
 
 export interface Auth {
   idToken: string,
@@ -19,6 +20,7 @@ export interface User {
 })
 export class AuthService {
   private http = inject(HttpClient);
+  private errorService = inject(ErrorService);
   private apiUrl = 'http://localhost:8080/'; // Adjust based on your server
 
   private authSubject = new BehaviorSubject<Auth | null>(null);
@@ -41,16 +43,23 @@ export class AuthService {
         }),
         error: (err) => {
           console.error('Error in user POST http request:', err);
+          this.errorService.showError('Error al recuperar cuenta: ' + err.message);
           localStorage.removeItem('idToken');
           localStorage.removeItem('refreshToken');
           this.loginAnonymous().subscribe({
-            error: (err) => console.error('Error in anonymous login fallback:', err)
+            error: (err) => {
+              console.error('Error in anonymous login fallback:', err);
+              this.errorService.showError('Error en acceso anónimo: ' + err.message);
+            }
           });
         }
       });
     } else {
       this.loginAnonymous().subscribe({
-        error: (err) => console.error('Error in anonymous login on startup:', err)
+        error: (err) => {
+          console.error('Error in anonymous login on startup:', err);
+          this.errorService.showError('Error en inicio de sesión anónimo: ' + err.message);
+        }
       });
     }
   }

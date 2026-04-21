@@ -2,6 +2,7 @@ import { Injectable, inject, NgZone } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { LobbySocketClient } from './lobby-socket-client.service';
 import { AuthService } from './auth.service';
+import { ErrorService } from './error.service';
 
 export interface Lobby {
     id: string,
@@ -28,6 +29,7 @@ export class CurrentLobbyService {
     private auth = inject(AuthService);
     private socketService = inject(LobbySocketClient);
     private zone = inject(NgZone);
+    private errorService = inject(ErrorService);
 
     private lobbySubject = new BehaviorSubject<Lobby | null>(null);
     lobby$ = this.lobbySubject.asObservable();
@@ -45,6 +47,8 @@ export class CurrentLobbyService {
                 this.zone.run(() => {
                     this.setupSubscriptions(newLobbyId);
                 });
+            } else {
+                this.errorService.showError('No se pudo crear la sala: ' + response.message);
             }
         });
     }
@@ -56,7 +60,7 @@ export class CurrentLobbyService {
                     this.setupSubscriptions(lobbyId);
                 });
             } else {
-                alert('No se pudo unir a la sala: ' + response.message);
+                this.errorService.showError('No se pudo unir a la sala: ' + response.message);
             }
         });
     }
@@ -119,6 +123,9 @@ export class CurrentLobbyService {
         // Equivalent logic to fetching the initial lobby data instead of a direct subscribe mapping
         this.socketService.socket.emit('lobbies.get', lobbyId, (response: any) => {
             if (response.status === 'error' || !response.data) {
+                if (response.message) {
+                    this.errorService.showError('Error al obtener la sala: ' + response.message);
+                }
                 this.leave();
                 return;
             }
@@ -145,7 +152,11 @@ export class CurrentLobbyService {
     }
 
     leave() {
-        this.socketService.socket.emit('lobby.leave', {});
+        this.socketService.socket.emit('lobby.leave', {}, (response: any) => {
+            if (response && response.status === 'error') {
+                this.errorService.showError('Error al salir de la sala: ' + response.message);
+            }
+        });
 
         if (this.roomSubName) {
             this.socketService.socket.off(this.roomSubName);
@@ -155,14 +166,26 @@ export class CurrentLobbyService {
     }
 
     setReady(isReady: boolean) {
-        this.socketService.socket.emit('lobby.ready', { isReady });
+        this.socketService.socket.emit('lobby.ready', { isReady }, (response: any) => {
+            if (response && response.status === 'error') {
+                this.errorService.showError('Error al prepararse: ' + response.message);
+            }
+        });
     }
 
     kick(targetId: number) {
-        this.socketService.socket.emit('lobby.kick', { targetId });
+        this.socketService.socket.emit('lobby.kick', { targetId }, (response: any) => {
+            if (response && response.status === 'error') {
+                this.errorService.showError('Error al expulsar al jugador: ' + response.message);
+            }
+        });
     }
 
     startGame() {
-        this.socketService.socket.emit('lobby.start', {});
+        this.socketService.socket.emit('lobby.start', {}, (response: any) => {
+            if (response && response.status === 'error') {
+                this.errorService.showError('Error al iniciar la partida: ' + response.message);
+            }
+        });
     }
 }

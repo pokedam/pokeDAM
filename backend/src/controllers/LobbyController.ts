@@ -219,7 +219,7 @@ export const lobbyController = (io: Server, socket: Socket): void => {
         if (targetPlayerId === playerId) {
             socket.leave(`lobby_${lobbyId}`);
         } else {
-            const targetSocket = (await io.in(`lobby_${lobbyId}`).fetchSockets()).find(s => (s as any).userId === targetPlayerId);
+            const targetSocket = (await io.in(`lobby_${lobbyId}`).fetchSockets()).find((s: any) => (s as any).userId === targetPlayerId);
             if (targetSocket) {
                 targetSocket.leave(`lobby_${lobbyId}`);
             }
