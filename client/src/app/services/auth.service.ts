@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, tap, map, catchError, throwError, Observable, of } from 'rxjs';
+import { BehaviorSubject, tap, map, catchError, throwError, Observable } from 'rxjs';
+import { ErrorService } from './error.service';
 
 export interface Auth {
   idToken: string,
@@ -12,7 +13,7 @@ export interface User {
   refreshToken: string,
   nickname: string,
   email: string | null,
-  avatarUrl: string | null,
+  avatarUrl?: string | null,
 }
 
 @Injectable({
@@ -20,6 +21,7 @@ export interface User {
 })
 export class AuthService {
   private http = inject(HttpClient);
+  private errorService = inject(ErrorService);
   private apiUrl = 'http://localhost:8080/'; // Adjust based on your server
 
   private authSubject = new BehaviorSubject<Auth | null>(null);
@@ -42,16 +44,23 @@ export class AuthService {
         }),
         error: (err) => {
           console.error('Error in user POST http request:', err);
+          this.errorService.showError('Error al recuperar cuenta: ' + err.message);
           localStorage.removeItem('idToken');
           localStorage.removeItem('refreshToken');
           this.loginAnonymous().subscribe({
-            error: (err) => console.error('Error in anonymous login fallback:', err)
+            error: (err) => {
+              console.error('Error in anonymous login fallback:', err);
+              this.errorService.showError('Error en acceso anónimo: ' + err.message);
+            }
           });
         }
       });
     } else {
       this.loginAnonymous().subscribe({
-        error: (err) => console.error('Error in anonymous login on startup:', err)
+        error: (err) => {
+          console.error('Error in anonymous login on startup:', err);
+          this.errorService.showError('Error en inicio de sesión anónimo: ' + err.message);
+        }
       });
     }
   }
@@ -84,21 +93,10 @@ export class AuthService {
   }
 
   public updateProfile(nickname: string, avatarUrl: string | null): Observable<User> {
-    return this.http.patch<User>(`${this.apiUrl}auth/user`, { nickname, avatarUrl }).pipe(
-      map(res => {
-        const currentAuth = this.authSubject.getValue();
-        return (res && res.id) ? res : { ...currentAuth?.user, nickname, avatarUrl } as User;
-      }),
-      catchError((err) => {
-        console.warn('Server update failed, performing local update only:', err);
-        const currentAuth = this.authSubject.getValue();
-        const fallbackUser = { ...currentAuth?.user, nickname, avatarUrl } as User;
-        return of(fallbackUser);
-      }),
+    return this.http.put<User>(`${this.apiUrl}auth/profile`, { nickname, avatarUrl }).pipe(
       tap((updatedUser) => {
         const currentAuth = this.authSubject.getValue();
         if (currentAuth) {
-          console.log('Updating profile in local state:', updatedUser);
           this.authSubject.next({
             ...currentAuth,
             user: updatedUser

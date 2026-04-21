@@ -1,0 +1,15 @@
+@if (errorService.errorMessage() !== null) {
+  <div class="overlay" (click)="close()">
+    <div class="retro-box modal-content" (click)="$event.stopPropagation()">
+      <div class="error-header">
+        <h2>ERROR</h2>
+      </div>
+      <div class="error-body">
+        <p>{{ errorService.errorMessage() }}</p>
+      </div>
+      <div class="error-footer">
+        <button class="retro-btn" (click)="close()">OK</button>
+      </div>
+    </div>
+  </div>
+}

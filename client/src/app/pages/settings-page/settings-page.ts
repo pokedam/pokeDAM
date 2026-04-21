@@ -32,7 +32,7 @@ export class SettingsPage {
       next: () => {
         this.onClose();
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Error updating profile:', err);
         // For demonstration purposes, if backend fails, we could update local state
         // but typically we should show an error message.
