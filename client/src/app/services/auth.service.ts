@@ -13,6 +13,7 @@ export interface User {
   refreshToken: string,
   nickname: string,
   email: string | null,
+  avatarUrl?: string | null,
 }
 
 @Injectable({
@@ -91,4 +92,17 @@ export class AuthService {
     );
   }
 
+  public updateProfile(nickname: string, avatarUrl: string | null): Observable<User> {
+    return this.http.put<User>(`${this.apiUrl}auth/profile`, { nickname, avatarUrl }).pipe(
+      tap((updatedUser) => {
+        const currentAuth = this.authSubject.getValue();
+        if (currentAuth) {
+          this.authSubject.next({
+            ...currentAuth,
+            user: updatedUser
+          });
+        }
+      })
+    );
+  }
 }
