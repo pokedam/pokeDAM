@@ -4,16 +4,20 @@ import cors from 'cors';
 import { Server } from 'socket.io';
 import jwt from 'jsonwebtoken';
 
-import { sequelize } from './config/Database.js';
+import { sequelize } from './Database.js';
 import { authRouter, JWT_SECRET } from './controllers/AuthController.js';
 import { lobbyController } from './controllers/LobbyController.js';
+import { sanitizeMiddleware, sanitizeSocketMiddleware } from './middleware/sanitize.js';
 
 // Configuración básica
 const PORT = process.env.PORT || 8080;
 
+
 const app = express();
 app.use(cors());
 app.use(express.json());
+// Middleware de sanitización para todas las peticiones REST
+app.use(sanitizeMiddleware);
 
 // ==========================================
 // RUTAS EXPRESS (REST)
@@ -34,14 +38,15 @@ const io = new Server(server, {
     pingTimeout: 10000   // Si no hay pong en 10s se desconecta
 });
 
+
+// Middleware de sanitización para todas las conexiones Socket.IO
+io.use(sanitizeSocketMiddleware);
 // Middleware de Autenticación para WebSockets
 io.use((socket, next) => {
     const token = socket.handshake.auth.token || socket.handshake.query.token;
-    
     if (!token) {
         return next(new Error("Authentication error: No token provided"));
     }
-
     jwt.verify(token as string, JWT_SECRET, (err, decoded: any) => {
         if (err) {
             return next(new Error("Authentication error: Invalid token"));

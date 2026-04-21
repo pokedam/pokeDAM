@@ -2,14 +2,14 @@ import { Sequelize, DataTypes, Model } from 'sequelize';
 import type { InferAttributes, InferCreationAttributes, CreationOptional } from 'sequelize';
 import { v4 as uuidv4 } from 'uuid';
 
-// Usamos SQLite en memoria igual que la H2 de Spring.
+// Usamos por el momento un SQLite en memoria 
 const sequelize = new Sequelize({
     dialect: 'sqlite',
-    storage: ':memory:', // Base de datos en memoria
+    storage: ':memory:', 
     logging: false
 });
 
-// Tipado estricto de los modelos de Sequelize
+// Por el momento, solo tenemos el model de usuario para realizar la autenticación en lugar de delegar a la API REST Spring.
 export interface UserModel extends Model<InferAttributes<UserModel>, InferCreationAttributes<UserModel>> {
     id: CreationOptional<number>;
     refreshToken: string | null;
