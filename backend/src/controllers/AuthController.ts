@@ -2,7 +2,7 @@ import express from 'express';
 import type { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
-import { User } from '../config/Database.js';
+import { User } from '../Database.js';
 
 const router = express.Router();
 
