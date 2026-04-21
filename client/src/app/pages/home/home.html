@@ -10,8 +10,9 @@
     </div>
   </main>
 
-  <!-- Login Dialog (Modal) -->
   @if (showLoginDialog) {
   <app-login-dialog (close)="closeDialog()" />
   }
+
+  <router-outlet></router-outlet>
 </div>

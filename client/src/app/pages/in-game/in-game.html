@@ -2,7 +2,11 @@
   <!-- Top section for battle visuals, etc. -->
   <div class="battle-scene">
     @for (player of players; track player.id) {
-      <app-player-tile [player]="player"></app-player-tile>
+      <app-player-tile 
+        [player]="player"
+        [selectedPokemons]="getSelectedPokemonsForTile(player)"
+        (pokemonSelect)="onPokemonSelect($event)">
+      </app-player-tile>
     }
   </div>
 
@@ -10,7 +14,7 @@
   <div class="bottom-panel">
     <!-- Action Menu (Left) -->
     <div class="retro-box actions-menu">
-      <button class="retro-btn action-btn">LUCHA</button>
+      <button class="retro-btn action-btn" (click)="onLuchaClick()">LUCHA</button>
       <button class="retro-btn action-btn">MOCHILA</button>
       <button class="retro-btn action-btn">POKÉMON</button>
       <button class="retro-btn action-btn">HUIR</button>
@@ -18,7 +22,25 @@
 
     <!-- Dialogue Box (Right) -->
     <div class="dialogue-section">
-      <app-dialogue></app-dialogue>
+      @if (currentMenu === 'main') {
+        <app-dialogue></app-dialogue>
+      } @else if (currentMenu === 'attacks') {
+        <div class="retro-box attacks-box">
+          <div class="attacks-grid">
+            @for (attack of selectedOurPokemon?.attacks; track attack.id) {
+              <button class="retro-btn action-btn attack-btn" (click)="onAttackSelect(attack)">
+                <span class="attack-name">{{ attack.name }}</span>
+                <span class="attack-type">{{ attack.type }}</span>
+              </button>
+            }
+          </div>
+          <button class="retro-btn action-btn cancel-btn" (click)="currentMenu = 'main'">VOLVER</button>
+        </div>
+      } @else if (currentMenu === 'target-selection') {
+        <div class="retro-box attacks-box target-box">
+          <p class="target-text">Selecciona {{ selectedAttack?.targetCount }} objetivo(s). (Elegidos: {{ selectedTargets.length }})</p>
+        </div>
+      }
     </div>
   </div>
 </div>

@@ -2,6 +2,14 @@ export type PokemonStatus = 'PAR' | 'DOR' | 'ENV' | 'QUE' | 'CON' | 'HEL';
 
 export type PokeState = 'active' | 'available' | 'ko' | 'unavailable';
 
+export interface Attack {
+  id: number;
+  name: string;
+  type: string;
+  power: number;
+  targetCount: number;
+}
+
 export interface Pokemon {
   id: number;
   name: string;
@@ -10,6 +18,7 @@ export interface Pokemon {
   level: number;
   avatarUrl: string; // Required pokemon photo
   statusConditions: PokemonStatus[];
+  attacks?: Attack[];
 }
 
 export interface Player {

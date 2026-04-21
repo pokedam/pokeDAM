@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output, Input, OnInit } from '@angular/core';
+import { Component, EventEmitter, Output, Input, OnInit, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 @Component({
@@ -8,7 +8,10 @@ import { FormsModule } from '@angular/forms';
   templateUrl: './create-lobby.html',
   styleUrl: '../battle-arena.css',
 })
-export class CreateLobby implements OnInit {
+export class CreateLobby implements OnInit, AfterViewInit {
+  @ViewChild('nameInput') nameInput!: ElementRef<HTMLInputElement>;
+  @ViewChild('passwordInput') passwordInput!: ElementRef<HTMLInputElement>;
+
   @Input({ required: true }) userName!: string;
   @Input() initialName: string = '';
 
@@ -21,6 +24,20 @@ export class CreateLobby implements OnInit {
 
   ngOnInit() {
     this.name = this.initialName || `${this.userName}'s Game`;
+  }
+
+  ngAfterViewInit() {
+    this.nameInput.nativeElement.focus();
+    // Select the text to make it easy to overwrite the default name
+    this.nameInput.nativeElement.select();
+  }
+
+  onPasswordToggle(value: boolean) {
+    if (value) {
+      setTimeout(() => {
+        this.passwordInput.nativeElement.focus();
+      }, 0);
+    }
   }
 
   cancel() {
