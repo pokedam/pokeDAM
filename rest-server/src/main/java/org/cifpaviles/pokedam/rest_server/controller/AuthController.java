@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/")
+@RequestMapping("/api")
 public class AuthController {
 
     @Autowired
@@ -25,7 +25,7 @@ public class AuthController {
     private JwtTokenProvider tokenProvider;
 
     @PostMapping("/usuarios")
-    public ResponseEntity<UserResponse> post(@RequestBody UserChangeRequest request) {
+    public ResponseEntity<UserResponse> post(@RequestBody UserChangeRequest request, Authentication authentication) {
         if (authentication == null || authentication.getPrincipal() == null) {
             return ResponseEntity.status(401).build();
         }
