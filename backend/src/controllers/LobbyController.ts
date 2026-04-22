@@ -1,6 +1,6 @@
 import { Server, Socket } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
-import { getUser } from '../config/Database.js';
+import { getUser } from '../database.js';
 
 export interface Player {
     isReady: boolean;
@@ -30,11 +30,7 @@ function lobbyToInfo(lobby: Lobby) {
 }
 
 
-export const lobbyController = (io: Server, socket: Socket): void => {
-
-    // Almacenamos el userId. En una app real vendría del auth/token middleware
-    const playerId = (socket as any).userId as number;
-
+export const lobbyController = (io: Server, userId: number, socket: Socket): void => {
     // Equivalente a @SubscribeMapping("/lobbies")
     socket.on('lobbies.getAll', (callback: (response: any) => void) => {
         if (typeof callback === 'function') {
@@ -73,7 +69,7 @@ export const lobbyController = (io: Server, socket: Socket): void => {
     });
 
     socket.on('lobby.create', async (payload: any, callback: (response: any) => void) => {
-        if (players.get(playerId)) {
+        if (players.get(userId)) {
             if (typeof callback === 'function') {
                 callback({ status: 'error', message: 'Player is already in a lobby' });
             }
@@ -82,18 +78,18 @@ export const lobbyController = (io: Server, socket: Socket): void => {
 
         const { name, password } = payload;
         const lobbyId = uuidv4();
-        const nickname = (await getUser(playerId)).nickname; // TODO: Store nickname as playerId is stored?
+        const nickname = (await getUser(userId)).nickname; // TODO: Store nickname as playerId is stored?
         const lobby: Lobby = {
             name,
             password: password || null,
-            hostId: playerId,
+            hostId: userId,
             hostNickname: nickname,
             joiners: new Map(),
             maxPlayers: 8
         };
 
         lobbies.set(lobbyId, lobby);
-        players.set(playerId, lobbyId);
+        players.set(userId, lobbyId);
         socket.join(`lobby_${lobbyId}`);
 
         // Notificar que hay nueva sala disponible a /topic/lobbies (todos los conectados)
@@ -114,7 +110,7 @@ export const lobbyController = (io: Server, socket: Socket): void => {
     });
 
     socket.on('lobby.join', async (payload: any, callback: (response: any) => void) => {
-        if (players.get(playerId)) {
+        if (players.get(userId)) {
             if (typeof callback === 'function') {
                 callback({ status: 'error', message: 'Player is already in a lobby' });
             }
@@ -139,15 +135,15 @@ export const lobbyController = (io: Server, socket: Socket): void => {
 
         const player: Player = {
             isReady: false,
-            nickname: (await getUser(playerId)).nickname, // TODO: Store nickname as playerId is stored?
+            nickname: (await getUser(userId)).nickname, // TODO: Store nickname as playerId is stored?
         };
-        lobby.joiners.set(playerId, player);
-        players.set(playerId, lobbyId);
+        lobby.joiners.set(userId, player);
+        players.set(userId, lobbyId);
         socket.join(`lobby_${lobbyId}`);
-        console.log(`Player ${playerId} joined lobby ${lobbyId}`);
+        console.log(`Player ${userId} joined lobby ${lobbyId}`);
         io.to(`lobby_${lobbyId}`).emit(`lobby.${lobbyId}.event`, {
             type: 'PLAYER_JOINED',
-            payload: { id: playerId, nickname: player.nickname }
+            payload: { id: userId, nickname: player.nickname }
         });
         io.emit('lobbies.event', {
             type: 'CHANGED',
@@ -162,7 +158,7 @@ export const lobbyController = (io: Server, socket: Socket): void => {
         }
     });
 
-    async function handleLeave(targetPlayerId: number = playerId) {
+    async function handleLeave(targetPlayerId: number = userId) {
         const lobbyId = players.get(targetPlayerId);
         if (!lobbyId) {
             return { status: 'error', message: 'Player is not in a lobby' };
@@ -216,7 +212,7 @@ export const lobbyController = (io: Server, socket: Socket): void => {
             });
         }
         // Remove the appropriate socket from the room
-        if (targetPlayerId === playerId) {
+        if (targetPlayerId === userId) {
             socket.leave(`lobby_${lobbyId}`);
         } else {
             const targetSocket = (await io.in(`lobby_${lobbyId}`).fetchSockets()).find((s: any) => (s as any).userId === targetPlayerId);
@@ -234,7 +230,7 @@ export const lobbyController = (io: Server, socket: Socket): void => {
 
     socket.on('lobby.kick', async (payload: any, callback: (response: any) => void) => {
         const { targetId } = payload;
-        const lobbyId = players.get(playerId);
+        const lobbyId = players.get(userId);
 
         if (!lobbyId) {
             if (typeof callback === 'function') {
@@ -244,7 +240,7 @@ export const lobbyController = (io: Server, socket: Socket): void => {
         }
 
         const lobby = lobbies.get(lobbyId);
-        if (lobby?.hostId !== playerId) {
+        if (lobby?.hostId !== userId) {
             if (typeof callback === 'function') {
                 callback({ status: 'error', message: 'Only the host can kick players' });
             }
@@ -266,7 +262,7 @@ export const lobbyController = (io: Server, socket: Socket): void => {
 
     socket.on('lobby.ready', (payload: any, callback: (response: any) => void) => {
 
-        const lobbyId = players.get(playerId);
+        const lobbyId = players.get(userId);
         if (!lobbyId) {
             if (typeof callback === 'function') {
                 callback({ status: 'error', message: 'Player is not in a lobby' });
@@ -275,12 +271,12 @@ export const lobbyController = (io: Server, socket: Socket): void => {
         }
 
         const { isReady } = payload;
-        lobbies.get(lobbyId)!.joiners.get(playerId)!.isReady = isReady;
+        lobbies.get(lobbyId)!.joiners.get(userId)!.isReady = isReady;
 
         // Informar a todos en la lobby
         io.to(`lobby_${lobbyId}`).emit(`lobby.${lobbyId}.event`, {
             type: 'PLAYER_READY',
-            payload: { id: playerId, isReady }
+            payload: { id: userId, isReady }
         });
 
         if (typeof callback === 'function') callback({ status: 'ok' });

@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 // Usamos por el momento un SQLite en memoria 
 const sequelize = new Sequelize({
     dialect: 'sqlite',
-    storage: ':memory:', 
+    storage: ':memory:',
     logging: false
 });
 
