@@ -20,6 +20,11 @@ export class UserMenuButton {
     return username ? username.charAt(0).toUpperCase() : '?';
   }
 
+  getAvatarUrl(index: number | undefined): string {
+    const seed = index !== undefined ? `avatar-${index}` : 'default';
+    return `https://api.dicebear.com/7.x/pixel-art/svg?seed=${seed}&backgroundColor=b6e3f4,c0aede,d1d4f9`;
+  }
+
   toggleDropdown(event: Event) {
     event.stopPropagation();
     this.isDropdownOpen = !this.isDropdownOpen;

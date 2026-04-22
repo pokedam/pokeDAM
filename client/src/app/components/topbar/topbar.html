@@ -55,7 +55,11 @@
     <!-- User info -->
     <div class="drawer-profile-info">
       <div class="drawer-avatar">
-        <span class="drawer-avatar-initial">{{ getAvatarInitial(auth.user.nickname) }}</span>
+        @if (auth.user.avatarIndex !== undefined) {
+          <img [src]="getAvatarUrl(auth.user.avatarIndex)" class="drawer-avatar-img" [alt]="auth.user.nickname">
+        } @else {
+          <span class="drawer-avatar-initial">{{ getAvatarInitial(auth.user.nickname) }}</span>
+        }
       </div>
       <span class="drawer-username">{{ auth.user.nickname }}</span>
     </div>

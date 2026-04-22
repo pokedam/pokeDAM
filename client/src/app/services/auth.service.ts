@@ -9,9 +9,9 @@ export interface Auth {
 
 export interface User {
   id: number,
-  refreshToken: string,
   nickname: string,
-  email: string | null,
+  avatarIndex: number,
+  refreshToken?: string,
 }
 
 @Injectable({

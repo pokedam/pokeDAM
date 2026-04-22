@@ -2,7 +2,11 @@
   @if (auth && auth.user) {
   <button class="user-menu-trigger" (click)="toggleDropdown($event)">
     <div class="user-avatar">
-      <span class="avatar-initial">{{ getAvatarInitial(auth.user.nickname) }}</span>
+      @if (auth.user.avatarIndex !== undefined) {
+        <img [src]="getAvatarUrl(auth.user.avatarIndex)" class="avatar-img" [alt]="auth.user.nickname">
+      } @else {
+        <span class="avatar-initial">{{ getAvatarInitial(auth.user.nickname) }}</span>
+      }
     </div>
     <span class="user-name">{{ auth.user.nickname }}</span>
     <span class="dropdown-arrow" [class.open]="isDropdownOpen">▼</span>

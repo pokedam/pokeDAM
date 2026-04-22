@@ -45,7 +45,7 @@ public class AuthController {
 
                     userRepository.save(user);
 
-                    return ResponseEntity.ok(new UserResponse(user));
+                    return ResponseEntity.ok(new UserResponse(user, true));
                 })
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
@@ -62,7 +62,7 @@ public class AuthController {
         user.setRefreshToken(tokenProvider.generateRefreshToken());
         userRepository.save(user);
 
-        return ResponseEntity.ok(new AuthResponse(tokenProvider.generateToken(user.getId()), new UserResponse(user)));
+        return ResponseEntity.ok(new AuthResponse(tokenProvider.generateToken(user.getId()), new UserResponse(user, true)));
     }
 
     @GetMapping("/user")
@@ -73,7 +73,9 @@ public class AuthController {
 
         Long id = (Long) authentication.getPrincipal();
 
-        return getUserById(id);
+        return userRepository.findById(id)
+                .map(user -> ResponseEntity.ok(new UserResponse(user, true)))
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @GetMapping("/user/{userId}")
@@ -105,7 +107,7 @@ public class AuthController {
 
                     userRepository.save(user);
 
-                    return ResponseEntity.ok(new UserResponse(user));
+                    return ResponseEntity.ok(new UserResponse(user, true));
                 })
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
@@ -125,7 +127,7 @@ public class AuthController {
             user.setRefreshToken(newRefreshToken);
             userRepository.save(user);
 
-            return ResponseEntity.ok(new AuthResponse(newIdToken, new UserResponse(user)));
+            return ResponseEntity.ok(new AuthResponse(newIdToken, new UserResponse(user, true)));
         }
 
         return ResponseEntity.badRequest().build();
