@@ -12,6 +12,5 @@ export interface Player {
     nickname: string | null;
 }
 
-
 export const lobbies: Map<string, Lobby> = new Map();
 export const players: Map<number, string> = new Map();
