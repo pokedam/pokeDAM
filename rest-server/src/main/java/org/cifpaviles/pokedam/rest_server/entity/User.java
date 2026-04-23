@@ -1,52 +1,33 @@
 package org.cifpaviles.pokedam.rest_server.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "app_user")
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(length = 500)
-    private String refreshToken;
+    public Long id;
 
     @Column(length = 100)
-    private String nickname;
+    public String nickname;
 
     @Column
-    private int avatarIndex;
+    public int avatarIndex;
 
-    public String getNickname() {
-        return nickname;
-    }
+    @Column(length = 100)
+    public String email;
 
-    public void setNickname(String nickname) {
-        this.nickname = nickname;
-    }
+    @Column(length = 500)
+    public String password;
+    
+    @Column(length = 500, nullable = false)
+    public String refreshToken;
 
-    public Long getId() {
-        return id;
-    }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getRefreshToken() {
-        return refreshToken;
-    }
-
-    public void setRefreshToken(String refreshToken) {
-        this.refreshToken = refreshToken;
-    }
-
-    public int getAvatarIndex() {
-        return avatarIndex;
-    }
-
-    public void setAvatarIndex(int avatarIndex) {
-        this.avatarIndex = avatarIndex;
-    }
 }

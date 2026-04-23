@@ -1,18 +1,22 @@
 package org.cifpaviles.pokedam.rest_server.controller;
 
+import java.util.Optional;
+
+import org.cifpaviles.pokedam.rest_server.entity.User;
+import org.cifpaviles.pokedam.rest_server.models.AuthChangeRequest;
 import org.cifpaviles.pokedam.rest_server.models.AuthResponse;
 import org.cifpaviles.pokedam.rest_server.models.TokenRefreshRequest;
-import org.cifpaviles.pokedam.rest_server.models.UserChangeRequest;
-import org.cifpaviles.pokedam.rest_server.models.UserResponse;
-import org.cifpaviles.pokedam.rest_server.entity.User;
 import org.cifpaviles.pokedam.rest_server.repository.UserRepository;
 import org.cifpaviles.pokedam.rest_server.security.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.Optional;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api")
@@ -25,27 +29,24 @@ public class AuthController {
     private JwtTokenProvider tokenProvider;
 
     @PostMapping("/usuarios")
-    public ResponseEntity<UserResponse> post(@RequestBody UserChangeRequest request, Authentication authentication) {
-        if (authentication == null || authentication.getPrincipal() == null) {
-            return ResponseEntity.status(401).build();
-        }
+    public ResponseEntity<AuthResponse> post(@RequestBody AuthChangeRequest request, Authentication authentication) {
 
         Long id = (Long) authentication.getPrincipal();
 
         return userRepository.findById(id)
                 .map(user -> {
 
-                    if (request.getNickname() != null) {
-                        user.setNickname(request.getNickname());
+                    if (request.nickname != null) {
+                        user.nickname = request.nickname;
                     }
 
-                    if (request.getAvatarIndex() != null) {
-                        user.setAvatarIndex(request.getAvatarIndex());
+                    if (request.avatarIndex != null) {
+                        user.avatarIndex = request.avatarIndex;
                     }
 
                     userRepository.save(user);
 
-                    return ResponseEntity.ok(new UserResponse(user, true));
+                    return ResponseEntity.ok(new AuthResponse(user));
                 })
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
@@ -54,60 +55,52 @@ public class AuthController {
     public ResponseEntity<AuthResponse> loginAnonymous() {
         User user = new User();
 
-        user.setAvatarIndex((int) (Math.random() * 5));
-
         userRepository.save(user);
 
-        user.setNickname("Trainer" + String.format("%04d", user.getId()));
-        user.setRefreshToken(tokenProvider.generateRefreshToken());
+        user.refreshToken = tokenProvider.generateRefreshToken();
         userRepository.save(user);
 
-        return ResponseEntity.ok(new AuthResponse(tokenProvider.generateToken(user.getId()), new UserResponse(user, true)));
+        return ResponseEntity
+                .ok(new AuthResponse(user));
     }
 
     @GetMapping("/user")
-    public ResponseEntity<UserResponse> getUser(Authentication authentication) {
-        if (authentication == null || authentication.getPrincipal() == null) {
-            return ResponseEntity.status(401).build();
-        }
+    public ResponseEntity<AuthResponse> getUser(Authentication authentication) {
 
         Long id = (Long) authentication.getPrincipal();
 
         return userRepository.findById(id)
-                .map(user -> ResponseEntity.ok(new UserResponse(user, true)))
+                .map(user -> ResponseEntity.ok(new AuthResponse(user)))
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @GetMapping("/user/{userId}")
-    public ResponseEntity<UserResponse> getUserById(@PathVariable("userId") Long userId) {
+    public ResponseEntity<AuthResponse> getUserById(@PathVariable("userId") Long userId) {
         return userRepository.findById(userId)
-                .map(user_ -> ResponseEntity.ok(new UserResponse(user_)))
+                .map(user -> ResponseEntity.ok(new AuthResponse(user)))
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping("/user")
-    public ResponseEntity<UserResponse> updateUser(Authentication authentication,
-            @RequestBody UserChangeRequest request) {
-        if (authentication == null || authentication.getPrincipal() == null) {
-            return ResponseEntity.status(401).build();
-        }
+    public ResponseEntity<AuthResponse> updateUser(Authentication authentication,
+            @RequestBody AuthChangeRequest request) {
 
         Long id = (Long) authentication.getPrincipal();
 
         return userRepository.findById(id)
                 .map(user -> {
 
-                    if (request.getNickname() != null) {
-                        user.setNickname(request.getNickname());
+                    if (request.nickname != null) {
+                        user.nickname = request.nickname;
                     }
 
-                    if (request.getAvatarIndex() != null) {
-                        user.setAvatarIndex(request.getAvatarIndex());
+                    if (request.avatarIndex != null) {
+                        user.avatarIndex = request.avatarIndex;
                     }
 
                     userRepository.save(user);
 
-                    return ResponseEntity.ok(new UserResponse(user, true));
+                    return ResponseEntity.ok(new AuthResponse(user));
                 })
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
@@ -121,13 +114,13 @@ public class AuthController {
         if (userOptional.isPresent()) {
             User user = userOptional.get();
 
-            String newIdToken = tokenProvider.generateToken(user.getId());
+            String newIdToken = tokenProvider.generateToken(user.id);
             String newRefreshToken = tokenProvider.generateRefreshToken();
 
-            user.setRefreshToken(newRefreshToken);
+            user.refreshToken = newRefreshToken;
             userRepository.save(user);
 
-            return ResponseEntity.ok(new AuthResponse(newIdToken, new UserResponse(user, true)));
+            return ResponseEntity.ok(new AuthResponse(user));
         }
 
         return ResponseEntity.badRequest().build();
