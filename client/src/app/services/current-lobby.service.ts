@@ -3,6 +3,7 @@ import { BehaviorSubject } from 'rxjs';
 import { LobbySocketClient } from './lobby-socket-client.service';
 import { AuthService } from './auth.service';
 import { ErrorService } from './error.service';
+import { InLobbyEvent, LobbyCreatedResponse, lobbyFactory, LobbyResponse, Result } from 'shared_types';
 
 export interface Lobby {
     id: string,
@@ -18,10 +19,6 @@ export interface Joiner {
     isReady: boolean;
 }
 
-export interface ServerEvent {
-    type: string;
-    payload: any;
-}
 
 @Injectable({ providedIn: 'root' })
 export class CurrentLobbyService {
@@ -41,30 +38,26 @@ export class CurrentLobbyService {
     private roomSubName: string | null = null;
 
     create(name: string, password: string | null) {
-        this.socketService.socket.emit('lobby.create', { name, password }, (response: any) => {
-            if (response.status === 'ok') {
-                const newLobbyId = response.data;
+        this.socketService.socket.emit('lobby.create', lobbyFactory.create(name, password), (response: Result<LobbyCreatedResponse>) => {
+            if (this.errorService.unwrap(response)) {
                 this.zone.run(() => {
-                    this.setupSubscriptions(newLobbyId);
+                    this.setupSubscriptions(response.content.id);
                 });
-            } else {
-                this.errorService.showError('No se pudo crear la sala: ' + response.message);
             }
         });
     }
 
     join(lobbyId: string, password?: string) {
-        this.socketService.socket.emit('lobby.join', { lobbyId, password }, (response: any) => {
-            if (response.status === 'ok') {
+        this.socketService.socket.emit('lobby.join', lobbyFactory.join(lobbyId, password), (response: Result<void>) => {
+            if (this.errorService.unwrap(response)) {
                 this.zone.run(() => {
                     this.setupSubscriptions(lobbyId);
                 });
-            } else {
-                this.errorService.showError('No se pudo unir a la sala: ' + response.message);
             }
         });
     }
 
+    /// Duplicated functionality??? Maybe uneeded?
     private setupSubscriptions(lobbyId: string) {
         if (this.roomSubName) {
             this.socketService.socket.off(this.roomSubName);
@@ -72,16 +65,16 @@ export class CurrentLobbyService {
 
         this.roomSubName = `lobby.${lobbyId}.event`;
 
-        this.socketService.socket.on(this.roomSubName, (event: ServerEvent) => {
+        this.socketService.socket.on(this.roomSubName, (event: InLobbyEvent) => {
             this.zone.run(() => {
                 let lobby = this.lobby;
                 console.log("Received lobby event:", event);
                 switch (event.type) {
 
-                    case 'PLAYER_JOINED':
+                    case 'joined':
                         if (lobby) {
-                            lobby.joiners.set(event.payload.id, {
-                                nickname: event.payload.nickname,
+                            lobby.joiners.set(event.id, {
+                                nickname: event.nickname,
                                 isReady: false
                             });
                             this.lobbySubject.next(lobby);
@@ -89,74 +82,64 @@ export class CurrentLobbyService {
 
                         break;
 
-                    case 'PLAYER_LEFT':
+                    case 'left':
                         if (lobby) {
-                            let leftId: number;
-                            if (event.payload.hostReplacement) {
-                                let newHost = lobby.joiners.get(event.payload.id)!;
-                                leftId = lobby.hostId;
-                                lobby.hostId = event.payload.id;
-                                lobby.hostNickname = newHost.nickname;
-                            } else leftId = event.payload.id;
-
-                            lobby.joiners.delete(event.payload.id);
-                            this.lobbySubject.next(leftId == this.auth.auth!.user.id ? null : lobby);
-
+                            lobby.joiners.delete(event.id);
+                            this.lobbySubject.next(event.id == this.auth.auth!.user.id ? null : lobby);
                         }
                         break;
 
-                    case 'PLAYER_READY':
-                        console.log("Received PLAYER_READY event:", event.payload);
+                    case 'host left':
                         if (lobby) {
-                            lobby.joiners.get(event.payload.id)!.isReady = event.payload.isReady;
+                            if (event.newHostId) {
+                                const leftId = lobby.hostId;
+                                lobby.hostId = event.newHostId;
+                                lobby.hostNickname = lobby.joiners.get(event.newHostId)!.nickname;
+                                lobby.joiners.delete(event.newHostId);
+                                this.lobbySubject.next(leftId == this.auth.auth!.user.id ? null : lobby);
+                            }
+                            else this.lobbySubject.next(null);
+                        }
+                        break;
+
+                    case 'ready':
+                        if (lobby) {
+                            lobby.joiners.get(event.id)!.isReady = event.isReady;
                             this.lobbySubject.next(lobby);
                         }
                         break;
 
-                    case 'GAME_STARTED':
-                        alert('¡La partida ha comenzado!');
-                        break;
+
                 }
             });
         });
 
-        // Equivalent logic to fetching the initial lobby data instead of a direct subscribe mapping
-        this.socketService.socket.emit('lobbies.get', lobbyId, (response: any) => {
-            if (response.status === 'error' || !response.data) {
-                if (response.message) {
-                    this.errorService.showError('Error al obtener la sala: ' + response.message);
-                }
-                this.leave();
-                return;
+        this.socketService.socket.emit('lobbies.get', lobbyId, (res: Result<LobbyResponse>) => {
+            if (this.errorService.unwrap(res)) {
+                const lobby: Lobby = {
+                    id: lobbyId,
+                    name: res.content.name,
+                    hostId: res.content.hostId,
+                    hostNickname: res.content.hostNickname ?? `Trainer${lobbyId}`,
+                    joiners: new Map(
+                        (res.content.joiners).map(item => [
+                            item.id,
+                            item,
+                        ])
+                    ),
+                    maxPlayers: res.content.maxPlayers
+                };
+                lobby.id = lobbyId;
+                this.zone.run(() => {
+                    this.lobbySubject.next(lobby);
+                });
             }
 
-            const lobby: Lobby = {
-                id: lobbyId,
-                name: response.data.name,
-                hostId: response.data.hostId,
-                hostNickname: response.data.hostNickname,
-                joiners: new Map(
-                    (response.data.joiners as any[]).map(item => [
-                        item.id,
-                        item,
-                    ])
-                ),
-                maxPlayers: response.data.maxPlayers
-            };
-            lobby.id = lobbyId;
-            console.log("Received lobby update:", response.data);
-            this.zone.run(() => {
-                this.lobbySubject.next(lobby);
-            });
         });
     }
 
     leave() {
-        this.socketService.socket.emit('lobby.leave', {}, (response: any) => {
-            if (response && response.status === 'error') {
-                this.errorService.showError('Error al salir de la sala: ' + response.message);
-            }
-        });
+        this.socketService.socket.emit('lobby.leave', (res: Result<void>) => this.errorService.unwrap(res));
 
         if (this.roomSubName) {
             this.socketService.socket.off(this.roomSubName);
@@ -166,26 +149,14 @@ export class CurrentLobbyService {
     }
 
     setReady(isReady: boolean) {
-        this.socketService.socket.emit('lobby.ready', { isReady }, (response: any) => {
-            if (response && response.status === 'error') {
-                this.errorService.showError('Error al prepararse: ' + response.message);
-            }
-        });
+        this.socketService.socket.emit('lobby.ready', isReady, (res: Result<void>) => this.errorService.unwrap<void>(res));
     }
 
     kick(targetId: number) {
-        this.socketService.socket.emit('lobby.kick', { targetId }, (response: any) => {
-            if (response && response.status === 'error') {
-                this.errorService.showError('Error al expulsar al jugador: ' + response.message);
-            }
-        });
+        this.socketService.socket.emit('lobby.kick', targetId, (res: Result<void>) => this.errorService.unwrap<void>(res));
     }
 
     startGame() {
-        this.socketService.socket.emit('lobby.start', {}, (response: any) => {
-            if (response && response.status === 'error') {
-                this.errorService.showError('Error al iniciar la partida: ' + response.message);
-            }
-        });
+        //TODO: Initialize game when game system exists.
     }
 }

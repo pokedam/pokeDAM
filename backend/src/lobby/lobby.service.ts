@@ -1,15 +1,18 @@
 import { v4 } from "uuid";
 import { getUser } from "../database.js";
-import { result, type Result } from "../result.js";
-import type { Lobby } from "./lobby.js";
-import type { LeftResponse, LobbyCreatedResponse, LobbyCreationRequest, LobbyJoinRequest, LobbyJoinResponse, LobbyResponse, LobbySummaryResponse } from "./lobby.models.js";
+import type {
+    LobbyCreationRequest,
+    LobbyJoinRequest,
+    LobbyResponse,
+    LobbySummaryResponse,
+    Result
+} from 'shared_types';
+import { result } from 'shared_types';
+import type { LeftResponse, Lobby, LobbyJoinResponse } from "./lobby.models.js";
 
 const lobbies: Map<string, Lobby> = new Map();
 const players: Map<number, string> = new Map();
 
-//////////////////////
-// Model formatting //
-//////////////////////
 function response(lobby: Lobby): LobbyResponse {
     return {
 
@@ -39,7 +42,7 @@ function summaryResponse(id: string, lobby: Lobby): LobbySummaryResponse {
 /////////////////////
 function get(id: string): Result<LobbyResponse> {
     const lobby = lobbies.get(id);
-    return lobby ? result.ok(response(lobby)) : result.notFound("Lobby with ID " + id + " not found");
+    return lobby ? result.ok(response(lobby)) : result.notFound(`No lobby with ID ${id} found`);
 }
 
 function getAll(): LobbySummaryResponse[] {
@@ -47,9 +50,9 @@ function getAll(): LobbySummaryResponse[] {
 }
 
 
-export async function create(hostId: number, request: LobbyCreationRequest, maxPlayers: number = 8): Promise<Result<LobbyCreatedResponse>> {
-    if (players.get(hostId)) return result.conflict("Player with Id " + hostId + " is already in a lobby");
-    let nickname = (await getUser(hostId)).nickname;
+export async function create(hostId: number, request: LobbyCreationRequest, maxPlayers: number = 8): Promise<Result<LobbySummaryResponse>> {
+    if (players.get(hostId)) return result.conflict(`Player is already in a lobby`);
+    let nickname = (await getUser(hostId)).nickname ?? `Trainer${hostId}`;
     const lobby = {
         name: request.name ?? nickname + "'s Game",
         password: request.password,
@@ -61,23 +64,23 @@ export async function create(hostId: number, request: LobbyCreationRequest, maxP
     const lobbyId = v4();
     lobbies.set(lobbyId, lobby);
     players.set(hostId, lobbyId);
-    return result.ok({ id: lobbyId });
+    return result.ok(summaryResponse(lobbyId, lobby));
 }
 
 async function join(playerId: number, req: LobbyJoinRequest): Promise<Result<LobbyJoinResponse>> {
-    if (players.get(playerId)) return result.conflict("Player with ID " + playerId + " is already on a lobby");
+    if (players.get(playerId)) return result.conflict(`Player is already in a lobby`);
 
     const lobby = lobbies.get(req.id);
-    if (!lobby) return result.conflict("Lobby with ID " + req.id + " not found");
+    if (!lobby) return result.conflict(`No lobby with ID ${req.id} found`);
 
-    if (lobby.password && lobby.password !== req.password)         
+    if (lobby.password && lobby.password !== req.password)
         return result.forbidden("Invalid lobby password");
-    const nickname = (await getUser(playerId)).nickname ?? "Trainer " + playerId;
+    const nickname = (await getUser(playerId)).nickname ?? `Trainer${playerId}`;
     lobby.joiners.set(playerId, {
         isReady: false,
         nickname,
     });
-    
+
     players.set(playerId, req.id);
     return result.ok({
         nickname,
@@ -87,17 +90,29 @@ async function join(playerId: number, req: LobbyJoinRequest): Promise<Result<Lob
 
 function leave(playerId: number): Result<LeftResponse> {
     const lobbyId = players.get(playerId);
-    if (!lobbyId) return result.conflict("Player with ID " + playerId + "not found on any lobby");
+    if (!lobbyId) return result.conflict(`Leave failed: Player is not in a lobby`);
+    return leaveLobby(playerId, lobbyId);
+}
+
+function kick(targetId: number, playerId: number): Result<LeftResponse> {
+    let lobbyId = players.get(targetId);
+    if (!lobbyId) return result.conflict(`Cannot kick player: Player is not in a lobby`);
 
     const lobby = lobbies.get(lobbyId);
-    if (!lobby) return result.conflict("Lobby with ID " + lobbyId + " not found");
+    if (!lobby) return result.conflict(`Cannot kick player: Associated lobby is not available`);
 
-    const player = lobby.joiners.get(playerId);
-    if (!player) return result.conflict("Player with ID " + playerId + " not found");
+    if (lobby.hostId !== playerId) return result.forbidden(`Cannot kick player: You are not the host of their current lobby`);
 
-    const isHost = lobby.hostId === playerId;
+    return leaveLobby(targetId, lobbyId);
+}
 
-    if (isHost) {
+function leaveLobby(playerId: number, lobbyId: string): Result<LeftResponse> {
+    const lobby = lobbies.get(lobbyId);
+    if (!lobby) return result.conflict(`Leave failed: No lobby with ID ${lobbyId} found`);
+
+    players.delete(playerId);
+
+    if (lobby.hostId === playerId) {
         const iterator = lobby.joiners.entries().next();
 
         if (!iterator.done) {
@@ -107,29 +122,30 @@ function leave(playerId: number): Result<LeftResponse> {
             lobby.hostNickname = newHost.nickname;
 
             lobby.joiners.delete(newHostId);
-            return result.ok({ newHostId });
+            return result.ok({ type: 'host', newHostId, lobbyId, playerCount: lobby.joiners.size + 1 });
         }
 
         lobbies.delete(lobbyId);
-        return result.ok({ newHostId: null });
-    }
+        return result.ok({ type: 'host', newHostId: null, lobbyId, playerCount: 0 });
+    } else
+        if (!lobby.joiners.delete(playerId))
+            return result.conflict(`Leave failed: Player is not in the lobby`);
 
-    lobby.joiners.delete(playerId);
-    return result.ok({ id: playerId });
+    return result.ok({ type: 'joiner', joinerId: playerId, lobbyId, playerCount: lobby.joiners.size + 1 });
 }
 
-export function isReady(playerId: number, isReady: boolean): Result<void> {
+function isReady(playerId: number, isReady: boolean): Result<string> {
     const lobbyId = players.get(playerId);
-    if (!lobbyId) return result.conflict("Player with ID " + playerId + " is not in a Lobby");
+    if (!lobbyId) return result.conflict("Change ready status failed: Player is not in a lobby");
 
     const lobby = lobbies.get(lobbyId);
-    if (!lobby) return result.conflict("Lobby with ID " + lobbyId + " not found");
+    if (!lobby) return result.conflict("Change ready status failed: Associated lobby is not available");
 
     const player = lobby.joiners.get(playerId);
-    if (!player) return result.conflict("Player with ID " + playerId + " not found as joiner in lobby with ID " + lobbyId);
+    if (!player) return result.conflict("Change ready status failed: Player is not in this lobby");
 
     player.isReady = isReady;
-    return result.ok(undefined);
+    return result.ok(lobbyId);
 }
 
 ////////////
@@ -143,5 +159,7 @@ export const lobbyService = {
     create,
     join,
     leave,
+    kick,
     isReady,
+
 };

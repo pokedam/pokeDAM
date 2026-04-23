@@ -2,17 +2,14 @@ import { Injectable, inject, NgZone } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { LobbySocketClient } from './lobby-socket-client.service';
 import { ErrorService } from './error.service';
+import { LobbyBrowserEvent, LobbySummaryResponse, Result } from 'shared_types';
+import { LobbiesBrowser } from '../components/battle-arena/lobbies-browser/lobbies-browser';
 
 export interface LobbyInfo {
   name: string;
   hasPassword: boolean;
   playerCount: number;
   maxPlayers: number;
-}
-
-export interface ServerEvent {
-  type: string;
-  payload: any;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -35,40 +32,33 @@ export class LobbiesService {
 
   private init() {
     this.socketService.connected$.subscribe(() => {
-
-      this.socketService.socket.emit('lobbies.getAll', (response: any) => {
-        if (response.status === 'ok') {
+      console.log("Socket connected, registering listener");
+      this.socketService.socket.emit('lobbies.getAll', (response: Result<LobbySummaryResponse[]>) => {
+        if (this.errorService.unwrap(response)) {
           const map = new Map<string, LobbyInfo>();
-          for (const lobby of response.data) {
-            map.set(lobby.id, lobby as LobbyInfo);
-          }
+          for (const lobby of response.content)
+            map.set(lobby.id, lobby);
+
           this.zone.run(() => {
             this.lobbiesSubject.next(map);
           });
-        } else {
-          this.errorService.showError('Error al obtener la lista de salas: ' + response.message);
         }
       });
 
-      this.socketService.socket.on('lobbies.event', (event: ServerEvent) => {
+      this.socketService.socket.on('lobbies.event', (event: LobbyBrowserEvent) => {
 
         this.zone.run(() => {
-
+          console.log("lobbies.event emits data!");
           switch (event.type) {
-
-            case 'ADDED':
-              this.lobbies.set(event.payload.id, event.payload);
+            case 'created':
+              console.log("data is a new lobby");
+              this.lobbies.set(event.res.id, event.res);
               break;
-
-            case 'CHANGED': {
-              if (event.payload.size == 0) {
-                this.lobbies.delete(event.payload.lobbyId);
-              } else {
-                const l = this.lobbies.get(event.payload.lobbyId);
-                if (l) l.playerCount = event.payload.size;
-              }
+            case 'changed':
+              console.log("data is a changed lobby");
+              if (event.count == 0) this.lobbies.delete(event.id)
+              else this.lobbies.get(event.id)!.playerCount = event.count;
               break;
-            }
           }
           this.lobbiesSubject.next(this.lobbies);
         });

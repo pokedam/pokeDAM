@@ -1,8 +1,8 @@
 import express from 'express';
 import type { Request, Response, } from 'express';
-import { User } from '../database.js';
+import { User } from './database.js';
 import { v4 } from 'uuid';
-import { jwt } from '../jwt.js';
+import { jwt } from './jwt.js';
 
 const router = express.Router();
 

@@ -1,0 +1,14 @@
+{
+  "name": "shared_types",
+  "version": "1.0.0",
+  "description": "Shared interfaces between backend and client",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

@@ -25,7 +25,9 @@ function sanitize(input: any): any {
 // Middleware para Express
 function sanitizeMiddleware(req: Request, res: Response, next: NextFunction) {
     req.body = sanitize(req.body);
-    req.query = sanitize(req.query);
+    for (const key in req.query) {
+        req.query[key] = sanitize(req.query[key]);
+    }
     next();
 }
 

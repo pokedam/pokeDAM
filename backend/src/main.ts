@@ -4,10 +4,10 @@ import cors from 'cors';
 import { Server } from 'socket.io';
 
 import { sequelize } from './database.js';
-import { authRouter } from './controllers/AuthController.js';
-import { lobbyController } from './controllers/LobbyController.js';
+import { authRouter } from './auth.js';
 import { sanitizer } from './sanitizer.js';
 import { jwt } from './jwt.js';
+import { lobbyController } from './lobby/lobby.controller.js';
 
 // Server configuration
 const app = express();
