@@ -8,7 +8,13 @@ export const jwt = {
     generate,
 };
 
-const JWT_SECRET = process.env.JWT_SECRET || 'mi_secreto_super_seguro_para_jwt_aqui_va';
+const JWT_SECRET = process.env.JWT_SECRET || fallbackJwt();
+
+function fallbackJwt(): string {
+    const jwt = 'mi_secreto_super_seguro_para_jwt_aqui_va';
+    console.warn(`[WARNING] process.env.JWT_SECRET is not defined. Using dev fallback.`);
+    return jwt;
+}
 
 // Middleware para Socket.IO
 function socketMiddleware(socket: any, next: (err?: any) => void) {
