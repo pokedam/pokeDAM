@@ -47,13 +47,13 @@ CI=1 NG_CLI_ANALYTICS=false npm start &
 CLIENT_PID=$!
 cd ..
 
-# cd rest-server || exit
-# echo "▶️ Iniciando Rest-Server (spring-boot:run)..."
-# # Por si acaso el archivo no tuviera permisos de ejecución en Linux/GitBash
-# chmod +x ./mvnw 2>/dev/null
-# ./mvnw spring-boot:run &
-# REST_SERVER_PID=$!
-# cd ..
+cd rest-server || exit
+echo "▶️ Iniciando Rest-Server (spring-boot:run)..."
+# Por si acaso el archivo no tuviera permisos de ejecución en Linux/GitBash
+chmod +x ./mvnw 2>/dev/null
+./mvnw spring-boot:run &
+REST_SERVER_PID=$!
+cd ..
 
 echo "========================================================"
 echo "✅ Todos los servicios han arrancado en la misma terminal:"
