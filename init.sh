@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Directorio raíz del proyecto (donde se ejecutó init.sh)
+PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
 # Función para cerrar los procesos en segundo plano al salir o presionar Ctrl+C
 cleanup() {
     echo ""
@@ -34,6 +37,14 @@ cd ..
 # 3 y 4. Ejecutar backend, client, y rest-server en segundo plano (&)
 echo "🔥 [4/4] Arrancando los servicios..."
 
+cd rest-server || exit
+echo "▶️ Iniciando Rest-Server (spring-boot:run)..."
+# Por si acaso el archivo no tuviera permisos de ejecución en Linux/GitBash
+chmod +x ./mvnw 2>/dev/null
+MAVEN_USER_HOME="$PROJECT_DIR/rest-server/.m2" ./mvnw spring-boot:run &
+REST_SERVER_PID=$!
+cd ..
+
 cd backend || exit
 echo "▶️ Iniciando Backend (npm start)..."
 npm start &
@@ -45,14 +56,6 @@ echo "▶️ Iniciando Client (npm start)..."
 # Pasamos CI=1 y NG_CLI_ANALYTICS=false para que Angular no pregunte NADA y no crashee
 CI=1 NG_CLI_ANALYTICS=false npm start &
 CLIENT_PID=$!
-cd ..
-
-cd rest-server || exit
-echo "▶️ Iniciando Rest-Server (spring-boot:run)..."
-# Por si acaso el archivo no tuviera permisos de ejecución en Linux/GitBash
-chmod +x ./mvnw 2>/dev/null
-./mvnw spring-boot:run &
-REST_SERVER_PID=$!
 cd ..
 
 echo "========================================================"
