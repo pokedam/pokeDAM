@@ -32,6 +32,7 @@ export interface PcPlayerPokemon {
 }
 
 export interface PlayerPokemon {
+    id: number;
     alias: string | null;
     pokemon: number;
     lvl: number;
@@ -45,9 +46,10 @@ export interface PlayerPokemon {
 
 // recibes: PcPlayerPokemon[], mostrarlos todos por pantalla
 
-//["Pikachu", "Gepeto", "Gastly"]
+//    564,     43345 ,   698,     24357,    3466,      23546,
+//["Pikachu", "Gepeto", "Gastly", "Hunter", "Golbat", "Bulbasaur"]
 
 // Botón de guardar para seleccionar tu equipo de 6 pokemons
 
-//[0, 2]
+//[564, 43345, 698]
 // envias number[] donde el numero es el indice del PcPlayerPokemon seleccionado en el array recibido
