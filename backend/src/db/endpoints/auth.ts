@@ -23,7 +23,6 @@ router.post('/refresh', async (req: Request, res: Response): Promise<void> => {
         })).data;
         res.json(authFactory.jwt(jwt.generate(auth.user.id), auth));
     } catch (e) {
-        console.error("Error refreshing token:", e);
         res.status(401).json({ message: "Invalid refresh token" });
     }
 });

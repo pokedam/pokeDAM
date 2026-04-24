@@ -32,7 +32,6 @@ export class LobbiesService {
 
   private init() {
     this.socketService.connected$.subscribe(() => {
-      console.log("Socket connected, registering listener");
       this.socketService.socket.emit('lobbies.getAll', (response: Result<LobbySummaryResponse[]>) => {
         if (this.errorService.unwrap(response)) {
           const map = new Map<string, LobbyInfo>();
@@ -48,14 +47,11 @@ export class LobbiesService {
       this.socketService.socket.on('lobbies.event', (event: LobbyBrowserEvent) => {
 
         this.zone.run(() => {
-          console.log("lobbies.event emits data!");
           switch (event.type) {
             case 'created':
-              console.log("data is a new lobby");
               this.lobbies.set(event.res.id, event.res);
               break;
             case 'changed':
-              console.log("data is a changed lobby");
               if (event.count == 0) this.lobbies.delete(event.id)
               else this.lobbies.get(event.id)!.playerCount = event.count;
               break;

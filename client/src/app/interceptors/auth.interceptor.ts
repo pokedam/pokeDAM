@@ -42,7 +42,6 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
             return next(retryReq);
           }),
           catchError((refreshError) => {
-            console.error('Token refresh failed: ', refreshError, ' Attemping annonymous login.');
             return authService.loginAnonymous().pipe(
               switchMap((newAnonymousToken) => {
                 const retryReq = req.clone({

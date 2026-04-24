@@ -68,7 +68,6 @@ export class CurrentLobbyService {
         this.socketService.socket.on(this.roomSubName, (event: InLobbyEvent) => {
             this.zone.run(() => {
                 let lobby = this.lobby;
-                console.log("Received lobby event:", event);
                 switch (event.type) {
 
                     case 'joined':

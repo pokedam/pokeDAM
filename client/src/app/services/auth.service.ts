@@ -43,7 +43,6 @@ export class AuthService {
     const idToken = localStorage.getItem('idToken');
     const refreshToken = localStorage.getItem('refreshToken');
 
-    console.log("AuthService initialized. ID Token:", idToken, "Refresh Token:", refreshToken);
     if (idToken && refreshToken) {
       this.http.get<User>(`${this.apiUrl}/user`).subscribe({
         next: (user) => this.authSubject.next({
@@ -51,40 +50,29 @@ export class AuthService {
           user
         }),
         error: (err) => {
-          console.error('Error in user POST http request:', err);
-          this.errorService.showError('Error al recuperar cuenta: ' + err.message);
+          this.errorService.showError('Failed loading account: ' + err.message);
           localStorage.removeItem('idToken');
           localStorage.removeItem('refreshToken');
           this.loginAnonymous().subscribe({
-            error: (err) => {
-              console.error('Error in anonymous login fallback:', err);
-              this.errorService.showError('Error en acceso anónimo: ' + err.message);
-            }
+            error: (err) => this.errorService.showError('Error in anonymous login fallback: ' + err.message),
           });
         }
       });
     } else {
       this.loginAnonymous().subscribe({
-        error: (err) => {
-          console.error('Error in anonymous login on startup:', err);
-          this.errorService.showError('Error en inicio de sesión anónimo: ' + err.message);
-        }
+        error: (err) => this.errorService.showError('Error in anonymous login on startup: ' + err.message),
       });
     }
   }
 
   public refreshTokens(): Observable<string> {
-    console.log("Called refreshTokens on client.");
     const refreshToken = localStorage.getItem('refreshToken');
-    console.log(`Current refresh token: ${refreshToken}`);
     if (!refreshToken) {
       return throwError(() => new Error('No refresh token available'));
     }
 
-    console.log("Trying refresh...");
     return this.http.post<JwtAuth>(`${this.apiUrl}/auth/refresh`, { refreshToken }).pipe(
       tap((res) => {
-        console.log("Received response from refresh endpoint: ", res);
         localStorage.setItem('idToken', res.idToken);
         localStorage.setItem('refreshToken', res.refreshToken);
         this.authSubject.next(res);
@@ -96,7 +84,6 @@ export class AuthService {
   public loginAnonymous(): Observable<string> {
     return this.http.post<shared.JwtAuth>(`${this.apiUrl}/auth/anonymous`, {}).pipe(
       tap((res) => {
-        console.log("Received user from anonymous login: ", res);
         localStorage.setItem('idToken', res.idToken);
         localStorage.setItem('refreshToken', res.refreshToken);
         this.authSubject.next(res);

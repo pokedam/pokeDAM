@@ -16,49 +16,14 @@ import { CurrentLobbyService } from '../../services/current-lobby.service';
   styleUrl: './battle-arena.css',
 })
 export class BattleArena {
-  //  currentLobby: Lobby | null = null;
-  //currentLobbyId: string | null = null;
-
   inCreateLobbyMenu: boolean = false;
   savedLobbyName: string = '';
   savedRequiresPassword: boolean = false;
   joiningLobbyId: string | null = null;
   joiningLobbyName: string | null = null;
-
-  //lobbies: Map<string, LobbyInfo> = new Map();
-
-  // private lobbiesSub?: Subscription;
-  // private roomSub?: Subscription;
-
   lobbies = inject(LobbiesService);
   currLobby = inject(CurrentLobbyService);
   auth = inject(AuthService);
-  //private cdr = inject(ChangeDetectorRef);
-
-  // ngOnInit() {
-  //   // Suscribirse a la lista global de partidas activas
-  //   this.lobbiesSub = this.lobbies.lobbies$.subscribe(lobbies => {
-  //     //this.lobbies = lobbies;
-  //     this.cdr.detectChanges();
-  //   });
-
-  //   // Suscribirse al estado de la partida actual
-  //   this.roomSub = this.lobbies.currentLobby.subscribe(lobby => {
-  //     if (lobby) {
-  //       this.currentLobbyId = lobby[0];
-  //       this.currentLobby = lobby[1];
-  //     } else {
-  //       this.currentLobby = null;
-  //       this.currentLobbyId = null;
-  //     }
-  //     this.cdr.detectChanges();
-  //   });
-  // }
-
-  // ngOnDestroy() {
-  //   this.lobbiesSub?.unsubscribe();
-  //   this.roomSub?.unsubscribe();
-  // }
 
   openCreateMenu() {
     this.inCreateLobbyMenu = true;
@@ -85,14 +50,12 @@ export class BattleArena {
       this.joiningLobbyId = lobbyId;
       this.joiningLobbyName = lobby.name;
     } else {
-      console.log(`Intentando unirse a la sala ${lobbyId}`);
       this.currLobby.join(lobbyId);
     }
   }
 
   confirmJoin(password: string) {
     if (this.joiningLobbyId) {
-      console.log(`Intentando unirse a la sala ${this.joiningLobbyId} con contraseña`);
       this.currLobby.join(this.joiningLobbyId, password);
       this.joiningLobbyId = null;
       this.joiningLobbyName = null;
