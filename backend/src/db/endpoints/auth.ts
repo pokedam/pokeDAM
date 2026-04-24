@@ -12,7 +12,18 @@ router.post('/anonymous', async (_: Request, res: Response): Promise<void> => {
 });
 
 router.post('/refresh', async (req: Request, res: Response): Promise<void> => {
-    console.log("Called backend refresh endpoint with refresh token:", req.body);
-    const auth = (await rest.post<Auth>('/auth/refresh', req.body)).data;
-    res.json(authFactory.jwt(jwt.generate(auth.user.id), auth));
+    try {
+        const tokenToRefresh = req.body.refreshToken;
+        if (!tokenToRefresh) {
+            res.status(400).json({ message: "No refresh token provided" });
+            return;
+        }
+        const auth = (await rest.post<Auth>('/auth/refresh', tokenToRefresh, {
+            headers: { 'Content-Type': 'text/plain' }
+        })).data;
+        res.json(authFactory.jwt(jwt.generate(auth.user.id), auth));
+    } catch (e) {
+        console.error("Error refreshing token:", e);
+        res.status(401).json({ message: "Invalid refresh token" });
+    }
 });

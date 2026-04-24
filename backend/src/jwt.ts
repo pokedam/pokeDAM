@@ -9,7 +9,7 @@ export const jwt = {
 };
 
 const SECRET = process.env.JWT_SECRET || fallbackJwt();
-const EXPIRE_TIME = 30;
+const EXPIRE_TIME = 5;
 
 function fallbackJwt(): string {
     const jwt = 'mi_secreto_super_seguro_para_jwt_aqui_va';

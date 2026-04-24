@@ -39,7 +39,6 @@ public class AuthController {
             User user = res.get();
 
             String newToken = UUID.randomUUID().toString();
-            user.nickname = "Ref";
             user.refreshToken = newToken;
             userRepository.save(user);
 

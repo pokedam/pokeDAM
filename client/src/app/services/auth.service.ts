@@ -77,12 +77,12 @@ export class AuthService {
     console.log("Called refreshTokens on client.");
     const refreshToken = localStorage.getItem('refreshToken');
     console.log(`Current refresh token: ${refreshToken}`);
-    if (!!refreshToken) {
+    if (!refreshToken) {
       return throwError(() => new Error('No refresh token available'));
     }
 
     console.log("Trying refresh...");
-    return this.http.post<JwtAuth>(`${this.apiUrl}/auth/refresh`, refreshToken).pipe(
+    return this.http.post<JwtAuth>(`${this.apiUrl}/auth/refresh`, { refreshToken }).pipe(
       tap((res) => {
         console.log("Received response from refresh endpoint: ", res);
         localStorage.setItem('idToken', res.idToken);
