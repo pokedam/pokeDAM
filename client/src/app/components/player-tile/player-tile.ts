@@ -1,5 +1,5 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { Player, PokeState, Pokemon } from '../../models/game.models';
+import { Player, PokeState, Pokemon } from '../../models/game';
 import { CommonModule, NgClass } from '@angular/common';
 import { PokemonChip } from '../pokemon-chip/pokemon-chip';
 

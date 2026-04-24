@@ -1,5 +1,4 @@
 import { v4 } from "uuid";
-import { getUser } from "../database.js";
 import type {
     LobbyCreationRequest,
     LobbyJoinRequest,
@@ -9,7 +8,7 @@ import type {
 } from 'shared_types';
 import { result } from 'shared_types';
 import type { LeftResponse, Lobby, LobbyJoinResponse } from "./lobby.models.js";
-
+import { dbService } from "../db/client.js";
 const lobbies: Map<string, Lobby> = new Map();
 const players: Map<number, string> = new Map();
 
@@ -52,7 +51,7 @@ function getAll(): LobbySummaryResponse[] {
 
 export async function create(hostId: number, request: LobbyCreationRequest, maxPlayers: number = 8): Promise<Result<LobbySummaryResponse>> {
     if (players.get(hostId)) return result.conflict(`Player is already in a lobby`);
-    let nickname = (await getUser(hostId)).nickname ?? `Trainer${hostId}`;
+    let nickname = (await dbService.user.get(hostId)).nickname ?? `Trainer${hostId}`;
     const lobby = {
         name: request.name ?? nickname + "'s Game",
         password: request.password,
@@ -75,7 +74,7 @@ async function join(playerId: number, req: LobbyJoinRequest): Promise<Result<Lob
 
     if (lobby.password && lobby.password !== req.password)
         return result.forbidden("Invalid lobby password");
-    const nickname = (await getUser(playerId)).nickname ?? `Trainer${playerId}`;
+    const nickname = (await dbService.user.get(playerId)).nickname;
     lobby.joiners.set(playerId, {
         isReady: false,
         nickname,

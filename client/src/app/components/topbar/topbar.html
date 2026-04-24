@@ -55,8 +55,8 @@
     <!-- User info -->
     <div class="drawer-profile-info">
       <div class="drawer-avatar">
-        @if (auth.user.avatarUrl) {
-        <img [src]="auth.user.avatarUrl" [alt]="auth.user.nickname" class="drawer-avatar-img" />
+        @if (authService.avatarUrl) {
+        <img [src]="authService.avatarUrl" [alt]="auth.user.nickname" class="drawer-avatar-img" />
         } @else {
         <span class="drawer-avatar-initial">{{ getAvatarInitial(auth.user.nickname) }}</span>
         }
@@ -78,7 +78,7 @@
       <span>Log Out</span>
     </button>
     <!-- } @else {
-    Not logged in: show login button
+    Not logged in: show login button 
     <button class="drawer-nav-item drawer-login-item" (click)="onDrawerLogin()">
       <span class="drawer-item-icon">🔑</span>
       <span>Log In</span>

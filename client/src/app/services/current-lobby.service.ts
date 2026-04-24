@@ -120,7 +120,7 @@ export class CurrentLobbyService {
                     id: lobbyId,
                     name: res.content.name,
                     hostId: res.content.hostId,
-                    hostNickname: res.content.hostNickname ?? `Trainer${lobbyId}`,
+                    hostNickname: res.content.hostNickname,
                     joiners: new Map(
                         (res.content.joiners).map(item => [
                             item.id,

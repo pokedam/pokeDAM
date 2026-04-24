@@ -16,6 +16,7 @@ export class Topbar {
   @Output() settingsClick = new EventEmitter<void>();
   @Output() pokedexClick = new EventEmitter<void>();
 
+
   isDrawerOpen = false;
 
   getAvatarInitial(username: string | undefined): string {

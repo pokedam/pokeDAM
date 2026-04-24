@@ -1,19 +1,14 @@
 import { Component, EventEmitter, Input, Output, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { pokemonDataset } from './pokemon-dataset';
+import * as pokemon from '../../models/pokemon';
+import { Pokemon } from '../../models/pokemon';
 
-export interface ProfileData {
-  username: string;
-  avatarUrl: string | null;
-}
+// export interface ProfileData {
+//   username: string;
+//   avatarUrl: string | null;
+// }
 
-const POKEMON_DATASET = [
-  {
-    "id": 2,
-    "nombre": "ivysaur",
-    "sprite": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/2.png"
-  },
-];
+
 
 @Component({
   selector: 'app-profile-dialog',
@@ -24,46 +19,33 @@ const POKEMON_DATASET = [
 })
 export class ProfileDialog implements OnInit {
   @Input() initialUsername = '';
-  @Input() initialAvatarUrl: string | null = null;
-
-  @Output() save = new EventEmitter<ProfileData>();
-  @Output() close = new EventEmitter<void>();
+  @Input() initialAvatar: number | null = null;
 
   username = '';
-  selectedAvatar: string | null = null;
-
-  // Lista de avatares (IDs de Pokémon) desde JSON
-  allAvatars: { id: number, name: string, url: string }[] = [];
-  availableAvatars: { id: number, name: string, url: string }[] = [];
-  
+  selectedAvatar: number | null = null;
+  currentDataset: Pokemon[] = [];
   searchTerm = '';
+
+  url = pokemon.avatarUrl;
 
   ngOnInit() {
     this.username = this.initialUsername;
-    this.selectedAvatar = this.initialAvatarUrl;
-    this.loadPokemonAvatars();
+    this.selectedAvatar = this.initialAvatar;
+    this.filterAvatars();
   }
 
-  loadPokemonAvatars() {
-    this.allAvatars = pokemonDataset.map((p: any) => ({
-      id: p.id,
-      name: p.nombre.charAt(0).toUpperCase() + p.nombre.slice(1),
-      url: p.sprite
-    }));
-    this.availableAvatars = this.allAvatars;
-  }
 
   filterAvatars() {
     const term = this.searchTerm.toLowerCase().trim();
     if (!term) {
-      this.availableAvatars = this.allAvatars;
+      this.currentDataset = pokemon.DB;
       return;
     }
-    
+
     const idFilter = parseInt(term, 10);
     const isNumber = !isNaN(idFilter) && idFilter.toString() === term;
 
-    this.availableAvatars = this.allAvatars.filter(p => {
+    this.currentDataset = pokemon.DB.filter(p => {
       if (isNumber && p.id === idFilter) {
         return true;
       }
@@ -71,19 +53,17 @@ export class ProfileDialog implements OnInit {
     });
   }
 
-  selectAvatar(url: string) {
-    this.selectedAvatar = url;
-  }
 
   onSave() {
-    if (!this.username.trim()) return;
-    this.save.emit({
-      username: this.username.trim(),
-      avatarUrl: this.selectedAvatar
-    });
+    // TODO!()
+    // if (!this.username.trim()) return;
+    // this.save.emit({
+    //   username: this.username.trim(),
+    //   avatarUrl: this.selectedAvatar
+    // });
   }
 
   onClose() {
-    this.close.emit();
+    //this.close.emit();
   }
 }

@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
-import { ProfileDialog, ProfileData } from '../../components/profile-dialog/profile-dialog';
+import { ProfileDialog } from '../../components/profile-dialog/profile-dialog';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
@@ -11,9 +11,7 @@ import { AuthService } from '../../services/auth.service';
     @if (authService.auth$ | async; as auth) {
       <app-profile-dialog 
         [initialUsername]="auth.user.nickname" 
-        [initialAvatarUrl]="auth.user.avatarUrl ?? null"
-        (save)="onSave($event)"
-        (close)="onClose()"
+        [initialAvatar]="auth.user.avatarIndex ?? null"
       />
     }
   `,
@@ -25,23 +23,4 @@ import { AuthService } from '../../services/auth.service';
 })
 export class SettingsPage {
   authService = inject(AuthService);
-  private location = inject(Location);
-
-  onSave(data: ProfileData) {
-    this.authService.updateProfile(data.username, data.avatarUrl).subscribe({
-      next: () => {
-        this.onClose();
-      },
-      error: (err: any) => {
-        console.error('Error updating profile:', err);
-        // For demonstration purposes, if backend fails, we could update local state
-        // but typically we should show an error message.
-        this.onClose();
-      }
-    });
-  }
-
-  onClose() {
-    this.location.back();
-  }
 }

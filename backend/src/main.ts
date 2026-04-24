@@ -3,19 +3,21 @@ import http from 'http';
 import cors from 'cors';
 import { Server } from 'socket.io';
 
-import { sequelize } from './database.js';
-import { authRouter } from './auth.js';
+//import { authRouter } from './auth.js';
 import { sanitizer } from './sanitizer.js';
 import { jwt } from './jwt.js';
 import { lobbyController } from './lobby/lobby.controller.js';
+import { dbService as db } from './db/client.js';
 
 // Server configuration
 const app = express();
 app.use(cors());
 app.use(express.json());
-// Middleware de sanitización para todas las peticiones REST
 app.use(sanitizer.middleware);
-app.use('/auth', authRouter); // Exactos endpoints de Java: /auth/anonymous, /auth/user, /auth/refresh
+
+app.use('/auth', db.auth.router);
+app.use('/user', jwt.middleware, db.user.router);
+
 
 //Server inicialization
 const server = http.createServer(app);
@@ -26,9 +28,8 @@ const io = new Server(server, {
         origin: "*",
         methods: ["GET", "POST"]
     },
-    // IDÉNTICO AL HEARTBEAT DE SPRING BOOT: new long[] { 10000, 10000 }
-    pingInterval: 10000, // Cada 10s el servidor hará ping
-    pingTimeout: 10000   // Si no hay pong en 10s se desconecta
+    pingInterval: 10000,
+    pingTimeout: 10000
 });
 
 // Socket Middlewares
@@ -44,19 +45,6 @@ io.on('connection', (socket) => {
 // ARRANCAR EL SERVIDOR
 // ==========================================
 const PORT = process.env.PORT || 8080;
-
-// Initializa base de datos
-await sequelize.sync();
-
 server.listen(PORT, () => {
     console.log(`Servidor REST y WebSocket corriendo en http://localhost:${PORT}`);
 });
-
-// sequelize.sync().then(() => {
-//     console.log("Base de datos en memoria (SQLite) sincronizada tipo H2.");
-//     server.listen(PORT, () => {
-//         console.log(`Servidor REST y WebSocket corriendo en http://localhost:${PORT}`);
-//     });
-// }).catch((err: any) => {
-//     console.error("Error sincronizando DB", err);
-// });

@@ -1,5 +1,5 @@
 import { Component, Input } from '@angular/core';
-import { Pokemon } from '../../models/game.models';
+import { Pokemon } from '../../models/game';
 import { CommonModule } from '@angular/common';
 import { LifeBar } from '../life-bar/life-bar';
 

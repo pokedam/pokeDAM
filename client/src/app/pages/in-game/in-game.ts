@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Dialogue } from '../../components/dialogue/dialogue';
 import { PlayerTile } from '../../components/player-tile/player-tile';
-import { Player, Pokemon, Attack } from '../../models/game.models';
+import { Player, Pokemon, Attack } from '../../models/game';
 
 @Component({
   selector: 'app-in-game',
@@ -135,7 +135,7 @@ export class InGame implements OnInit {
   onPokemonSelect(event: { player: Player, pokemon: Pokemon }) {
     if (this.currentMenu === 'target-selection') {
       if (event.player.id === 'player-1') return;
-      
+
       const index = this.selectedTargets.findIndex(p => p === event.pokemon);
       if (index > -1) {
         this.selectedTargets.splice(index, 1);
@@ -200,7 +200,7 @@ export class InGame implements OnInit {
       return;
     }
     alert(`¡${this.selectedOurPokemon?.name} usó ${this.selectedAttack?.name} contra ${this.selectedTargets.map(t => t.name).join(', ')}!`);
-    
+
     this.currentMenu = 'main';
     this.selectedOurPokemon = null;
     this.selectedAttack = null;

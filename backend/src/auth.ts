@@ -1,112 +1,97 @@
-import express from 'express';
-import type { Request, Response, } from 'express';
-import { User } from './database.js';
-import { v4 } from 'uuid';
-import { jwt } from './jwt.js';
+// import express from 'express';
+// import type { Request, Response, } from 'express';
+// import { User } from './database.js';
+// import { v4 } from 'uuid';
+// import { jwt } from './jwt.js';
 
-const router = express.Router();
+// const router = express.Router();
 
+// router.post('/anonymous', async (_: Request, res: Response): Promise<void> => {
+//     let user = await User.create({
+//         refreshToken: v4(),
+//         nickname: null
+//     });
 
-// Extender el tipo de Request de Express para incluir nuestro usuario autenticado
-declare global {
-    namespace Express {
-        interface Request {
-            user?: { id: number };
-        }
-    }
-}
+//     user.nickname = `Trainer${String(user.id).padStart(4, '0')}`;
+//     await user.save();
 
-// @PostMapping("/anonymous")
-router.post('/anonymous', async (_: Request, res: Response, next): Promise<void> => {
-    let user = await User.create({
-        refreshToken: v4(),
-        nickname: null
-    });
+//     res.json({
+//         idToken: jwt.generate(user.id),
+//         user: user
+//     });
+// });
 
-    user.nickname = `Trainer${String(user.id).padStart(4, '0')}`;
-    await user.save();
+// router.get('/user', jwt.middleware, async (req: Request, res: Response): Promise<void> => {
+//     if (!req.userId) {
+//         res.status(401).send();
+//         return;
+//     }
 
-    res.json({
-        idToken: jwt.generate(user.id),
-        user: user
-    });
-});
+//     const user = await User.findByPk(req.userId);
+//     if (!user) {
+//         res.status(404).send();
+//         return;
+//     }
 
-// @GetMapping("/user")
-router.get('/user', jwt.middleware, async (req: Request, res: Response): Promise<void> => {
-    if (!req.user || !req.user.id) {
-        res.status(401).send();
-        return;
-    }
+//     res.json(user);
+// });
 
-    const user = await User.findByPk(req.user.id);
-    if (!user) {
-        res.status(404).send();
-        return;
-    }
+// router.get('/user/:userId', async (req: Request, res: Response): Promise<void> => {
+//     const user = await User.findByPk(Number(req.params.userId));
+//     if (!user) {
+//         res.status(404).send();
+//         return;
+//     }
 
-    res.json(user);
-});
+//     res.json(user);
+// });
 
-// @GetMapping("/user/{userId}")
-router.get('/user/:userId', async (req: Request, res: Response): Promise<void> => {
-    const user = await User.findByPk(Number(req.params.userId));
-    if (!user) {
-        res.status(404).send();
-        return;
-    }
+// router.post('/user', jwt.middleware, async (req: Request, res: Response): Promise<void> => {
+//     if (!req.userId) {
+//         res.status(401).send();
+//         return;
+//     }
 
-    res.json(user);
-});
+//     const { nickname } = req.body;
+//     let user = await User.findByPk(req.userId);
 
-// @PostMapping("/user")
-router.post('/user', jwt.middleware, async (req: Request, res: Response): Promise<void> => {
-    if (!req.user || !req.user.id) {
-        res.status(401).send();
-        return;
-    }
+//     if (!user) {
+//         res.status(404).send();
+//         return;
+//     }
 
-    const { nickname } = req.body;
-    let user = await User.findByPk(req.user.id);
+//     if (nickname) {
+//         user.nickname = nickname;
+//         await user.save();
+//     }
 
-    if (!user) {
-        res.status(404).send();
-        return;
-    }
+//     res.json(user);
+// });
 
-    if (nickname) {
-        user.nickname = nickname;
-        await user.save();
-    }
+// router.post('/refresh', async (req: Request, res: Response): Promise<void> => {
+//     const { refresh_token } = req.body;
 
-    res.json(user);
-});
+//     if (!refresh_token) {
+//         res.status(400).send();
+//         return;
+//     }
 
-// @PostMapping("/refresh")
-router.post('/refresh', async (req: Request, res: Response): Promise<void> => {
-    const { refresh_token } = req.body;
+//     const user = await User.findOne({ where: { refreshToken: refresh_token } });
 
-    if (!refresh_token) {
-        res.status(400).send();
-        return;
-    }
+//     if (user) {
+//         const newIdToken = jwt.generate(user.id);
+//         const newRefreshToken = v4();
 
-    const user = await User.findOne({ where: { refreshToken: refresh_token } });
+//         user.refreshToken = newRefreshToken;
+//         await user.save();
 
-    if (user) {
-        const newIdToken = jwt.generate(user.id);
-        const newRefreshToken = v4();
+//         res.json({
+//             idToken: newIdToken,
+//             user: user
+//         });
+//     } else {
+//         res.status(400).send();
+//     }
+// });
 
-        user.refreshToken = newRefreshToken;
-        await user.save();
-
-        res.json({
-            idToken: newIdToken,
-            user: user
-        });
-    } else {
-        res.status(400).send();
-    }
-});
-
-export { router as authRouter };
+// export { router as authRouter };
