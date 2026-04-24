@@ -1,8 +1,30 @@
+:host {
+  display: block;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s ease-in-out;
+}
+
+:host(.selected) .pokemon-entry {
+  outline: 2px solid #ffcc00;
+  outline-offset: 2px;
+  box-shadow: 0 0 10px rgba(255, 204, 0, 0.8);
+  background-color: rgba(255, 204, 0, 0.15);
+  border-radius: 4px;
+}
+
+:host(.selected.enemy) .pokemon-entry {
+  outline: 2px solid #ff3333;
+  box-shadow: 0 0 10px rgba(255, 51, 51, 0.8);
+  background-color: rgba(255, 51, 51, 0.15);
+}
+
 .pokemon-entry {
   display: flex;
   flex-direction: column;
   gap: 2px;
   font-size: 8px;
+  padding: 2px; /* Add small padding to make background color look good when selected */
 }
 
 .pokemon-content {

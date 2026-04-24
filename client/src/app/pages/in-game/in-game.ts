@@ -2,11 +2,12 @@ import { Component, OnInit } from '@angular/core';
 import { Dialogue } from '../../components/dialogue/dialogue';
 import { PlayerTile } from '../../components/player-tile/player-tile';
 import { Player, Pokemon, Attack } from '../../models/game.models';
+import { AttackOverlay } from '../../components/attack-overlay/attack-overlay';
 
 @Component({
   selector: 'app-in-game',
   standalone: true,
-  imports: [Dialogue, PlayerTile],
+  imports: [Dialogue, PlayerTile, AttackOverlay],
   templateUrl: './in-game.html',
   styleUrl: './in-game.css',
 })
@@ -16,6 +17,7 @@ export class InGame implements OnInit {
   selectedOurPokemon: Pokemon | null = null;
   selectedAttack: Attack | null = null;
   selectedTargets: Pokemon[] = [];
+  isAttacking: boolean = false;
   players: Player[] = [
     {
       id: 'player-1',
@@ -199,8 +201,13 @@ export class InGame implements OnInit {
       alert('Selecciona al menos un objetivo.');
       return;
     }
-    alert(`¡${this.selectedOurPokemon?.name} usó ${this.selectedAttack?.name} contra ${this.selectedTargets.map(t => t.name).join(', ')}!`);
     
+    // Start attack animation overlay
+    this.isAttacking = true;
+  }
+
+  onAttackAnimationComplete() {
+    this.isAttacking = false;
     this.currentMenu = 'main';
     this.selectedOurPokemon = null;
     this.selectedAttack = null;

@@ -23,6 +23,7 @@
       <app-pokemon-chip 
         [pokemon]="pokemon"
         [class.selected]="selectedPokemons.includes(pokemon)"
+        [class.enemy]="player.id !== 'player-1'"
         (click)="pokemonSelect.emit({player: player, pokemon: pokemon})">
       </app-pokemon-chip>
     }

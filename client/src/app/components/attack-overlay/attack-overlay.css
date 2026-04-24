@@ -1,0 +1,188 @@
+:host {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1000;
+  pointer-events: all;
+  display: block;
+}
+
+.overlay-backdrop {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  animation: flashIn 0.3s ease-out forwards;
+}
+
+.speed-lines {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 10px,
+    rgba(255, 255, 255, 0.05) 10px,
+    rgba(255, 255, 255, 0.05) 20px
+  );
+  animation: scrollLines 0.5s linear infinite;
+  z-index: 1;
+}
+
+@keyframes scrollLines {
+  from { transform: translate(0, 0); }
+  to { transform: translate(-20px, -20px); }
+}
+
+.split-screen {
+  position: absolute;
+  width: 120%;
+  height: 100%;
+  display: flex;
+  z-index: 2;
+  transform: skewX(-15deg);
+  left: -10%;
+}
+
+.panel {
+  flex: 1;
+}
+
+.attacker-panel {
+  background: linear-gradient(90deg, rgba(200, 0, 0, 0.4) 0%, rgba(200, 0, 0, 0.8) 100%);
+  border-right: 4px solid #fff;
+}
+
+.target-panel {
+  background: linear-gradient(-90deg, rgba(0, 50, 200, 0.4) 0%, rgba(0, 50, 200, 0.8) 100%);
+}
+
+.fighters-container {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 15%;
+  box-sizing: border-box;
+  z-index: 5;
+}
+
+.attacker-container {
+  width: 250px;
+  height: 250px;
+  filter: drop-shadow(0 0 20px rgba(255, 0, 0, 0.6));
+}
+
+.targets-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+  max-width: 400px;
+  filter: drop-shadow(0 0 20px rgba(0, 100, 255, 0.6));
+}
+
+.pixel-sprite {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+  transform: scale(1.5);
+}
+
+.target-sprite {
+  width: 150px;
+  height: 150px;
+}
+
+.slide-in-left {
+  animation: slideInLeft 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  opacity: 0;
+  transform: translateX(-200px);
+}
+
+.slide-in-right {
+  animation: slideInRight 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  animation-delay: 0.2s;
+  opacity: 0;
+  transform: translateX(200px);
+}
+
+@keyframes slideInLeft {
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.flash-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: white;
+  z-index: 6;
+  opacity: 0;
+  pointer-events: none;
+  animation: flashStrike 0.3s 0.6s ease-out forwards;
+}
+
+@keyframes flashStrike {
+  0% { opacity: 0; }
+  20% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.attack-banner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.8);
+  padding: 20px 60px;
+  border: 6px solid #ffcc00;
+  border-radius: 12px;
+  box-shadow: 0 0 50px rgba(255, 204, 0, 0.8);
+  animation: popInBanner 0.5s 0.9s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.attack-name {
+  color: #fff;
+  font-size: 48px;
+  font-weight: bold;
+  text-transform: uppercase;
+  font-style: italic;
+  text-shadow: 3px 3px 0 #e3000b, -2px -2px 0 #e3000b;
+  letter-spacing: 4px;
+}
+
+@keyframes popInBanner {
+  to {
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes flashIn {
+  0% { background-color: rgba(255,255,255,1); }
+  100% { background-color: rgba(0,0,0,0.85); }
+}

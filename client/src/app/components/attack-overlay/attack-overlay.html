@@ -1,0 +1,29 @@
+<div class="overlay-backdrop">
+  <div class="speed-lines"></div>
+  
+  <!-- Diagonal split background -->
+  <div class="split-screen">
+    <div class="panel attacker-panel"></div>
+    <div class="panel target-panel"></div>
+  </div>
+
+  <!-- Foreground sprites -->
+  <div class="fighters-container">
+     <div class="attacker-container slide-in-left">
+       <img [src]="attacker.avatarUrl" [alt]="attacker.name" class="pixel-sprite">
+     </div>
+     <div class="targets-container slide-in-right">
+       @for (target of targets; track target.id) {
+         <img [src]="target.avatarUrl" [alt]="target.name" class="pixel-sprite target-sprite">
+       }
+     </div>
+  </div>
+
+  <!-- Screen flash effect -->
+  <div class="flash-overlay"></div>
+
+  <!-- Big attack name banner -->
+  <div class="attack-banner pop-in">
+    <span class="attack-name">{{ attack.name }}</span>
+  </div>
+</div>
