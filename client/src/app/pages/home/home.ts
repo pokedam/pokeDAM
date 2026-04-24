@@ -1,20 +1,15 @@
-import { Component, OnInit, inject } from '@angular/core';
-import { Router, ActivatedRoute, RouterOutlet } from '@angular/router';
-import { AsyncPipe } from '@angular/common';
-import { LoginDialog } from '../../components/login-dialog/login-dialog';
-import { Topbar } from '../../components/topbar/topbar';
-import { Dialogue, DialogueSequence } from '../../components/dialogue/dialogue';
+import { Component } from '@angular/core';
+
+import {  DialogueSequence } from '../../components/dialogue/dialogue';
 import { BattleArena } from '../../components/battle-arena/battle-arena';
-import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-home',
-  imports: [LoginDialog, Topbar, BattleArena, RouterOutlet],
+  imports: [ BattleArena ],
   templateUrl: './home.html',
   styleUrl: './home.css',
 })
 export class Home {
-  showLoginDialog = false;
 
   matchDialogue: DialogueSequence = [
     '¡Hola, entrenador!',
@@ -34,20 +29,4 @@ export class Home {
     { type: 'text', value: 'Pokémon.', speed: 150 }
   ];
 
-  constructor() { }
-
-  private router = inject(Router);
-  private route = inject(ActivatedRoute);
-
-  onLoginClick() {
-    this.showLoginDialog = true;
-  }
-
-  onSettings() {
-    this.router.navigate(['settings'], { relativeTo: this.route });
-  }
-
-  closeDialog() {
-    this.showLoginDialog = false;
-  }
 }
