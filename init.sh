@@ -16,8 +16,9 @@ trap cleanup SIGINT SIGTERM EXIT
 
 echo "🚀 Inicializando el proyecto PokeDAM..."
 
+
 # 1. shared_types: npm install y npm run build
-echo "📦 [1/4] Procesando 'shared_types'..."
+echo "📦 [2/5] Procesando 'shared_types'..."
 cd shared_types || exit
 npm install
 npm run build

@@ -35,9 +35,15 @@ async function obtenerPokemon() {
             }
         }
 
-        // Guardar el archivo JSON
-        fs.writeFileSync('pokemon.json', JSON.stringify(listaPokemon, null, 2));
-        console.log(`\n¡Éxito! Se han guardado ${listaPokemon.length} Pokémon en 'pokemon.json'.`);
+        // Guardar el archivo JSON en shared_types/src/generated
+        const path = require('path');
+        const generatedDir = path.join(__dirname, '..', 'src', 'generated');
+        if (!fs.existsSync(generatedDir)) {
+            fs.mkdirSync(generatedDir, { recursive: true });
+        }
+        const outputPath = path.join(generatedDir, 'pokemon.json');
+        fs.writeFileSync(outputPath, JSON.stringify(listaPokemon, null, 2));
+        console.log(`\n¡Éxito! Se han guardado ${listaPokemon.length} Pokémon en '${outputPath}'.`);
         
     } catch (error) {
         console.error("Error crítico al conectar con la API:", error);
