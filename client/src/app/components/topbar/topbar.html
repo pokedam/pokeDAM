@@ -4,7 +4,7 @@
   <!-- Desktop actions -->
   <div class="topbar-actions desktop-only">
     <button class="retro-btn menu-btn play-btn" routerLink="/play">Jugar</button>
-    <button class="retro-btn menu-btn pokedex-btn" (click)="pokedexClick.emit()">Pokédex</button>
+    <button class="retro-btn menu-btn pokedex-btn" routerLink="/pc">PC Pokémon</button>
     @if (authService.auth$ | async; as auth) {
     <app-user-menu-button [auth]="auth" (settingsClick)="settingsClick.emit()" />
     }
@@ -39,9 +39,9 @@
       </button>
     </li>
     <li>
-      <button class="drawer-nav-item" (click)="onDrawerPokedex()">
-        <span class="drawer-item-icon">📖</span>
-        <span>Pokédex</span>
+      <button class="drawer-nav-item" routerLink="/pc" (click)="closeDrawer()">
+        <span class="drawer-item-icon">💻</span>
+        <span>PC Pokémon</span>
       </button>
     </li>
   </ul>

@@ -10,7 +10,6 @@ import { BattleArena } from '../../components/battle-arena/battle-arena';
   styleUrl: './home.css',
 })
 export class Home {
-
   matchDialogue: DialogueSequence = [
     '¡Hola, entrenador!',
     { type: 'pause', duration: 400 },

@@ -28,4 +28,4 @@ export interface Player {
     activePokemons: Pokemon[];
     isCurrentTurn: boolean;
     pokeStates: PokeState[]; // Up to 8 states; missing entries are treated as 'inhabilitado'
-} 
+}   
