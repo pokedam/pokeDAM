@@ -20,16 +20,14 @@ public class PcController {
 
     @GetMapping("/{userId}")
     public ResponseEntity<AuthResponse> getAllPokemons(
-            @PathVariable("userId") Long userId
-        ) {
+            @PathVariable("userId") Long userId) {
         return ResponseEntity.badRequest().build();
     }
 
     @PostMapping("/{userId}")
-    public ResponseEntity getAllPokemons(
+    public ResponseEntity<Void> getAllPokemons(
             @PathVariable("userId") Long userId,
-            @RequestBody Long[] selectedPokemons
-        ) {
-        return ResponseEntity.badRequest().build();
+            @RequestBody Long[] selectedPokemons) {
+        return ResponseEntity.ok().build();
     }
 }

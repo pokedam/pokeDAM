@@ -5,8 +5,10 @@ import java.util.UUID;
 
 import org.cifpaviles.pokedam.rest_server.entity.User;
 import org.cifpaviles.pokedam.rest_server.models.AuthResponse;
+import org.cifpaviles.pokedam.rest_server.models.LoginRequest;
 import org.cifpaviles.pokedam.rest_server.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -32,7 +34,6 @@ public class AuthController {
 
     @PostMapping("/refresh")
     public ResponseEntity<AuthResponse> refreshUserToken(@RequestBody String token) {
-        System.out.println("Called refresh on rest-server with refresh token: " + token);
         Optional<User> res = userRepository.findByRefreshToken(token);
 
         if (res.isPresent()) {
@@ -45,6 +46,20 @@ public class AuthController {
             return ResponseEntity.ok(new AuthResponse(user));
         }
 
-        return ResponseEntity.badRequest().build();
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest req) {
+        Optional<User> res = userRepository.findByEmail(req.email);
+
+        if (res.isPresent()) {
+            User user = res.get();
+            if (user.password == req.password) {
+                return ResponseEntity.ok(new AuthResponse(user));
+            }
+        }
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
     }
 }

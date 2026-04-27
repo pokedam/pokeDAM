@@ -1,18 +1,15 @@
-<div class="lobby-header">
-    <h2>{{ displayName }}</h2>
-    <div class="header-actions">
-        @if (player != null){
-        <button class="retro-btn" (click)="toggleReady()">
-            {{ player.isReady ? 'Cancel Ready' : 'Set Ready' }}
-        </button>
-        } @else {
-        <button class="retro-btn start-match-btn" [disabled]="!canStartMatch()" (click)="startGame()">
-            Start Match
-        </button>
-        }
-        <button class="retro-btn" (click)="leaveLobby()" title="Leave Room">X</button>
-    </div>
-</div>
+<app-content-header [title]="displayName">
+    @if (player != null){
+    <button class="retro-btn" (click)="toggleReady()">
+        {{ player.isReady ? 'Cancel Ready' : 'Set Ready' }}
+    </button>
+    } @else {
+    <button class="retro-btn start-match-btn" [disabled]="!canStartMatch()" (click)="startGame()">
+        Start Match
+    </button>
+    }
+    <button class="retro-btn" (click)="leaveLobby()" title="Leave Room">X</button>
+</app-content-header>
 <div class="lobby-content">
     <div class="players-list">
         <h3>Players ({{ currentLobby.joiners.size + 1 }}/{{ currentLobby.maxPlayers }})</h3>

@@ -4,10 +4,22 @@
   <!-- Desktop actions -->
   <div class="topbar-actions desktop-only">
     <button class="retro-btn menu-btn play-btn" routerLink="/play">Jugar</button>
-    <button class="retro-btn menu-btn pokedex-btn" (click)="pokedexClick.emit()">Pokédex</button>
-    @if (authService.auth$ | async; as auth) {
+    <button class="retro-btn menu-btn">Pokédex</button>
+    <button class="retro-btn menu-btn profile-btn" routerLink="/settings">
+      <div class="user-avatar">
+        @if (user.avatarIndex) {
+        <img [src]="getAvatarUrl()" [alt]="user.nickname" class="avatar-img" />
+        } @else {
+        <span class="avatar-initial">{{ getAvatarInitial() }}</span>
+        }
+      </div>
+      <span class="user-name">{{ user.nickname }}</span>
+
+
+    </button>
+    <!-- @if (authService.auth$ | async; as auth) {
     <app-user-menu-button [auth]="auth" (settingsClick)="settingsClick.emit()" />
-    }
+    } -->
   </div>
 
   <!-- Mobile hamburger button -->
@@ -39,7 +51,7 @@
       </button>
     </li>
     <li>
-      <button class="drawer-nav-item" (click)="onDrawerPokedex()">
+      <button class="drawer-nav-item">
         <span class="drawer-item-icon">📖</span>
         <span>Pokédex</span>
       </button>
@@ -50,24 +62,21 @@
   <div class="drawer-profile-section">
     <div class="drawer-section-label">Profile</div>
 
-    @if (authService.auth$ | async; as auth) {
-    <!-- @if (auth.user.email) { -->
-    <!-- User info -->
     <div class="drawer-profile-info">
       <div class="drawer-avatar">
-        @if (authService.avatarUrl) {
-        <img [src]="authService.avatarUrl" [alt]="auth.user.nickname" class="drawer-avatar-img" />
+        @if (user.avatarIndex) {
+        <img [src]="getAvatarUrl()" [alt]="user.nickname" class="drawer-avatar-img" />
         } @else {
-        <span class="drawer-avatar-initial">{{ getAvatarInitial(auth.user.nickname) }}</span>
+        <span class="drawer-avatar-initial">{{ getAvatarInitial() }}</span>
         }
       </div>
-      <span class="drawer-username">{{ auth.user.nickname }}</span>
+      <span class="drawer-username">{{ user.nickname }}</span>
     </div>
 
     <div class="drawer-divider"></div>
 
     <!-- Settings -->
-    <button class="drawer-nav-item" (click)="onDrawerSettings()">
+    <button class="drawer-nav-item" routerLink="/settings">
       <span class="drawer-item-icon">⚙️</span>
       <span>Settings</span>
     </button>
@@ -84,6 +93,5 @@
       <span>Log In</span>
     </button>
     } -->
-    }
   </div>
 </nav>

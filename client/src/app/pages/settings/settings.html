@@ -1,0 +1,77 @@
+<form [formGroup]="form" (ngSubmit)="onSave()">
+  <app-content-header [title]="'Trainer Profile'">
+    <button class=" retro-btn save-btn" [class.success]="saveSuccess" [disabled]="!hasChanged() || submitting">
+      {{ saveSuccess ? 'Saved!' : (submitting ? 'Saving...' : 'Save Changes') }}
+    </button>
+  </app-content-header>
+  <div class="profile-form">
+
+    <div class="profile-main-content">
+      <!-- Current Avatar Preview -->
+      <div class="avatar-preview-section">
+        <div class="avatar-circle">
+          @if (avatarId) {
+          <img [src]="selectedAvatarUrl()" alt="Current Avatar" class="avatar-img" />
+          } @else {
+          <span class="avatar-initial">{{ form.get('nickname')?.value ?
+            form.get('nickname')?.value.charAt(0).toUpperCase() : '?' }}</span>
+          }
+        </div>
+        <!-- Username Input -->
+        <div class="form-group username-group">
+          <label for="profile-nickname" class="retro-label">Trainer Name</label>
+          <input formControlName="nickname" id="profile-nickname" type="text" class="retro-input" placeholder="New Name"
+            autocomplete="off" />
+          <div class="validation-message" [class.show]="nicknameErr !== null">
+            <span *ngIf="nicknameErr">{{ nicknameErr }}</span>
+          </div>
+        </div>
+
+        <!-- Email Input -->
+        <div class="form-group email-group">
+          <label for="profile-email" class="retro-label">Email</label>
+          <input formControlName="email" id="profile-email" type="email" class="retro-input"
+            placeholder="you@example.com" autocomplete="email" />
+          <div class="validation-message" [class.show]="emailErr !== null">
+            <span *ngIf="emailErr">{{ emailErr }}</span>
+          </div>
+        </div>
+
+        <!-- Password Input -->
+        <div class="form-group password-group">
+          <label for="profile-password" class="retro-label">Password</label>
+          <input formControlName="password" id="profile-password" type="password" class="retro-input"
+            placeholder="New Password" autocomplete="new-password" />
+          <div class="validation-message" [class.show]="passwordErr !== null">
+            <span *ngIf="passwordErr">{{ passwordErr }}</span>
+          </div>
+        </div>
+
+      </div>
+
+
+
+      <!-- Avatar Selection -->
+      <div class="form-group avatar-selection-group">
+        <label class="retro-label">Choose your Profile Picture</label>
+
+        <!-- Search Input -->
+        <div class="search-container">
+          <input type="text" class="retro-input" placeholder="Search by name or ID..." [(ngModel)]="searchTerm"
+            [ngModelOptions]="{standalone: true}" (ngModelChange)="filterAvatars()" name="pokemonSearch"
+            autocomplete="off" />
+        </div>
+
+        <div class="avatar-grid">
+          @for (avatar of availableAvatars; track avatar.id) {
+          <button type="button" class="avatar-option" [class.selected]="avatarId === avatar.id"
+            (click)="selectAvatar(avatar.id)" [title]="avatar.name">
+            <img [src]="avatar.url" [alt]="avatar.name" />
+            <span class="avatar-id">#{{ avatar.id }}</span>
+          </button>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+</form>

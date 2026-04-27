@@ -1,7 +1,7 @@
 import axios from 'axios';
 import type { User } from 'shared_types';
-import * as auth from './endpoints/auth.js';
-import * as user from './endpoints/user.js';
+import * as auth from './entrypoints/auth.js';
+import * as user from './entrypoints/user.js';
 
 // Utilizaremos una variable de entorno en el futuro, por ahora dejamos un fallback.
 const REST_SERVER_URL = process.env.MAIN_SERVER_URL ?? fallbackRestServerUrl();

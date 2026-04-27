@@ -1,11 +1,13 @@
 import { Component, EventEmitter, inject, Input, Output } from '@angular/core';
 import { Lobby, Joiner as Joiner, CurrentLobbyService } from '../../../services/current-lobby.service';
 import { AuthService } from '../../../services/auth.service';
+import { ContentHeader } from '../../content-header/content-header';
 
 
 @Component({
   selector: 'app-in-lobby',
   standalone: true,
+  imports: [ContentHeader],
   templateUrl: './in-lobby.html',
   styleUrl: '../battle-arena.css',
 })

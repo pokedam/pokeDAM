@@ -1,8 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, tap, map, catchError, throwError, Observable } from 'rxjs';
+import { BehaviorSubject, tap, map, catchError, throwError, Observable, EMPTY } from 'rxjs';
 import { ErrorService } from './error.service';
-import shared, { JwtAuth } from 'shared_types';
+import shared, { authFactory, JwtAuth, LoginRequest, UserChangeRequest } from 'shared_types';
 
 export interface Auth {
   idToken: string,
@@ -44,6 +44,7 @@ export class AuthService {
     const refreshToken = localStorage.getItem('refreshToken');
 
     if (idToken && refreshToken) {
+      console.log(`IdToken = ${idToken}, refreshToken = ${refreshToken}`);
       this.http.get<User>(`${this.apiUrl}/user`).subscribe({
         next: (user) => this.authSubject.next({
           idToken: localStorage.getItem('idToken') || idToken,
@@ -92,16 +93,41 @@ export class AuthService {
     );
   }
 
-  public updateProfile(nickname: string, avatarUrl: string | null): Observable<User> {
-    return this.http.put<User>(`${this.apiUrl}/auth/profile`, { nickname, avatarUrl }).pipe(
-      tap((updatedUser) => {
-        const currentAuth = this.authSubject.getValue();
-        if (currentAuth) {
-          this.authSubject.next({
-            ...currentAuth,
-            user: updatedUser
-          });
+  public login(req: LoginRequest): Observable<string> {
+    return this.http.post<shared.JwtAuth>(`${this.apiUrl}/auth/login`, req).pipe(
+      tap((res) => {
+        localStorage.setItem('idToken', res.idToken);
+        localStorage.setItem('refreshToken', res.refreshToken);
+        this.authSubject.next(res);
+      }),
+      map((res) => res.idToken)
+    );
+  }
+
+  public logout(): void {
+    localStorage.removeItem('idToken');
+    localStorage.removeItem('refreshToken');
+    this.authSubject.next(null);
+    this.loginAnonymous().subscribe({
+      error: (err) => this.errorService.showError('Error in anonymous login after logout: ' + err.message),
+    });
+  }
+
+  public updateProfile(req: UserChangeRequest): Observable<void> {
+    return this.http.patch<void>(`${this.apiUrl}/user`, req).pipe(
+      tap((_) => {
+        var auth = this.authSubject.getValue();
+
+        if (auth) {
+          if (req.nickname) auth.user.nickname = req.nickname;
+          if (req.email) auth.user.email = req.email;
+          if (req.avatarIndex) auth.user.avatarIndex = req.avatarIndex;
+          this.authSubject.next(auth);
         }
+      },),
+      catchError((error) => {
+        this.errorService.showError(error);
+        return EMPTY;
       })
     );
   }

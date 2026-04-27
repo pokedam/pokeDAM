@@ -1,7 +1,7 @@
 import express from 'express';
 import type { Request, Response, } from 'express';
 import { rest } from '../client.js';
-import type { User } from 'shared_types';
+import type { User, UserChangeRequest } from 'shared_types';
 
 export async function get(userId: number): Promise<User> {
     return (await rest.get<User>(`/user/${userId}`)).data;
@@ -15,4 +15,11 @@ router.get('', async (req: Request, res: Response): Promise<void> => {
 
 router.get('/:userId', async (req: Request, res: Response): Promise<void> => {
     res.json(await get(Number(req.params.userId)));
+});
+
+
+router.patch('', async (req: Request, res: Response): Promise<void> => {
+    const request: UserChangeRequest = req.body;
+    const response = await rest.patch(`/user/${req.userId}`, request);
+    res.json(response.data);
 });

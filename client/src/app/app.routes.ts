@@ -2,22 +2,11 @@ import { Routes } from '@angular/router';
 import { Home } from './pages/home/home';
 import { InGame } from './pages/in-game/in-game';
 import { Presentation } from './pages/presentation/presentation';
-import { SettingsPage } from './pages/settings-page/settings-page';
+import { Settings } from './pages/settings/settings';
 
 export const routes: Routes = [
-  {
-    path: '',
-    component: Presentation,
-    children: [
-      { path: 'settings', component: SettingsPage }
-    ]
-  },
-  {
-    path: 'play',
-    component: Home,
-    children: [
-      { path: 'settings', component: SettingsPage }
-    ]
-  },
-  { path: 'in-game', component: InGame }
+  { path: '', component: Presentation },
+  { path: 'play', component: Home },
+  { path: 'in-game', component: InGame },
+  { path: 'settings', component: Settings }
 ];

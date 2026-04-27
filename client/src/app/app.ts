@@ -1,33 +1,24 @@
 import { Component, inject, signal } from '@angular/core';
-import { ActivatedRoute, Router, RouterOutlet } from '@angular/router';
+import { RouterOutlet } from '@angular/router';
 import { ErrorModal } from './components/error-modal/error-modal';
-import { LoginDialog } from './components/login-dialog/login-dialog';
 import { Topbar } from './components/topbar/topbar';
+import { AuthService } from './services/auth.service';
+import { AsyncPipe } from '@angular/common';
 
 @Component({
   selector: 'app-root',
-  imports: [Topbar, LoginDialog, RouterOutlet, RouterOutlet, ErrorModal],
+  imports: [Topbar, RouterOutlet, RouterOutlet, ErrorModal, AsyncPipe],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })
 export class App {
   showLoginDialog = false;
-  
-  private router = inject(Router);
-  private route = inject(ActivatedRoute);
-  
+
+  // private router = inject(Router);
+  // private route = inject(ActivatedRoute);
+  public authService = inject(AuthService);
+
   protected readonly title = signal('client');
 
-  
-  onLoginClick() {
-    this.showLoginDialog = true;
-  }
 
-  onSettings() {
-    this.router.navigate(['settings'], { relativeTo: this.route });
-  }
-
-  closeDialog() {
-    this.showLoginDialog = false;
-  }
 }
