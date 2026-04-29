@@ -8,7 +8,7 @@ export class ErrorService {
   errorMessage = signal<string | null>(null);
 
   unwrap<T>(result: Result<T>): result is Ok<T> {
-    if (result.ok) return true;
+    if (result.success) return true;
 
     this.showError(result.message)
     return false;

@@ -1,8 +1,10 @@
-<form [formGroup]="form" (ngSubmit)="onSave()">
-  <app-content-header [title]="'Trainer Profile'">
-    <button class=" retro-btn save-btn" [class.success]="saveSuccess" [disabled]="!hasChanged() || submitting">
-      {{ saveSuccess ? 'Saved!' : (submitting ? 'Saving...' : 'Save Changes') }}
-    </button>
+<form [formGroup]="form" (ngSubmit)="saveController.click()">
+  <app-content-header [title]="'Profile'">
+    <app-async-button [type]="'submit'" [controller]="saveController" [buttonClass]="'retro-btn save-btn'">
+      Save Changes
+      <span loading> Loading...</span>
+      <span done>Saved!</span>
+    </app-async-button>
   </app-content-header>
   <div class="profile-form">
 
@@ -47,6 +49,15 @@
           </div>
         </div>
 
+        @if(isLogged) {
+        <div class="logout-section">
+          <button type="button" class="retro-btn logout-btn" (click)="logout()">Logout</button>
+        </div>
+        } @else {
+        <div class="logout-section">
+          <button type="button" class="retro-btn logout-btn" routerLink="/login">Already have an account?</button>
+        </div>
+        }
       </div>
 
 

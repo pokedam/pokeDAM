@@ -1,10 +1,13 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, DoCheck, Input, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angular/forms';
-import { POKEMONS } from 'shared_types';
+import { POKEMONS, User } from 'shared_types';
 import { AuthService } from '../../services/auth.service';
 import { ErrorService } from '../../services/error.service';
 import { ContentHeader } from '../../components/content-header/content-header';
+import { AsyncButton, AsyncButtonController } from '../../components/async-button/async-button';
+import { map, Observable, of } from 'rxjs';
+import { Router, RouterLink } from '@angular/router';
 
 export interface ProfileData {
   username: string;
@@ -17,15 +20,16 @@ function contentOrNull(str: string): string | null {
 }
 
 @Component({
-  selector: 'app-settings',
+  selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, ContentHeader],
-  templateUrl: './settings.html',
-  styleUrl: './settings.css',
+  imports: [AsyncButton, CommonModule, FormsModule, ReactiveFormsModule, ContentHeader, RouterLink],
+  templateUrl: './profile.html',
+  styleUrl: './profile.css',
 })
-export class Settings implements OnInit {
+export class Profile implements OnInit, DoCheck {
   authService = inject(AuthService);
   errorService = inject(ErrorService);
+  router = inject(Router);
 
   form!: FormGroup;
 
@@ -34,12 +38,23 @@ export class Settings implements OnInit {
   emailErr: String | null = null;
   passwordErr: String | null = null;
   avatarId: number | null = null;
-  submitting: boolean = false;
-  saveSuccess: boolean = false;
+
+  @Input() saveController: AsyncButtonController = new AsyncButtonController();
+
+  constructor() {
+    this.saveController.callback = this.onSave.bind(this);
+  }
+  ngDoCheck(): void {
+    let hasChanged = this.hasChanged();
+    this.saveController.disabled = !hasChanged;
+    if (hasChanged)
+      this.saveController.state = 'init';
+
+
+  }
 
   initialNickname: string = '';
   initialAvatarId: number | null = null
-
 
   selectedAvatarUrl(): string {
     let idx = this.avatarId!;
@@ -64,9 +79,11 @@ export class Settings implements OnInit {
 
   ngOnInit() {
     this.loadPokemonAvatars();
-    const user = this.authService.auth!.user;
+    this.initialize(this.authService.auth!.user);
+  }
 
-    this.avatarId = user.avatarIndex;
+  initialize(user: User) {
+    this.avatarId = user.avatarId;
     this.initialAvatarId = this.avatarId;
     this.initialNickname = user.nickname;
 
@@ -76,7 +93,7 @@ export class Settings implements OnInit {
     this.form = new FormGroup({
       email: new FormControl(
         { value: initialEmail, disabled: this.isLogged },
-        this.isLogged ? [] : [Validators.email]
+        this.isLogged ? [] : [Validators.required, Validators.email]
       ),
 
       password: new FormControl(
@@ -129,63 +146,61 @@ export class Settings implements OnInit {
 
     let nickname = this.form.get('nickname');
     if (nickname?.invalid && nickname.errors?.['required']) {
-      this.nicknameErr = "Trainer Name is required.";
+      this.nicknameErr = "Nickname is required";
     }
 
     let email = this.form.get('email');
     if (email?.invalid) {
       if (email.errors?.['required']) {
-        this.emailErr = "Email is required.";
+        this.emailErr = "Email is required";
       } else if (email.errors?.['email']) {
-        this.emailErr = "Please enter a valid email address.";
+        this.emailErr = "Invalid email";
       }
     }
 
     let pass = this.form.get('password');
     if (pass?.invalid) {
       if (pass.errors?.['required']) {
-        this.passwordErr = "Password is required.";
+        this.passwordErr = "Password is required";
       } else if (pass.errors?.['minlength']) {
-        this.passwordErr = "Password must be at least 8 characters.";
+        this.passwordErr = "Password must be at least 8 characters";
       }
     }
   }
 
-  onSave() {
-    if (this.submitting) return;
+  logout() {
+    this.authService.logout();
+    this.router.navigate(['/login']);
+  }
 
+  saveForm() {
+    console.log("SAVE FORM");
+    this.saveController.click();
+  }
+
+  onSave(): Observable<boolean> {
     this.validate();
     if (this.form.invalid) {
-      return;
+      return of(false);
     }
 
-    this.submitting = true;
-
     const vals = this.form.getRawValue();
-    this.authService.updateProfile({
+    const auth = this.authService.auth!;
+
+
+    return this.authService.updateProfile({
       nickname: contentOrNull(vals.nickname || ''),
-      avatarIndex: this.avatarId,
+      avatarId: this.avatarId,
       email: contentOrNull(vals.email || ''),
       password: contentOrNull(vals.password || ''),
-    }).subscribe({
-      next: () => {
-        this.isLogged = true;
-        this.submitting = false;
-        this.saveSuccess = true;
-
-        const vals = this.form.getRawValue();
-        this.initialNickname = vals.nickname || '';
-        this.initialAvatarId = this.avatarId;
-        this.form.get('password')?.setValue('');
-
-        setTimeout(() => {
-          this.saveSuccess = false;
-        }, 2000);
-      },
-      error: (err) => {
-        this.submitting = false;
-        this.errorService.showError(`Error updating profile: ${err}`);
-      }
-    });
+    }).pipe(
+      map((auth) => {
+        if (auth) {
+          this.initialize(auth.user);
+          return true;
+        }
+        return false;
+      })
+    );
   }
 }

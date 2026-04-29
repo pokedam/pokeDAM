@@ -1,36 +1,30 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, tap, map, catchError, throwError, Observable, EMPTY } from 'rxjs';
+import { BehaviorSubject, tap, map, catchError, throwError, Observable, EMPTY, of } from 'rxjs';
 import { ErrorService } from './error.service';
-import shared, { authFactory, JwtAuth, LoginRequest, UserChangeRequest } from 'shared_types';
+import shared, { authFactory, JwtAuth, LoginRequest, User, UserChangeRequest } from 'shared_types';
+import { HttpService } from './http.service';
 
 export interface Auth {
   idToken: string,
   user: User,
 }
 
-export interface User {
-  id: number,
-  nickname: string,
-  email: string | null,
-  avatarIndex: number | null;
-}
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private http = inject(HttpClient);
+  private http = inject(HttpService);
   private errorService = inject(ErrorService);
-  private apiUrl = 'http://localhost:8080'; // Adjust based on your server
 
   private authSubject = new BehaviorSubject<Auth | null>(null);
   public auth$ = this.authSubject.asObservable();
 
   public get avatarUrl(): string | null {
     const auth = this.authSubject.getValue();
-    if (auth && auth.user.avatarIndex !== null) {
-      return `assets/avatars/avatar${auth.user.avatarIndex}.png`;
+    if (auth && auth.user.avatarId !== null) {
+      return `assets/avatars/avatar${auth.user.avatarId}.png`;
     }
     return null;
   }
@@ -44,8 +38,7 @@ export class AuthService {
     const refreshToken = localStorage.getItem('refreshToken');
 
     if (idToken && refreshToken) {
-      console.log(`IdToken = ${idToken}, refreshToken = ${refreshToken}`);
-      this.http.get<User>(`${this.apiUrl}/user`).subscribe({
+      this.http.get<User>(`/user`).subscribe({
         next: (user) => this.authSubject.next({
           idToken: localStorage.getItem('idToken') || idToken,
           user
@@ -72,7 +65,7 @@ export class AuthService {
       return throwError(() => new Error('No refresh token available'));
     }
 
-    return this.http.post<JwtAuth>(`${this.apiUrl}/auth/refresh`, { refreshToken }).pipe(
+    return this.http.post<JwtAuth>(`/auth/refresh`, { refreshToken }).pipe(
       tap((res) => {
         localStorage.setItem('idToken', res.idToken);
         localStorage.setItem('refreshToken', res.refreshToken);
@@ -82,28 +75,25 @@ export class AuthService {
     );
   }
 
-  public loginAnonymous(): Observable<string> {
-    return this.http.post<shared.JwtAuth>(`${this.apiUrl}/auth/anonymous`, {}).pipe(
+  public loginAnonymous(): Observable<Auth> {
+    return this.http.post<shared.JwtAuth>(`/auth/anonymous`, {}).pipe(
       tap((res) => {
         localStorage.setItem('idToken', res.idToken);
         localStorage.setItem('refreshToken', res.refreshToken);
         this.authSubject.next(res);
       }),
-      map((res) => res.idToken)
     );
   }
 
-  public login(req: LoginRequest): Observable<string> {
-    return this.http.post<shared.JwtAuth>(`${this.apiUrl}/auth/login`, req).pipe(
+  public login(req: LoginRequest): Observable<Auth> {
+    return this.http.post<shared.JwtAuth>(`/auth/login`, req).pipe(
       tap((res) => {
         localStorage.setItem('idToken', res.idToken);
         localStorage.setItem('refreshToken', res.refreshToken);
         this.authSubject.next(res);
       }),
-      map((res) => res.idToken)
     );
   }
-
   public logout(): void {
     localStorage.removeItem('idToken');
     localStorage.removeItem('refreshToken');
@@ -113,22 +103,29 @@ export class AuthService {
     });
   }
 
-  public updateProfile(req: UserChangeRequest): Observable<void> {
-    return this.http.patch<void>(`${this.apiUrl}/user`, req).pipe(
-      tap((_) => {
+  public updateProfile(req: UserChangeRequest): Observable<Auth | null> {
+
+    let d = this.http.patch<void>(`/user`, req).pipe(
+      map(() => {
         var auth = this.authSubject.getValue();
 
         if (auth) {
           if (req.nickname) auth.user.nickname = req.nickname;
           if (req.email) auth.user.email = req.email;
-          if (req.avatarIndex) auth.user.avatarIndex = req.avatarIndex;
+          if (req.avatarId) auth.user.avatarId = req.avatarId;
           this.authSubject.next(auth);
+          return auth;
         }
-      },),
-      catchError((error) => {
-        this.errorService.showError(error);
-        return EMPTY;
+
+
+        throw new Error('No authenticated user');
+      }),
+      catchError((err) => {
+        console.warn("Error updating profile:", err);
+        this.errorService.showError(err.message);
+        return of(null);
       })
     );
+    return d;
   }
 }

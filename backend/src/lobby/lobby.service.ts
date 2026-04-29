@@ -51,12 +51,13 @@ function getAll(): LobbySummaryResponse[] {
 
 export async function create(hostId: number, request: LobbyCreationRequest, maxPlayers: number = 8): Promise<Result<LobbySummaryResponse>> {
     if (players.get(hostId)) return result.conflict(`Player is already in a lobby`);
-    let nickname = (await dbService.user.get(hostId)).nickname ?? `Trainer${hostId}`;
+    let res = (await dbService.user.get(hostId));
+    if (!res.success) return res;
     const lobby = {
-        name: request.name ?? nickname + "'s Game",
+        name: request.name ?? res.content.nickname,
         password: request.password,
         hostId,
-        hostNickname: nickname,
+        hostNickname: res.content.nickname,
         joiners: new Map(),
         maxPlayers
     };
@@ -74,7 +75,9 @@ async function join(playerId: number, req: LobbyJoinRequest): Promise<Result<Lob
 
     if (lobby.password && lobby.password !== req.password)
         return result.forbidden("Invalid lobby password");
-    const nickname = (await dbService.user.get(playerId)).nickname;
+    let res = (await dbService.user.get(playerId));
+    if (!res.success) return res;
+    let nickname = res.content.nickname;
     lobby.joiners.set(playerId, {
         isReady: false,
         nickname,

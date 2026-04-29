@@ -1,25 +1,10 @@
-import express from 'express';
-import type { Request, Response, } from 'express';
-import { rest } from '../client.js';
-import type { User, UserChangeRequest } from 'shared_types';
+import { api } from '../client.js';
+import type { Result, User, UserChangeRequest } from 'shared_types';
 
-export async function get(userId: number): Promise<User> {
-    return (await rest.get<User>(`/user/${userId}`)).data;
+export function get(userId: number): Promise<Result<User>> {
+    return api.get<User>(`/user/${userId}`);
 }
 
-export const router = express.Router();
-
-router.get('', async (req: Request, res: Response): Promise<void> => {
-    res.json(await get(req.userId));
-});
-
-router.get('/:userId', async (req: Request, res: Response): Promise<void> => {
-    res.json(await get(Number(req.params.userId)));
-});
-
-
-router.patch('', async (req: Request, res: Response): Promise<void> => {
-    const request: UserChangeRequest = req.body;
-    const response = await rest.patch(`/user/${req.userId}`, request);
-    res.json(response.data);
-});
+export function set(userId: number, req: UserChangeRequest): Promise<Result<void>> {
+    return api.patch<void>(`/user/${userId}`, req);
+}

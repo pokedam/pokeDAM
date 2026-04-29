@@ -1,7 +1,7 @@
 export interface User {
     id: number;
     nickname: string;
-    avatarIndex: number | null;
+    avatarId: number | null;
     email: string | null;
 }
 
@@ -16,7 +16,7 @@ export interface JwtAuth extends Auth {
 
 export interface UserChangeRequest {
     nickname: string | null;
-    avatarIndex: number | null;
+    avatarId: number | null;
     email: string | null;
     password: string | null;
 }

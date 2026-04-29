@@ -98,3 +98,23 @@ body {
   outline: none;
   border-color: var(--pkmn-red);
 }
+
+.save-btn {
+  background-color: var(--pkmn-gb-mid2);
+  color: white;
+  width: 216px;
+}
+
+.save-btn:hover:not(:disabled) {
+  background-color: var(--pkmn-gb-mid1);
+}
+
+.save-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.save-btn.success:disabled {
+  opacity: 1;
+  color: #a5d6a7;
+}

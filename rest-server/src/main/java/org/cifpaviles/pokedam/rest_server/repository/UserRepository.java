@@ -18,7 +18,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("""
                 UPDATE User u SET
                     u.nickname = COALESCE(:nickname, u.nickname),
-                    u.avatarIndex = COALESCE(:avatarIndex, u.avatarIndex),
+                    u.avatarId = COALESCE(:avatarId, u.avatarId),
                     u.email = COALESCE(:email, u.email),
                     u.password = COALESCE(:password, u.password)
                 WHERE u.id = :id
@@ -26,7 +26,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     int patchUser(
             @Param("id") Long id,
             @Param("nickname") String nickname,
-            @Param("avatarIndex") Long avatarIndex,
+            @Param("avatarId") Long avatarId,
             @Param("email") String email,
             @Param("password") String password);
 }

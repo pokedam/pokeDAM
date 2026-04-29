@@ -19,7 +19,7 @@ export class Topbar {
   }
 
   getAvatarUrl(): string {
-    let idx = this.user.avatarIndex!;
+    let idx = this.user.avatarId!;
     return POKEMONS[idx]!.sprite;
   }
 

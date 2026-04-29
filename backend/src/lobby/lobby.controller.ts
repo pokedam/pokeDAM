@@ -25,7 +25,7 @@ export function lobbyController(io: Server, userId: number, socket: Socket): voi
 
     socket.on('lobby.create', async (req: LobbyCreationRequest, callback: Callback<LobbyCreatedResponse>) => {
         const res = await lobbyService.create(userId, req);
-        if (res.ok) {
+        if (res.success) {
             const lobbyRoom = `lobby_${res.content.id}`;
             // Subscribimnos al usuario a la socket io room del lobby.
             // Emitimos un evento para notificar que la sala ha sido creada.
@@ -37,7 +37,7 @@ export function lobbyController(io: Server, userId: number, socket: Socket): voi
 
     socket.on('lobby.join', async (req: LobbyJoinRequest, callback: Callback<void>) => {
         const res = await lobbyService.join(userId, req);
-        if (res.ok) {
+        if (res.success) {
             const lobbyRoom = `lobby_${req.id}`;
             io.to(lobbyRoom).emit(`lobby.${req.id}.event`, lobbyFactory.joinedEvent(userId, res.content.nickname));
             io.emit('lobbies.event', lobbyFactory.changedEvent(req.id, res.content.playerCount));
@@ -48,13 +48,13 @@ export function lobbyController(io: Server, userId: number, socket: Socket): voi
 
     socket.on('lobby.ready', async (isReady: boolean, callback: Callback<void>) => {
         let res = lobbyService.isReady(userId, isReady);
-        if (res.ok) io.to(`lobby_${res.content}`).emit(`lobby.${res.content}.event`, lobbyFactory.readyEvent(userId, isReady));
+        if (res.success) io.to(`lobby_${res.content}`).emit(`lobby.${res.content}.event`, lobbyFactory.readyEvent(userId, isReady));
         callback(res.map((_) => { }));
     });
 
     socket.on('lobby.kick', async (targetId: number, callback: Callback<void>) => {
         let res = lobbyService.kick(targetId, userId);
-        if (res.ok) {
+        if (res.success) {
             handleLeaveEvents(io, res.content, targetId);
             const lobbyRoom = `lobby_${res.content.lobbyId}`;
             (await io.in(lobbyRoom).fetchSockets()).find((s: any) => (s as any).userId === targetId)?.leave(lobbyRoom);
@@ -83,7 +83,7 @@ export function lobbyController(io: Server, userId: number, socket: Socket): voi
 
     function handleLeave(): Result<void> {
         const res = lobbyService.leave(userId);
-        if (res.ok) {
+        if (res.success) {
             handleLeaveEvents(io, res.content, userId);
             socket.leave(`lobby_${res.content.lobbyId}`);
         }

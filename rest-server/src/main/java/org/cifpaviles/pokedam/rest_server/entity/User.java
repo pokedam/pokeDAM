@@ -101,7 +101,7 @@ public class User {
 
     public User(UserChangeRequest data) {
         this.nickname = data.nickname;
-        this.avatarIndex = data.avatarIndex;
+        this.avatarId = data.avatarId;
         this.email = data.email;
         this.password = data.password;
     }
@@ -114,9 +114,9 @@ public class User {
     public String nickname;
 
     @Column
-    public Long avatarIndex;
+    public Long avatarId;
 
-    @Column(length = 100)
+    @Column(length = 100, unique = true)
     public String email;
 
     @Column(length = 500)

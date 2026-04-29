@@ -5,9 +5,9 @@
   <div class="topbar-actions desktop-only">
     <button class="retro-btn menu-btn play-btn" routerLink="/play">Jugar</button>
     <button class="retro-btn menu-btn">Pokédex</button>
-    <button class="retro-btn menu-btn profile-btn" routerLink="/settings">
+    <button class="retro-btn menu-btn profile-btn" routerLink="/profile">
       <div class="user-avatar">
-        @if (user.avatarIndex) {
+        @if (user.avatarId) {
         <img [src]="getAvatarUrl()" [alt]="user.nickname" class="avatar-img" />
         } @else {
         <span class="avatar-initial">{{ getAvatarInitial() }}</span>
@@ -64,7 +64,7 @@
 
     <div class="drawer-profile-info">
       <div class="drawer-avatar">
-        @if (user.avatarIndex) {
+        @if (user.avatarId) {
         <img [src]="getAvatarUrl()" [alt]="user.nickname" class="drawer-avatar-img" />
         } @else {
         <span class="drawer-avatar-initial">{{ getAvatarInitial() }}</span>
@@ -76,16 +76,16 @@
     <div class="drawer-divider"></div>
 
     <!-- Settings -->
-    <button class="drawer-nav-item" routerLink="/settings">
+    <button class="drawer-nav-item" routerLink="/profile">
       <span class="drawer-item-icon">⚙️</span>
-      <span>Settings</span>
+      <span>Profile</span>
     </button>
 
     <!-- Logout -->
-    <button class="drawer-nav-item drawer-logout-item">
+    <!-- <button class="drawer-nav-item drawer-logout-item">
       <span class="drawer-item-icon">🚪</span>
       <span>Log Out</span>
-    </button>
+    </button> -->
     <!-- } @else {
     Not logged in: show login button 
     <button class="drawer-nav-item drawer-login-item" (click)="onDrawerLogin()">

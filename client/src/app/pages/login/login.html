@@ -1,0 +1,45 @@
+<form [formGroup]="form" (ngSubmit)="loginController.click()">
+  <app-content-header [title]="'Login'"></app-content-header>
+  <div class="profile-form">
+    <div class="profile-main-content">
+      <!-- Current Avatar Preview -->
+      <div class="avatar-preview-section">
+
+        <!-- Username Input -->
+
+        <!-- Email Input -->
+        <div class="form-group email-group">
+          <label for="profile-email" class="retro-label">Email</label>
+          <input formControlName="email" id="profile-email" type="email" class="retro-input"
+            placeholder="you@example.com" autocomplete="email" />
+          <div class="validation-message" [class.show]="emailErr !== null">
+            <span *ngIf="emailErr">{{ emailErr }}</span>
+          </div>
+        </div>
+
+        <!-- Password Input -->
+        <div class="form-group password-group">
+          <label for="profile-password" class="retro-label">Password</label>
+          <input formControlName="password" id="profile-password" type="password" class="retro-input"
+            placeholder="New Password" autocomplete="new-password" />
+          <div class="validation-message" [class.show]="passwordErr !== null">
+            <span *ngIf="passwordErr">{{ passwordErr }}</span>
+          </div>
+        </div>
+
+
+        <div class="logout-section">
+          <app-async-button [controller]="loginController" [buttonClass]="'retro-btn logout-btn'">
+            Login
+            <span loading> Loading...</span>
+            <span done>Login</span>
+          </app-async-button>
+        </div>
+
+      </div>
+
+
+
+    </div>
+  </div>
+</form>
