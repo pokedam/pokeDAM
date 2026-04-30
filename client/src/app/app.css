@@ -12,13 +12,8 @@
 
 .main-content {
     width: 100%;
-    display: block;
     background-color: white;
     flex: 1;
     overflow-y: auto;
     scrollbar-width: none;
-}
-
-.main-content::-webkit-scrollbar {
-    display: none;
 }

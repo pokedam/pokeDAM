@@ -1,8 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, tap, map, catchError, throwError, Observable, EMPTY, of } from 'rxjs';
-import { ErrorService } from './error.service';
-import shared, { authFactory, JwtAuth, LoginRequest, User, UserChangeRequest } from 'shared_types';
+import { tap, map, throwError, Observable, } from 'rxjs';
+import shared, { JwtAuth, LoginRequest, User, UserChangeRequest } from 'shared_types';
 import { HttpService } from './http.service';
 import { storage } from './storage.service';
 
@@ -24,19 +22,6 @@ export class AuthService {
   public get auth() {
     return this._auth.asReadonly();
   }
-
-
-  // public get avatarUrl(): string | null {
-  //   const auth = this.auth();
-  //   if (auth && auth.user.avatarId !== null) {
-  //     return `assets/avatars/avatar${auth.user.avatarId}.png`;
-  //   }
-  //   return null;
-  // }
-
-  // public get auth(): Auth | null {
-  //   return this.authSubject.getValue();
-  // }
 
   public refreshTokens(): Observable<Auth> {
     var refreshToken = storage.refreshToken;
