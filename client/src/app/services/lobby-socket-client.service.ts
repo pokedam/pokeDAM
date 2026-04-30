@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, effect, inject } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
 import { BehaviorSubject, filter } from 'rxjs';
 import { AuthService } from './auth.service';
@@ -14,8 +14,8 @@ export class LobbySocketClient {
   private currentToken: string | null = null;
 
   constructor() {
-
-    this.auth.auth$.subscribe(auth => {
+    effect(() => {
+      let auth = this.auth.auth();
 
       if (!auth?.idToken) return;
 

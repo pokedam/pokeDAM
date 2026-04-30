@@ -1,11 +1,11 @@
 type OkBase<T> = {
-  ok: true;
+  success: true;
   status: number;
   content: T;
 };
 
 type ErrBase = {
-  ok: false;
+  success: false;
   status: number;
   message: string;
 };
@@ -26,15 +26,15 @@ export type Result<T> = Ok<T> | Err;
 const resultProto: ResultProto<any> = {
 
   data<T>(this: Result<T>): T | null {
-    return this.ok ? this.content : null;
+    return this.success ? this.content : null;
   },
 
-  err<T = never>(this: Result<T>): string | null {
-    return this.ok ? null : this.message;
+  err<T>(this: Result<T>): string | null {
+    return this.success ? null : this.message;
   },
 
   map<U>(this: Result<any>, f: (data: any) => U): Result<U> {
-    if (this.ok) {
+    if (this.success) {
       return result.ok(f(this.content));
     } else {
       return this as Result<U>;
@@ -42,40 +42,36 @@ const resultProto: ResultProto<any> = {
   }
 };
 
-function enhance<T>(res: OkBase<T> | ErrBase): Result<T> {
-  return Object.assign(Object.create(resultProto), res);
-}
-
 export const result = {
-  ok<T>(content: T): Result<T> {
-    return enhance({
-      ok: true,
+  ok<T>(content: T): Ok<T> {
+    return Object.assign(Object.create(resultProto), {
+      success: true,
       status: 200,
       content,
     });
   },
 
-  err<T = never>(message: string, status: number): Result<T> {
-    return enhance({
-      ok: false,
+  err(message: string, status: number): Err {
+    return Object.assign(Object.create(resultProto), {
+      success: false,
       status,
       message,
     });
   },
 
-  badRequest<T = never>(message: string): Result<T> {
+  badRequest<T = never>(message: string): Err {
     return this.err(message, 400);
   },
 
-  unauthorized<T = never>(message: string): Result<T> {
+  unauthorized<T = never>(message: string): Err {
     return this.err(message, 401);
   },
 
-  forbidden<T = never>(message: string): Result<T> {
+  forbidden(message: string): Err {
     return this.err(message, 403);
   },
 
-  notFound<T = never>(message: string): Result<T> {
+  notFound<T = never>(message: string): Err {
     return this.err(message, 404);
   },
 

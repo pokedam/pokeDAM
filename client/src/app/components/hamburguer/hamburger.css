@@ -1,0 +1,24 @@
+/* ─── Hamburger Button ─── */
+.hamburger-line {
+    display: block;
+    width: 18px;
+    height: 3px;
+    background-color: var(--border-main);
+    border-radius: 2px;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+    transform-origin: center;
+}
+
+/* Hamburger → X animation */
+.hamburger-line:nth-child(1).open {
+    transform: translateY(8px) rotate(45deg);
+}
+
+.hamburger-line:nth-child(2).open {
+    opacity: 0;
+    transform: scaleX(0);
+}
+
+.hamburger-line:nth-child(3).open {
+    transform: translateY(-8px) rotate(-45deg);
+}

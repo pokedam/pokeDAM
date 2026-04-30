@@ -1,38 +1,7 @@
-/* Container */
-.lobby-box {
-  display: flex;
-  flex-direction: column;
-  padding: 20px;
-  background-color: white;
-  min-height: 550px;
-  height: 100%;
-}
-
 /* Header */
-.lobby-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 15px;
-  border-bottom: 4px solid var(--border-main);
-}
-
-.lobby-header h2 {
-  font-size: 24px;
-  color: var(--text-main);
-  margin: 0;
-}
-
-.header-actions {
-  display: flex;
-  gap: 15px;
-}
-
 .create-lobby-btn {
   background-color: var(--pkmn-red);
   color: white;
-  text-shadow: 1px 1px 0px var(--border-main);
 }
 
 /* Table */

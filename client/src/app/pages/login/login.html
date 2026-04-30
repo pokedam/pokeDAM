@@ -1,0 +1,38 @@
+<form [formGroup]="form" (ngSubmit)="loginBtn.click()">
+  <app-content-header [title]="'Login'"></app-content-header>
+  <!-- Current Avatar Preview -->
+  <div class="section">
+    <div class="form-group">
+      <label for="profile-email" class="retro-label">Email</label>
+      <input formControlName="email" id="profile-email" type="email" class="retro-input" placeholder="you@example.com"
+        autocomplete="email" />
+      <div class="validation-message" [class.show]="emailErr !== null">
+        <span>{{ emailErr }}</span>
+      </div>
+
+    </div>
+
+    <!-- Password Input -->
+    <div class="form-group">
+      <label for="profile-password" class="retro-label">Password</label>
+      <input formControlName="password" id="profile-password" type="password" class="retro-input"
+        placeholder="New Password" autocomplete="new-password" />
+      <div class="validation-message" [class.show]="passwordErr !== null">
+        <span>{{ passwordErr }}</span>
+      </div>
+    </div>
+
+
+    <app-async-button #loginBtn [callback]="onLogin.bind(this)">
+      Login
+      <span loading> Loading...</span>
+      <span done>Login</span>
+    </app-async-button>
+
+
+  </div>
+
+
+
+
+</form>

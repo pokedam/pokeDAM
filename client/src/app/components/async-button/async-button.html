@@ -1,0 +1,11 @@
+<button class="retro-btn" [type]="type" (click)="click()" [disabled]="disabled" [ngClass]="buttonClass">
+    @if (loading) {
+    <ng-content select="[loading]"></ng-content>
+    } @else {
+    @if (done) {
+    <ng-content select="[done]"></ng-content>
+    } @else {
+    <ng-content></ng-content>
+    }
+    }
+</button>

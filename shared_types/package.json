@@ -5,6 +5,8 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
+    "rebuild": "node scripts/fetch-pokemon.js --force",
+    "prebuild": "node scripts/fetch-pokemon.js",
     "build": "tsc",
     "dev": "tsc --watch"
   },

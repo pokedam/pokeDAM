@@ -2,24 +2,13 @@ import { Routes } from '@angular/router';
 import { Home } from './pages/home/home';
 import { InGame } from './pages/in-game/in-game';
 import { Presentation } from './pages/presentation/presentation';
-import { SettingsPage } from './pages/settings-page/settings-page';
-import { PcMenu } from './components/pc-menu/pc-menu';
+import { Profile } from './pages/profile/profile';
+import { Login } from './pages/login/login';
 
 export const routes: Routes = [
-  {
-    path: '',
-    component: Presentation,
-    children: [
-      { path: 'settings', component: SettingsPage }
-    ]
-  },
-  {
-    path: 'play',
-    component: Home,
-    children: [
-      { path: 'settings', component: SettingsPage }
-    ]
-  },
+  { path: '', component: Presentation },
+  { path: 'play', component: Home },
   { path: 'in-game', component: InGame },
-  { path: 'pc', component: PcMenu }
+  { path: 'profile', component: Profile },
+  { path: 'login', component: Login, }
 ];

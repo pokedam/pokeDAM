@@ -13,6 +13,6 @@ export class ErrorModal {
   errorService = inject(ErrorService);
 
   close() {
-    this.errorService.clearError();
+    this.errorService.clear();
   }
 }

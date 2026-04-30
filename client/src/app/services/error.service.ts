@@ -6,19 +6,25 @@ import { Ok, Result } from 'shared_types';
 })
 export class ErrorService {
   errorMessage = signal<string | null>(null);
+  errorCallback: (() => void) | null = null;
 
-  unwrap<T>(result: Result<T>): result is Ok<T> {
-    if (result.ok) return true;
+  unwrap<T>(result: Result<T>, then?: (() => void)): result is Ok<T> {
+    if (result.success) return true;
 
-    this.showError(result.message)
+    this.show(result.message, then)
+
     return false;
   }
 
-  showError(message: string) {
+  show(message: string, then?: (() => void)) {
     this.errorMessage.set(message);
+    this.errorCallback = then || null;
   }
 
-  clearError() {
+  clear() {
     this.errorMessage.set(null);
+    if (this.errorCallback)
+      this.errorCallback();
+    this.errorCallback = null;
   }
 }

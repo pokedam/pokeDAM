@@ -1,10 +1,11 @@
 import { Component, EventEmitter, Output, Input, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ContentHeader } from '../../content-header/content-header';
 
 @Component({
   selector: 'app-join-lobby-password',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, ContentHeader],
   templateUrl: './join-lobby-password.html',
   styleUrl: '../battle-arena.css',
 })

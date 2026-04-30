@@ -1,0 +1,9 @@
+<div class="avatar-size">
+    <div class="avatar-circle">
+        @if (avatarUrl) {
+        <img [src]="avatarUrl" alt="Avatar" class="avatar-img" />
+        } @else if (initial) {
+        <span class="avatar-initial">{{ initial }}</span>
+        }
+    </div>
+</div>

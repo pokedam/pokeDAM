@@ -8,31 +8,15 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
+
+import org.cifpaviles.pokedam.rest_server.models.UserChangeRequest;
+
 import java.util.Arrays;
 import jakarta.persistence.PrePersist;
 
 @Entity
 @Table(name = "app_user")
 public class User {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    public Long id;
-
-    @Column(length = 100)
-    public String nickname;
-
-    @Column
-    public Long avatarIndex;
-
-    @Column(length = 100)
-    public String email;
-
-    @Column(length = 500)
-    public String password;
-
-    @Column(length = 500, nullable = false)
-    public String refreshToken;
-
     private static final List<String> TRAINER_BASE_NAMES = Arrays.asList(
             "Ash",
             "Red",
@@ -110,6 +94,36 @@ public class User {
             "Chili",
             "Cress",
             "Colress");
+
+    public User() {
+
+    }
+
+    public User(UserChangeRequest data) {
+        this.nickname = data.nickname;
+        this.avatarId = data.avatarId;
+        this.email = data.email;
+        this.password = data.password;
+    }
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    public Long id;
+
+    @Column(length = 100)
+    public String nickname;
+
+    @Column
+    public Long avatarId;
+
+    @Column(length = 100, unique = true)
+    public String email;
+
+    @Column(length = 500)
+    public String password;
+
+    @Column(length = 500, nullable = false)
+    public String refreshToken;
 
     public static String generateRandomTrainerName() {
         int num = ThreadLocalRandom.current().nextInt(1, 1000); // 1..999

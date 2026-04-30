@@ -1,33 +1,41 @@
-import { Component, inject, signal } from '@angular/core';
-import { ActivatedRoute, Router, RouterOutlet } from '@angular/router';
+import { Component, inject, OnInit } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
 import { ErrorModal } from './components/error-modal/error-modal';
-import { LoginDialog } from './components/login-dialog/login-dialog';
 import { Topbar } from './components/topbar/topbar';
+import { AuthService } from './services/auth.service';
+import { ErrorService } from './services/error.service';
+import { catchError, EMPTY } from 'rxjs';
 
 @Component({
   selector: 'app-root',
-  imports: [Topbar, LoginDialog, RouterOutlet, RouterOutlet, ErrorModal],
+  imports: [Topbar, RouterOutlet, RouterOutlet, ErrorModal],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })
-export class App {
-  showLoginDialog = false;
-  
-  private router = inject(Router);
-  private route = inject(ActivatedRoute);
-  
-  protected readonly title = signal('client');
+export class App implements OnInit {
+  auth = inject(AuthService);
+  error = inject(ErrorService);
 
-  
-  onLoginClick() {
-    this.showLoginDialog = true;
+  get isLogged() {
+    return this.auth.auth != null;
   }
 
-  onSettings() {
-    this.router.navigate(['settings'], { relativeTo: this.route });
-  }
-
-  closeDialog() {
-    this.showLoginDialog = false;
+  ngOnInit(): void {
+    // If app has credentials, get user associated
+    this.auth.getUser()
+      .pipe(
+        catchError((err) => {
+          // Log error for debugging
+          // Failed, fallback to anonymous login
+          this.error.show('Session expired, log in again');
+          return this.auth.loginAnonymous().pipe(
+            catchError((_) => {
+              // Failed anonymous too.
+              this.error.show('Connection failed.');
+              return EMPTY;
+            }),
+          );
+        }),
+      ).subscribe();
   }
 }

@@ -3,26 +3,31 @@ import http from 'http';
 import cors from 'cors';
 import { Server } from 'socket.io';
 
-//import { authRouter } from './auth.js';
 import { sanitizer } from './sanitizer.js';
 import { jwt } from './jwt.js';
 import { lobbyController } from './lobby/lobby.controller.js';
-import { dbService as db } from './db/client.js';
+import * as endpoints from './endpoints/index.js';
 
+// =============
+// EXPRESS
+// =============
 // Server configuration
 const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(sanitizer.middleware);
 
-app.use('/auth', db.auth.router);
-app.use('/user', jwt.middleware, db.user.router);
+// Endpoints
+app.use('/auth', endpoints.auth);
+app.use('/user', jwt.middleware, endpoints.user);
 
-
-//Server inicialization
+// Server inicialization
 const server = http.createServer(app);
 
-//Socket.io configuration
+// =============
+// SOCKETS
+// =============
+// Socket.io configuration
 const io = new Server(server, {
     cors: {
         origin: "*",
@@ -41,9 +46,9 @@ io.on('connection', (socket) => {
     lobbyController(io, userId, socket);
 });
 
-// ==========================================
-// ARRANCAR EL SERVIDOR
-// ==========================================
+// =============
+// INIT SERVER
+// =============
 const PORT = process.env.PORT || 8080;
 server.listen(PORT, () => {
     console.log(`Servidor REST y WebSocket corriendo en http://localhost:${PORT}`);

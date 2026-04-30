@@ -1,9 +1,6 @@
-<div class="lobby-header">
-  <h2>Custom Matches</h2>
-  <div class="header-actions">
-    <button class="retro-btn create-lobby-btn" (click)="createLobby()">Create Match</button>
-  </div>
-</div>
+<app-content-header [title]="'Custom Matches'">
+  <button class="retro-btn create-lobby-btn" (click)="createLobby()">Create Match</button>
+</app-content-header>
 
 <div class="table-container">
   <table class="lobby-table">

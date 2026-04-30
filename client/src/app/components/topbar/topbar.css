@@ -3,7 +3,6 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: 20px;
   padding: 15px 20px;
   background-color: white;
   height: 90px;
@@ -21,11 +20,16 @@
   gap: 15px;
 }
 
-.pokedex-btn {
+
+
+.play-btn {
   background-color: var(--pkmn-yellow);
 }
 
-/* ─── Responsive visibility ─── */
+.profile-btn {
+  width: 220px;
+}
+
 .desktop-only {
   display: flex !important;
 }
@@ -44,7 +48,6 @@
   }
 }
 
-/* ─── Hamburger Button ─── */
 .hamburger-btn {
   display: flex;
   flex-direction: column;
@@ -72,28 +75,14 @@
   transform: translate(3px, 3px);
 }
 
+/* ─── Hamburger Button ─── */
 .hamburger-line {
   display: block;
   width: 18px;
   height: 3px;
   background-color: var(--border-main);
   border-radius: 2px;
-  transition: transform 0.2s ease, opacity 0.2s ease;
   transform-origin: center;
-}
-
-/* Hamburger → X animation */
-.hamburger-line:nth-child(1).open {
-  transform: translateY(8px) rotate(45deg);
-}
-
-.hamburger-line:nth-child(2).open {
-  opacity: 0;
-  transform: scaleX(0);
-}
-
-.hamburger-line:nth-child(3).open {
-  transform: translateY(-8px) rotate(-45deg);
 }
 
 /* ─── Drawer Overlay ─── */
@@ -106,8 +95,13 @@
 }
 
 @keyframes fade-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 /* ─── Side Drawer ─── */
@@ -241,8 +235,8 @@
 }
 
 .drawer-avatar {
-  width: 42px;
-  height: 42px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   background-color: var(--pkmn-red);
   border: 3px solid var(--border-main);
@@ -297,4 +291,27 @@
 .drawer-login-item:hover {
   background-color: #e8eeff;
   color: var(--pkmn-blue);
+}
+
+
+
+/* ─── Avatar ─── */
+.avatar-container {
+  width: 32px;
+  height: 32px;
+}
+
+/* ─── Username ─── */
+.user-name {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Keep avatar and username vertically centered inside topbar buttons */
+.topbar-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
 }

@@ -1,11 +1,9 @@
-import axios from 'axios';
-import type { User } from 'shared_types';
-import * as auth from './endpoints/auth.js';
-import * as user from './endpoints/user.js';
+import axios, { type AxiosRequestConfig, type AxiosResponse } from 'axios';
+import * as auth from './entrypoints/auth.js';
+import * as user from './entrypoints/user.js';
+import { result, type Err, type Result } from 'shared_types';
 
-// Utilizaremos una variable de entorno en el futuro, por ahora dejamos un fallback.
 const REST_SERVER_URL = process.env.MAIN_SERVER_URL ?? fallbackRestServerUrl();
-
 const REST_SERVER_KEY = process.env.MAIN_SERVER_KEY ?? fallbackRestServerKey();
 
 function fallbackRestServerUrl(): string {
@@ -20,7 +18,7 @@ function fallbackRestServerKey(): string {
 }
 
 // Creamos una instancia de axios pre-configurada
-export const rest = axios.create({
+const rest = axios.create({
     baseURL: REST_SERVER_URL,
     timeout: 5000,
     headers: {
@@ -28,35 +26,60 @@ export const rest = axios.create({
     }
 });
 
-// Añadimos un interceptor para poner el header Authorization dinámicamente.
-// Esto permite rotar/actualizar el token, añadir logging o manejar excepciones centralizadas.
 rest.interceptors.request.use((config: any) => {
     config.headers = config.headers ?? {};
     (config.headers as Record<string, string>)['Authorization'] = `Bearer ${REST_SERVER_KEY}`;
     return config;
 });
 
+async function propagate<T = any, D = any, H = {}>(entrypoint: Promise<AxiosResponse<T, D, H>>): Promise<Result<T>> {
+    try {
+        return result.ok((await entrypoint).data);
+    } catch (error) {
+        if (axios.isAxiosError(error) && error.response)
+            return result.err(error.response.data?.message ?? 'Unknown', error.response.status);
+        else
+            return result.internal('Internal server error');
+    }
+}
 
+export const api = {
+    async post<T = any, R extends AxiosResponse<T> = AxiosResponse<T>, D = any>(
+        url: string,
+        data?: D,
+        config?: AxiosRequestConfig<D>
+    ): Promise<Result<T>> {
+        let res = rest.post<T, R, D>(url, data, config);
+        return await propagate(res);
+    },
+
+    async get<T = any, R extends AxiosResponse<T> = AxiosResponse<T>>(
+        url: string,
+        config?: AxiosRequestConfig
+    ): Promise<Result<T>> {
+        let res = rest.get<T, R>(url, config);
+        return await propagate(res);
+    },
+
+    async patch<T = any, R extends AxiosResponse<T> = AxiosResponse<T>, D = any>(
+        url: string,
+        data?: D,
+        config?: AxiosRequestConfig<D>
+    ): Promise<Result<T>> {
+        let res = rest.patch<T, R, D>(url, data, config);
+        return await propagate(res);
+    },
+
+    async delete<T = any, R extends AxiosResponse<T> = AxiosResponse<T>>(
+        url: string,
+        config?: AxiosRequestConfig
+    ): Promise<Result<T>> {
+        let res = rest.delete<T, R>(url, config);
+        return await propagate(res);
+    },
+};
 
 export const dbService = {
     auth,
     user,
-    // /**
-    //  * Envía la información de un usuario al main-server.
-    //  * Esta función está preparada para ser usada en el futuro sin modificar la funcionalidad actual.
-    //  * 
-    //  * @param user El objeto User a enviar
-    //  */
-    // async sendUser(user: User): Promise<number> {
-    //     try {
-    //         // Ejemplo de petición POST a una hipotética ruta del main-server
-    //         // No afecta a la funcionalidad actual del backend porque todavía no se llama desde ningún controlador
-    //         const response = await rest.post<number>('/api/users/sync', user);
-    //         return response.data;
-    //     } catch (error) {
-    //         console.error("Error al enviar el usuario al main-server:", error);
-    //         // Lanzamos el error para que, en un futuro, el controlador que use esto decida qué hacer (ej. devolver un status 502)
-    //         throw error;
-    //     }
-    // }
 };

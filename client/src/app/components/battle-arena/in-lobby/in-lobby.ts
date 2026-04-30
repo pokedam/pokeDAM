@@ -1,11 +1,13 @@
 import { Component, EventEmitter, inject, Input, Output } from '@angular/core';
 import { Lobby, Joiner as Joiner, CurrentLobbyService } from '../../../services/current-lobby.service';
 import { AuthService } from '../../../services/auth.service';
+import { ContentHeader } from '../../content-header/content-header';
 
 
 @Component({
   selector: 'app-in-lobby',
   standalone: true,
+  imports: [ContentHeader],
   templateUrl: './in-lobby.html',
   styleUrl: '../battle-arena.css',
 })
@@ -19,7 +21,7 @@ export class InLobby {
   }
 
   get userIndex(): number {
-    return this.authService.auth!.user.id;
+    return this.authService.auth()!.user.id;
   }
 
   get player(): Joiner | null {
@@ -56,7 +58,7 @@ export class InLobby {
   }
 
   toggleReady() {
-    let userId = this.authService.auth!.user.id;
+    let userId = this.authService.auth()!.user.id;
     let isReady = this.lobbyService.lobby!.joiners.get(userId)!.isReady;
     this.lobbyService.setReady(!isReady);
   }

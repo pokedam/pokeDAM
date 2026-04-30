@@ -1,0 +1,84 @@
+<form [formGroup]="form" (ngSubmit)="saveBtn.click()">
+  <app-content-header [title]="'Profile'"></app-content-header>
+  <div class="content">
+    <!-- Current Avatar Preview -->
+    <div class="section credentials-section">
+      <div class="avatar-container">
+        <app-avatar-circle [avatar]="avatarId !== null ? avatarId : form.get('nickname')?.value"></app-avatar-circle>
+      </div>
+      <!-- Username Input -->
+      <div class="form-group username-group">
+        <label for="profile-nickname" class="retro-label">Trainer Name</label>
+        <input formControlName="nickname" id="profile-nickname" type="text" class="retro-input" placeholder="New Name"
+          autocomplete="off" />
+        <div class="validation-message" [class.show]="nicknameErr !== null">
+
+          <span>{{ nicknameErr }}</span>
+
+        </div>
+      </div>
+
+      <!-- Email Input -->
+      <div class="form-group email-group">
+        <label for="profile-email" class="retro-label">Email</label>
+        <input formControlName="email" id="profile-email" type="email" class="retro-input" placeholder="you@example.com"
+          autocomplete="email" />
+        <div class="validation-message" [class.show]="emailErr !== null">
+
+          <span>{{ emailErr }}</span>
+
+        </div>
+      </div>
+
+      <!-- Password Input -->
+      <div class="form-group password-group">
+        <label for="profile-password" class="retro-label">Password</label>
+        <input formControlName="password" id="profile-password" type="password" class="retro-input"
+          placeholder="New Password" autocomplete="new-password" />
+        <div class="validation-message" [class.show]="passwordErr !== null">
+
+          <span>{{ passwordErr }}</span>
+
+        </div>
+      </div>
+
+      <div class="credential-actions">
+        <app-async-button [disabled]="!hasChanged()" #saveBtn [type]="'submit'" [callback]="onSave.bind(this)"
+          [buttonClass]="'save-btn'">
+          Save Changes
+          <span loading> Loading...</span>
+          <span done>Saved!</span>
+        </app-async-button>
+        @if(isLogged) {
+        <button type="button" class="retro-btn logout-btn" (click)="logout()">Logout</button>
+        } @else {
+        <button type="button" class="retro-btn logout-btn" routerLink="/login">Already have an account?</button>
+        }
+
+      </div>
+    </div>
+
+    <!-- Avatar Selection -->
+    <div class="section">
+
+      <!-- Search Input -->
+      <div class="form-group search-container">
+        <label class="retro-label">Choose your Profile Picture</label>
+        <input type="text" class="retro-input" placeholder="Search by name or ID..." [(ngModel)]="searchTerm"
+          [ngModelOptions]="{standalone: true}" (ngModelChange)="filterAvatars()" name="pokemonSearch"
+          autocomplete="off" />
+      </div>
+
+      <div class="avatar-grid">
+        @for (avatar of availableAvatars; track avatar.id) {
+        <button type="button" class="avatar-option" [class.selected]="avatarId === avatar.id"
+          (click)="selectAvatar(avatar.id)" [title]="avatar.name">
+          <img [src]="avatar.url" [alt]="avatar.name" />
+          <span class="avatar-id">#{{ avatar.id }}</span>
+        </button>
+        }
+      </div>
+
+    </div>
+  </div>
+</form>

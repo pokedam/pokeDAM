@@ -1,10 +1,11 @@
 import { Component, EventEmitter, Output, Input, OnInit, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ContentHeader } from '../../content-header/content-header';
 
 @Component({
   selector: 'app-create-lobby',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, ContentHeader],
   templateUrl: './create-lobby.html',
   styleUrl: '../battle-arena.css',
 })

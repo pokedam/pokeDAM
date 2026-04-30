@@ -3,11 +3,12 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 
 import { CommonModule } from '@angular/common';
 import { LobbyInfo } from '../../../services/lobbies.service';
+import { ContentHeader } from '../../content-header/content-header';
 
 @Component({
   selector: 'app-lobbies-browser',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ContentHeader],
   templateUrl: './lobbies-browser.html',
   styleUrl: '../battle-arena.css'
 })

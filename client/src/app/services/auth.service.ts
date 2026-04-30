@@ -1,108 +1,114 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, tap, map, catchError, throwError, Observable } from 'rxjs';
+import { BehaviorSubject, tap, map, catchError, throwError, Observable, EMPTY, of } from 'rxjs';
 import { ErrorService } from './error.service';
-import shared, { JwtAuth } from 'shared_types';
+import shared, { authFactory, JwtAuth, LoginRequest, User, UserChangeRequest } from 'shared_types';
+import { HttpService } from './http.service';
+import { storage } from './storage.service';
 
 export interface Auth {
   idToken: string,
   user: User,
 }
 
-export interface User {
-  id: number,
-  nickname: string,
-  email: string | null,
-  avatarIndex: number | null;
-}
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private http = inject(HttpClient);
-  private errorService = inject(ErrorService);
-  private apiUrl = 'http://localhost:8080'; // Adjust based on your server
+  private http = inject(HttpService);
+  //private errorService = inject(ErrorService);
 
-  private authSubject = new BehaviorSubject<Auth | null>(null);
-  public auth$ = this.authSubject.asObservable();
+  private _auth = signal<Auth | null>(null);
 
-  public get avatarUrl(): string | null {
-    const auth = this.authSubject.getValue();
-    if (auth && auth.user.avatarIndex !== null) {
-      return `assets/avatars/avatar${auth.user.avatarIndex}.png`;
-    }
-    return null;
+  public get auth() {
+    return this._auth.asReadonly();
   }
 
-  public get auth(): Auth | null {
-    return this.authSubject.getValue();
-  }
 
-  constructor() {
-    const idToken = localStorage.getItem('idToken');
-    const refreshToken = localStorage.getItem('refreshToken');
+  // public get avatarUrl(): string | null {
+  //   const auth = this.auth();
+  //   if (auth && auth.user.avatarId !== null) {
+  //     return `assets/avatars/avatar${auth.user.avatarId}.png`;
+  //   }
+  //   return null;
+  // }
 
-    if (idToken && refreshToken) {
-      this.http.get<User>(`${this.apiUrl}/user`).subscribe({
-        next: (user) => this.authSubject.next({
-          idToken: localStorage.getItem('idToken') || idToken,
-          user
-        }),
-        error: (err) => {
-          this.errorService.showError('Failed loading account: ' + err.message);
-          localStorage.removeItem('idToken');
-          localStorage.removeItem('refreshToken');
-          this.loginAnonymous().subscribe({
-            error: (err) => this.errorService.showError('Error in anonymous login fallback: ' + err.message),
-          });
-        }
-      });
-    } else {
-      this.loginAnonymous().subscribe({
-        error: (err) => this.errorService.showError('Error in anonymous login on startup: ' + err.message),
-      });
-    }
-  }
+  // public get auth(): Auth | null {
+  //   return this.authSubject.getValue();
+  // }
 
-  public refreshTokens(): Observable<string> {
-    const refreshToken = localStorage.getItem('refreshToken');
+  public refreshTokens(): Observable<Auth> {
+    var refreshToken = storage.refreshToken;
     if (!refreshToken) {
       return throwError(() => new Error('No refresh token available'));
     }
 
-    return this.http.post<JwtAuth>(`${this.apiUrl}/auth/refresh`, { refreshToken }).pipe(
+    return this.http.post<JwtAuth>(`/auth/refresh`, { refreshToken }).pipe(
       tap((res) => {
-        localStorage.setItem('idToken', res.idToken);
-        localStorage.setItem('refreshToken', res.refreshToken);
-        this.authSubject.next(res);
+        storage.idToken = res.idToken;
+        storage.refreshToken = res.refreshToken;
+        this._auth.set(res);
       }),
-      map((res) => res.idToken)
     );
   }
 
-  public loginAnonymous(): Observable<string> {
-    return this.http.post<shared.JwtAuth>(`${this.apiUrl}/auth/anonymous`, {}).pipe(
+  public loginAnonymous(): Observable<Auth> {
+    return this.http.post<shared.JwtAuth>(`/auth/anonymous`, {}).pipe(
       tap((res) => {
-        localStorage.setItem('idToken', res.idToken);
-        localStorage.setItem('refreshToken', res.refreshToken);
-        this.authSubject.next(res);
+        storage.idToken = res.idToken;
+        storage.refreshToken = res.refreshToken;
+        this._auth.set(res);
       }),
-      map((res) => res.idToken)
     );
   }
 
-  public updateProfile(nickname: string, avatarUrl: string | null): Observable<User> {
-    return this.http.put<User>(`${this.apiUrl}/auth/profile`, { nickname, avatarUrl }).pipe(
-      tap((updatedUser) => {
-        const currentAuth = this.authSubject.getValue();
-        if (currentAuth) {
-          this.authSubject.next({
-            ...currentAuth,
-            user: updatedUser
-          });
-        }
-      })
+  public login(req: LoginRequest): Observable<Auth> {
+    return this.http.post<shared.JwtAuth>(`/auth/login`, req).pipe(
+      tap((res) => {
+        storage.idToken = res.idToken;
+        storage.refreshToken = res.refreshToken;
+        this._auth.set(res);
+      }),
     );
+  }
+
+  public logout(): void {
+    storage.idToken = null;
+    storage.refreshToken = null;
+    this._auth.set(null);
+  }
+
+  public getUser(): Observable<Auth> {
+    return this.http.get<User>(`/user`).pipe(
+      map((user) => {
+        console.dir(user);
+        let auth: Auth = {
+          idToken: storage.idToken || '',
+          user
+        };
+        console.dir(auth);
+        this._auth.set(auth);
+        return auth;
+      }),
+    );
+  }
+
+  public setUser(req: UserChangeRequest): Observable<Auth> {
+    var auth = this._auth();
+    if (auth !== null) {
+      let a: Auth = auth;
+      return this.http.patch<void>(`/user`, req).pipe(
+        map(() => {
+          if (req.nickname) a.user.nickname = req.nickname;
+          if (req.email) a.user.email = req.email;
+          if (req.avatarId) a.user.avatarId = req.avatarId;
+          this._auth.set(a);
+          return a;
+        }),
+
+      );
+    }
+    return throwError(() => new Error('No authenticated user'));
   }
 }

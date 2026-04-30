@@ -1,73 +1,78 @@
-#!/bin/bash
-
-# Directorio raíz del proyecto (donde se ejecutó init.sh)
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-# Función para cerrar los procesos en segundo plano al salir o presionar Ctrl+C
 cleanup() {
     echo ""
-    echo "🛑 Cerrando todos los servicios..."
+    echo "🛑 Shutting down all services..."
     kill $BACKEND_PID $CLIENT_PID $REST_SERVER_PID 2>/dev/null
     exit
 }
 
-# Capturamos la señal de interrupción (Ctrl+C) para limpiar los procesos
-trap cleanup SIGINT SIGTERM EXIT
+trap cleanup SIGINT SIGTERM EXIT # Capture Ctrl+C to clean up processes
 
-echo "🚀 Inicializando el proyecto PokeDAM..."
+echo "🚀 Initializing PokeDAM project..."
 
-# 1. shared_types: npm install y npm run build
-echo "📦 [1/4] Procesando 'shared_types'..."
+# 1. shared_types: npm install and npm run build
+echo "📦 [1/4] Processing 'shared_types'..."
 cd shared_types || exit
 npm install
+
+# Check args and run rebuild if --force or -f is passed
+for arg in "$@"; do
+    if [[ "$arg" == "--force" || "$arg" == "-f" ]]; then
+        echo "♻️ [shared_types] --force/-f enabled: running 'npm run rebuild'..."
+        npm run rebuild
+        break
+    fi
+done
+
 npm run build
 cd ..
 
-# 2. backend y client: npm install
-echo "📦 [2/4] Instalando dependencias de 'backend'..."
+# 2. backend and client: npm install
+echo "📦 [2/4] Installing dependencies for 'backend'..."
 cd backend || exit
 npm install
 cd ..
 
-echo "📦 [3/4] Instalando dependencias de 'client'..."
+echo "📦 [3/4] Installing dependencies for 'client'..."
 cd client || exit
 npm install
 cd ..
 
-# 3 y 4. Ejecutar backend, client, y rest-server en segundo plano (&)
-echo "🔥 [4/4] Arrancando los servicios..."
+# 3 and 4. Run backend, client, and rest-server in background (&)
+echo "🔥 [4/4] Starting services..."
 
 cd rest-server || exit
-echo "▶️ Iniciando Rest-Server (spring-boot:run)..."
-# Por si acaso el archivo no tuviera permisos de ejecución en Linux/GitBash
+echo "▶️ Starting Rest-Server (spring-boot:run)..."
+# Ensure execution permission in case it's missing (Linux/GitBash)
 chmod +x ./mvnw 2>/dev/null
 MAVEN_USER_HOME="$PROJECT_DIR/rest-server/.m2" ./mvnw spring-boot:run &
 REST_SERVER_PID=$!
 cd ..
 
 cd backend || exit
-echo "▶️ Iniciando Backend (npm start)..."
+echo "▶️ Starting Backend (npm start)..."
 npm start &
 BACKEND_PID=$!
 cd ..
 
 cd client || exit
-echo "▶️ Iniciando Client (npm start)..."
-# Pasamos CI=1 y NG_CLI_ANALYTICS=false para que Angular no pregunte NADA y no crashee
+echo "▶️ Starting Client (npm start)..."
+# Set CI=1 and NG_CLI_ANALYTICS=false so Angular does not prompt or crash
 CI=1 NG_CLI_ANALYTICS=false npm start &
 CLIENT_PID=$!
 cd ..
 
 echo "========================================================"
-echo "✅ Todos los servicios han arrancado en la misma terminal:"
+echo "✅ All services have started in the same terminal:"
 echo "   - Backend PID: $BACKEND_PID"
 echo "   - Client PID: $CLIENT_PID"
 echo "   - Rest-Server PID: $REST_SERVER_PID"
-echo "   (Los registros de los tres se irán mostrando aquí)"
+echo "   (Logs from all three will be displayed here)"
 echo ""
-echo "❗ IMPORTANTE: Presiona [Ctrl + C] para parar todos a la vez."
+echo "❗ IMPORTANT: Press [Ctrl + C] to stop everything at once."
 echo "========================================================"
 
-# El wait hace que el script espere a que terminen los procesos hijos,
-# manteniendo la terminal activa hasta que el usuario presione Ctrl+C.
+# wait keeps the script running until child processes exit,
+# keeping the terminal active until the user presses Ctrl+C.
 wait

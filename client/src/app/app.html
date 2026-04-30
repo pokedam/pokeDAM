@@ -1,14 +1,11 @@
-<div class="home-layout">
+@if (isLogged) {
+<div class="app">
     <!-- Topbar -->
-    <app-topbar (loginClick)="onLoginClick()" (settingsClick)="onSettings()" />
+    <app-topbar />
     <!-- Main Content -->
-    <main class="main-content">
+    <main class="retro-box main-content">
         <router-outlet></router-outlet>
     </main>
-
-    @if (showLoginDialog) {
-    <app-login-dialog (close)="closeDialog()" />
-    }
 </div>
-
+}
 <app-error-modal></app-error-modal>
