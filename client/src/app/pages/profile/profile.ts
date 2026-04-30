@@ -1,12 +1,13 @@
-import { Component, DoCheck, Input, OnInit, inject } from '@angular/core';
+import { Component, DoCheck, Input, OnInit, ViewChild, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angular/forms';
 import { POKEMONS, User } from 'shared_types';
+import { AvatarCircle } from '../../components/avatar-circle/avatar-circle';
 import { AuthService } from '../../services/auth.service';
 import { ErrorService } from '../../services/error.service';
 import { ContentHeader } from '../../components/content-header/content-header';
-import { AsyncButton, AsyncButtonController } from '../../components/async-button/async-button';
-import { map, Observable, of } from 'rxjs';
+import { AsyncButton } from '../../components/async-button/async-button';
+import { catchError, map, Observable, of } from 'rxjs';
 import { Router, RouterLink } from '@angular/router';
 
 export interface ProfileData {
@@ -22,7 +23,15 @@ function contentOrNull(str: string): string | null {
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [AsyncButton, CommonModule, FormsModule, ReactiveFormsModule, ContentHeader, RouterLink],
+  imports: [
+    AsyncButton,
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule,
+    ContentHeader,
+    RouterLink,
+    AvatarCircle
+  ],
   templateUrl: './profile.html',
   styleUrl: './profile.css',
 })
@@ -30,6 +39,8 @@ export class Profile implements OnInit, DoCheck {
   authService = inject(AuthService);
   errorService = inject(ErrorService);
   router = inject(Router);
+
+  cdr = inject(ChangeDetectorRef);
 
   form!: FormGroup;
 
@@ -39,18 +50,23 @@ export class Profile implements OnInit, DoCheck {
   passwordErr: String | null = null;
   avatarId: number | null = null;
 
-  @Input() saveController: AsyncButtonController = new AsyncButtonController();
+  @ViewChild('saveBtn') saveBtn!: AsyncButton;
 
-  constructor() {
-    this.saveController.callback = this.onSave.bind(this);
+  // constructor() {
+  //   this.saveController.callback = this.onSave.bind(this);
+  // }
+
+  ngOnInit() {
+    this.loadPokemonAvatars();
+    // this.saveBtn.callback = this.onSave.bind(this);
+    this.initialize(this.authService.auth!.user);
   }
+
   ngDoCheck(): void {
     let hasChanged = this.hasChanged();
-    this.saveController.disabled = !hasChanged;
+    //this.saveController.disabled = !hasChanged;
     if (hasChanged)
-      this.saveController.state = 'init';
-
-
+      this.saveBtn.state = 'init';
   }
 
   initialNickname: string = '';
@@ -76,11 +92,6 @@ export class Profile implements OnInit, DoCheck {
   availableAvatars: { id: number, name: string, url: string }[] = [];
 
   searchTerm = '';
-
-  ngOnInit() {
-    this.loadPokemonAvatars();
-    this.initialize(this.authService.auth!.user);
-  }
 
   initialize(user: User) {
     this.avatarId = user.avatarId;
@@ -163,7 +174,7 @@ export class Profile implements OnInit, DoCheck {
       if (pass.errors?.['required']) {
         this.passwordErr = "Password is required";
       } else if (pass.errors?.['minlength']) {
-        this.passwordErr = "Password must be at least 8 characters";
+        this.passwordErr = "Password too short!";
       }
     }
   }
@@ -173,11 +184,6 @@ export class Profile implements OnInit, DoCheck {
     this.router.navigate(['/login']);
   }
 
-  saveForm() {
-    console.log("SAVE FORM");
-    this.saveController.click();
-  }
-
   onSave(): Observable<boolean> {
     this.validate();
     if (this.form.invalid) {
@@ -185,8 +191,6 @@ export class Profile implements OnInit, DoCheck {
     }
 
     const vals = this.form.getRawValue();
-    const auth = this.authService.auth!;
-
 
     return this.authService.updateProfile({
       nickname: contentOrNull(vals.nickname || ''),
@@ -200,7 +204,13 @@ export class Profile implements OnInit, DoCheck {
           return true;
         }
         return false;
-      })
+      }),
+      catchError((err) => {
+        this.emailErr = "Email already in use";
+        this.cdr.detectChanges();
+        return of(false);
+      }),
+
     );
   }
 }

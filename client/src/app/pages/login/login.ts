@@ -1,10 +1,10 @@
-import { Component, DoCheck, Input, OnInit, inject } from '@angular/core';
+import { Component, DoCheck, Input, OnInit, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { ErrorService } from '../../services/error.service';
 import { ContentHeader } from '../../components/content-header/content-header';
-import { AsyncButton, AsyncButtonController } from '../../components/async-button/async-button';
+import { AsyncButton } from '../../components/async-button/async-button';
 import { catchError, map, Observable, of } from 'rxjs';
 import { Router } from '@angular/router';
 
@@ -35,11 +35,8 @@ export class Login implements OnInit {
   emailErr: String | null = null;
   passwordErr: String | null = null;
 
-  @Input() loginController: AsyncButtonController = new AsyncButtonController();
+  @ViewChild('loginBtn') loginBtn!: AsyncButton;
 
-  constructor() {
-    this.loginController.callback = this.onLogin.bind(this);
-  }
   ngOnInit(): void {
     this.form = new FormGroup({
       email: new FormControl(

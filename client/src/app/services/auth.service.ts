@@ -44,11 +44,12 @@ export class AuthService {
           user
         }),
         error: (err) => {
-          this.errorService.showError('Failed loading account: ' + err.message);
-          localStorage.removeItem('idToken');
-          localStorage.removeItem('refreshToken');
-          this.loginAnonymous().subscribe({
-            error: (err) => this.errorService.showError('Error in anonymous login fallback: ' + err.message),
+          this.errorService.showError('Session expired, log in again', () => {
+            localStorage.removeItem('idToken');
+            localStorage.removeItem('refreshToken');
+            this.loginAnonymous().subscribe({
+              error: (err) => this.errorService.showError('Error in anonymous login fallback: ' + err.message),
+            });
           });
         }
       });
@@ -108,7 +109,6 @@ export class AuthService {
     let d = this.http.patch<void>(`/user`, req).pipe(
       map(() => {
         var auth = this.authSubject.getValue();
-
         if (auth) {
           if (req.nickname) auth.user.nickname = req.nickname;
           if (req.email) auth.user.email = req.email;
@@ -116,15 +116,9 @@ export class AuthService {
           this.authSubject.next(auth);
           return auth;
         }
-
-
         throw new Error('No authenticated user');
       }),
-      catchError((err) => {
-        console.warn("Error updating profile:", err);
-        this.errorService.showError(err.message);
-        return of(null);
-      })
+
     );
     return d;
   }

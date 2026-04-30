@@ -118,3 +118,70 @@ body {
   opacity: 1;
   color: #a5d6a7;
 }
+
+
+/* Form Base */
+/* Form basics */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.retro-label {
+  font-family: var(--font-retro);
+  font-size: 10px;
+  color: var(--pkmn-gb-dark);
+  letter-spacing: 1px;
+}
+
+.retro-input {
+  font-family: var(--font-retro);
+  background-color: white;
+  border: 4px solid var(--border-main);
+  padding: 13px 15px;
+  font-size: 12px;
+  border-radius: 4px;
+  color: var(--text-main);
+  outline: none;
+  transition: border-color 0.15s, background-color 0.15s;
+  box-shadow: inset 2px 2px 0px rgba(0, 0, 0, 0.08);
+}
+
+.retro-input:focus {
+  border-color: var(--pkmn-blue);
+  background-color: #f0f4ff;
+}
+
+.retro-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.validation-message {
+  font-family: var(--font-retro);
+  font-size: 9px;
+  color: #df4444;
+  /* Retro red */
+  margin: 2px;
+  min-height: 11px;
+  opacity: 0;
+  transition: opacity 0.2s ease-in;
+}
+
+.validation-message.show {
+  opacity: 1;
+}
+
+.section {
+  padding: 24px;
+  gap: 8px;
+  background-color: var(--pkmn-gb-light);
+  border: 4px solid var(--border-main);
+  border-radius: 8px;
+  box-shadow: inset 4px 4px 0px rgba(0, 0, 0, 0.05);
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}

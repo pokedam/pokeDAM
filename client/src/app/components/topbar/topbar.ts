@@ -1,11 +1,13 @@
-import { Component, HostListener, } from '@angular/core';
+import { Component, HostListener } from '@angular/core';
+import { Hamburger } from '../hamburguer/hamburger';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { POKEMONS, User } from 'shared_types';
+import { AvatarCircle } from '../avatar-circle/avatar-circle';
 
 @Component({
   selector: 'app-topbar',
-  imports: [RouterLink],
+  imports: [AvatarCircle, RouterLink, Hamburger],
   templateUrl: './topbar.html',
   styleUrl: './topbar.css',
 })
