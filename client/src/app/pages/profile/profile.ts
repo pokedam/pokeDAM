@@ -192,7 +192,7 @@ export class Profile implements OnInit, DoCheck {
 
     const vals = this.form.getRawValue();
 
-    return this.authService.updateProfile({
+    return this.authService.setUser({
       nickname: contentOrNull(vals.nickname || ''),
       avatarId: this.avatarId,
       email: contentOrNull(vals.email || ''),

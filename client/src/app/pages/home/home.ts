@@ -21,6 +21,7 @@ export class Home {
   savedRequiresPassword: boolean = false;
   joiningLobbyId: string | null = null;
   joiningLobbyName: string | null = null;
+
   lobbies = inject(LobbiesService);
   currLobby = inject(CurrentLobbyService);
   auth = inject(AuthService);

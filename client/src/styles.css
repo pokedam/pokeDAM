@@ -177,6 +177,7 @@ body {
 .section {
   padding: 24px;
   gap: 8px;
+  height: 100%;
   background-color: var(--pkmn-gb-light);
   border: 4px solid var(--border-main);
   border-radius: 8px;

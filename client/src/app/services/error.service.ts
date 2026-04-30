@@ -11,17 +11,17 @@ export class ErrorService {
   unwrap<T>(result: Result<T>, then?: (() => void)): result is Ok<T> {
     if (result.success) return true;
 
-    this.showError(result.message, then)
+    this.show(result.message, then)
 
     return false;
   }
 
-  showError(message: string, then?: (() => void)) {
+  show(message: string, then?: (() => void)) {
     this.errorMessage.set(message);
     this.errorCallback = then || null;
   }
 
-  clearError() {
+  clear() {
     this.errorMessage.set(null);
     if (this.errorCallback)
       this.errorCallback();

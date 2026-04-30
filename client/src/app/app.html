@@ -1,4 +1,4 @@
-@if (authService.auth$ | async; as auth) {
+@if (isLogged) {
 <div class="home-layout">
     <!-- Topbar -->
     <app-topbar />

@@ -94,7 +94,7 @@ export class Login implements OnInit {
       }),
       catchError((err) => {
         console.error(`Login failed: ${err.message}`);
-        this.errorService.showError('Login failed: ' + err.message);
+        this.errorService.show('Login failed: ' + err.message);
         return of(false);
       })
     );

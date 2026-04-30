@@ -1,4 +1,3 @@
-@if (auth.auth) {
 @if (currLobby.lobby$ | async; as lobby) {
 <app-in-lobby />
 } @else if (joiningLobbyId) {
@@ -12,9 +11,4 @@
 <app-create-lobby [userName]="auth.auth!.user.nickname" [initialName]="savedLobbyName"
   (onCancel)="closeCreateMenu($event)" (onCreateLobby)="createLobby($event)">
 </app-create-lobby>
-}
-} @else {
-<div class="loading-container">
-  Loading arena...
-</div>
 }
