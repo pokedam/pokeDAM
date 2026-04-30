@@ -17,7 +17,7 @@ export class App implements OnInit {
   error = inject(ErrorService);
 
   get isLogged() {
-    return this.auth.auth != null;
+    return this.auth.auth() != null;
   }
 
   ngOnInit(): void {

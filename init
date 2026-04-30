@@ -21,7 +21,7 @@ for arg in "$@"; do
     if [[ "$arg" == "--force" || "$arg" == "-f" ]]; then
         echo "♻️ [shared_types] --force/-f enabled: running 'npm run rebuild'..."
         npm run rebuild
-        break
+        break 
     fi
 done
 
