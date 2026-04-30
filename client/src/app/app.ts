@@ -17,14 +17,15 @@ export class App implements OnInit {
   error = inject(ErrorService);
 
   get isLogged() {
-    return this.auth.auth !== null;
+    return this.auth.auth != null;
   }
 
   ngOnInit(): void {
     // If app has credentials, get user associated
     this.auth.getUser()
       .pipe(
-        catchError((_) => {
+        catchError((err) => {
+          // Log error for debugging
           // Failed, fallback to anonymous login
           this.error.show('Session expired, log in again');
           return this.auth.loginAnonymous().pipe(

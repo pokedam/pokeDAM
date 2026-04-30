@@ -27,7 +27,9 @@
 
   <!-- Mobile hamburger button -->
   <button class="hamburger-btn mobile-only" (click)="toggleDrawer()" aria-label="Open menu">
-    <app-hamburger [isOpen]="isDrawerOpen"></app-hamburger>
+    <span class="hamburger-line" [class.open]="isDrawerOpen"></span>
+    <span class="hamburger-line" [class.open]="isDrawerOpen"></span>
+    <span class="hamburger-line" [class.open]="isDrawerOpen"></span>
   </button>
 </header>
 

@@ -7,7 +7,7 @@ import { AuthService } from '../../services/auth.service';
 import { ErrorService } from '../../services/error.service';
 import { ContentHeader } from '../../components/content-header/content-header';
 import { AsyncButton } from '../../components/async-button/async-button';
-import { catchError, map, Observable, of } from 'rxjs';
+import { catchError, EMPTY, map, Observable, of, tap } from 'rxjs';
 import { Router, RouterLink } from '@angular/router';
 
 export interface ProfileData {
@@ -57,9 +57,8 @@ export class Profile implements OnInit, DoCheck {
   // }
 
   ngOnInit() {
-    this.loadPokemonAvatars();
-    // this.saveBtn.callback = this.onSave.bind(this);
-    this.initialize(this.authService.auth!.user);
+    this.loadPokemonAvatars();    
+    this.initialize(this.authService.auth()!.user);
   }
 
   ngDoCheck(): void {
@@ -181,7 +180,17 @@ export class Profile implements OnInit, DoCheck {
 
   logout() {
     this.authService.logout();
-    this.router.navigate(['/login']);
+    console.log("Logged out");
+    this.authService.loginAnonymous().pipe(
+      tap(a => {
+        console.log("Logged in anonymously: ", a);
+        this.router.navigate(['/login']);
+      }),
+      catchError(_ => {
+        this.errorService.show("Connection failed");
+        return EMPTY;
+      })
+    ).subscribe();
   }
 
   onSave(): Observable<boolean> {

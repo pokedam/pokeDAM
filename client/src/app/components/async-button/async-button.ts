@@ -21,6 +21,7 @@ export class AsyncButton {
 
   _cdr = inject(ChangeDetectorRef);
 
+
   get done(): boolean {
     return this.state == 'done';
   }
@@ -33,11 +34,16 @@ export class AsyncButton {
     if (this.disabled) {
       return;
     }
+
     this.state = 'loading';
+    this._cdr.markForCheck();
+
     try {
       this.state = (await firstValueFrom(this.callback!())) ? 'done' : 'init';
+      this._cdr.markForCheck();
     } catch (e) {
       this.state = 'init';
+      this._cdr.markForCheck();
       throw e;
     }
   }

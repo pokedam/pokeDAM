@@ -74,7 +74,7 @@ export class Home {
   }
 
   toggleReady() {
-    let userId = this.auth.auth!.user.id;
+    let userId = this.auth.auth()!.user.id;
     let isReady = this.currLobby.lobby!.joiners.get(userId)!.isReady;
     this.currLobby.setReady(!isReady);
   }

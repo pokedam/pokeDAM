@@ -84,7 +84,7 @@ export class CurrentLobbyService {
                     case 'left':
                         if (lobby) {
                             lobby.joiners.delete(event.id);
-                            this.lobbySubject.next(event.id == this.auth.auth!.user.id ? null : lobby);
+                            this.lobbySubject.next(event.id == this.auth.auth()!.user.id ? null : lobby);
                         }
                         break;
 
@@ -95,7 +95,7 @@ export class CurrentLobbyService {
                                 lobby.hostId = event.newHostId;
                                 lobby.hostNickname = lobby.joiners.get(event.newHostId)!.nickname;
                                 lobby.joiners.delete(event.newHostId);
-                                this.lobbySubject.next(leftId == this.auth.auth!.user.id ? null : lobby);
+                                this.lobbySubject.next(leftId == this.auth.auth()!.user.id ? null : lobby);
                             }
                             else this.lobbySubject.next(null);
                         }

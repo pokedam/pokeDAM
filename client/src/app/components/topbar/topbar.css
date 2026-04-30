@@ -75,6 +75,16 @@
   transform: translate(3px, 3px);
 }
 
+/* ─── Hamburger Button ─── */
+.hamburger-line {
+  display: block;
+  width: 18px;
+  height: 3px;
+  background-color: var(--border-main);
+  border-radius: 2px;
+  transform-origin: center;
+}
+
 /* ─── Drawer Overlay ─── */
 .drawer-overlay {
   position: fixed;

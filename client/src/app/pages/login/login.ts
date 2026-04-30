@@ -40,7 +40,7 @@ export class Login implements OnInit {
   ngOnInit(): void {
     this.form = new FormGroup({
       email: new FormControl(
-        this.authService.auth?.user.email || '',
+        this.authService.auth()?.user.email || '',
         [Validators.required, Validators.email]
       ),
 

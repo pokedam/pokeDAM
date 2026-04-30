@@ -21,7 +21,7 @@ export class InLobby {
   }
 
   get userIndex(): number {
-    return this.authService.auth!.user.id;
+    return this.authService.auth()!.user.id;
   }
 
   get player(): Joiner | null {
@@ -58,7 +58,7 @@ export class InLobby {
   }
 
   toggleReady() {
-    let userId = this.authService.auth!.user.id;
+    let userId = this.authService.auth()!.user.id;
     let isReady = this.lobbyService.lobby!.joiners.get(userId)!.isReady;
     this.lobbyService.setReady(!isReady);
   }

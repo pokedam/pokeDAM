@@ -17,7 +17,7 @@ export class Topbar {
   isDrawerOpen = false;
 
   get user(): User {
-    return this.authService.auth!.user;
+    return this.authService.auth()!.user;
   }
 
   getAvatarUrl(): string {

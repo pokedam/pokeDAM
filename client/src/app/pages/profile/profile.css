@@ -60,6 +60,12 @@
   padding-right: 8px;
 }
 
+@-moz-document url-prefix() {
+  .avatar-grid {
+    padding-right: 0px !important;
+  }
+}
+
 .avatar-grid::-webkit-scrollbar {
   width: 12px;
 }
@@ -71,6 +77,13 @@
 .avatar-grid::-webkit-scrollbar-thumb {
   background: var(--pkmn-gb-mid1);
   border: 2px solid var(--border-main);
+}
+
+/* Firefox scrollbar styling solo en Firefox */
+@-moz-document url-prefix() {
+  .avatar-grid {
+    scrollbar-width: none;
+  }
 }
 
 .avatar-option {
