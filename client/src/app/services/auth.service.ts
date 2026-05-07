@@ -15,9 +15,8 @@ export interface Auth {
 })
 export class AuthService {
   private http = inject(HttpService);
-  //private errorService = inject(ErrorService);
 
-  private _auth = signal<Auth | null>(null);
+  private _auth = signal<Auth | null>(null, { equal: (_, __) => false });
 
   public get auth() {
     return this._auth.asReadonly();
@@ -80,20 +79,14 @@ export class AuthService {
   }
 
   public setUser(req: UserChangeRequest): Observable<Auth> {
-    var auth = this._auth();
-    if (auth !== null) {
-      let a: Auth = auth;
-      return this.http.patch<void>(`/user`, req).pipe(
-        map(() => {
-          if (req.nickname) a.user.nickname = req.nickname;
-          if (req.email) a.user.email = req.email;
-          if (req.avatarId) a.user.avatarId = req.avatarId;
-          this._auth.set(a);
-          return a;
-        }),
-
-      );
-    }
+    this._auth.update((auth) => {
+      if (auth != null) {
+        if (req.nickname) auth.user.nickname = req.nickname;
+        if (req.email) auth.user.email = req.email;
+        if (req.avatarId) auth.user.avatarId = req.avatarId;
+      }
+      return auth;
+    });   
     return throwError(() => new Error('No authenticated user'));
   }
 }

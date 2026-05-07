@@ -21,7 +21,6 @@ export class App implements OnInit {
   }
 
   ngOnInit(): void {
-    // If app has credentials, get user associated
     this.auth.getUser()
       .pipe(
         catchError((err) => {

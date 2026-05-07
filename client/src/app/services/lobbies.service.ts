@@ -1,9 +1,9 @@
-import { Injectable, inject, NgZone } from '@angular/core';
+import { EffectRef, Injectable, Injector, inject, NgZone, effect } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
-import { LobbySocketClient } from './lobby-socket-client.service';
+import { SocketService } from './socket.service';
 import { ErrorService } from './error.service';
 import { LobbyBrowserEvent, LobbySummaryResponse, Result } from 'shared_types';
-import { LobbiesBrowser } from '../components/battle-arena/lobbies-browser/lobbies-browser';
+
 
 export interface LobbyInfo {
   name: string;
@@ -14,10 +14,27 @@ export interface LobbyInfo {
 
 @Injectable({ providedIn: 'root' })
 export class LobbiesService {
-
-  private socketService = inject(LobbySocketClient);
+  private socketService = inject(SocketService);
   private zone = inject(NgZone);
   private errorService = inject(ErrorService);
+  private injector = inject(Injector);
+
+  private effectRef: EffectRef | null = null;
+
+  private onLobbyEvent = (event: LobbyBrowserEvent) => {
+    this.zone.run(() => {
+      switch (event.type) {
+        case 'created':
+          this.lobbies.set(event.res.id, event.res);
+          break;
+        case 'changed':
+          if (event.count == 0) this.lobbies.delete(event.id)
+          else this.lobbies.get(event.id)!.playerCount = event.count;
+          break;
+      }
+      this.lobbiesSubject.next(this.lobbies);
+    });
+  };
 
   private lobbiesSubject = new BehaviorSubject<Map<string, LobbyInfo>>(new Map());
   lobbies$ = this.lobbiesSubject.asObservable();
@@ -25,14 +42,14 @@ export class LobbiesService {
     return this.lobbiesSubject.getValue();
   }
 
+  init(): void {
+    if (this.effectRef) return;
 
-  constructor() {
-    this.init();
-  }
+    this.effectRef = effect(() => {
+      const socket = this.socketService.socket();
+      if (!socket) return;
 
-  private init() {
-    this.socketService.connected$.subscribe(() => {
-      this.socketService.socket.emit('lobbies.getAll', (response: Result<LobbySummaryResponse[]>) => {
+      socket.emit('lobbies.getAll', (response: Result<LobbySummaryResponse[]>) => {
         if (this.errorService.unwrap(response)) {
           const map = new Map<string, LobbyInfo>();
           for (const lobby of response.content)
@@ -44,21 +61,15 @@ export class LobbiesService {
         }
       });
 
-      this.socketService.socket.on('lobbies.event', (event: LobbyBrowserEvent) => {
+      socket.off('lobbies.event', this.onLobbyEvent);
+      socket.on('lobbies.event', this.onLobbyEvent);
 
-        this.zone.run(() => {
-          switch (event.type) {
-            case 'created':
-              this.lobbies.set(event.res.id, event.res);
-              break;
-            case 'changed':
-              if (event.count == 0) this.lobbies.delete(event.id)
-              else this.lobbies.get(event.id)!.playerCount = event.count;
-              break;
-          }
-          this.lobbiesSubject.next(this.lobbies);
-        });
-      });
-    });
+    }, { injector: this.injector });
+  }
+
+  dispose(): void {
+    this.effectRef?.destroy();
+    this.effectRef = null;
+    this.socketService.socket()?.off('lobbies.event', this.onLobbyEvent);
   }
 }

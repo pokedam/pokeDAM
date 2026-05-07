@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { AsyncPipe } from '@angular/common';
 import { AuthService } from '../../services/auth.service';
 import { LobbiesService, LobbyInfo } from '../../services/lobbies.service';
@@ -15,7 +15,7 @@ import { JoinLobbyPassword } from '../../components/battle-arena/join-lobby-pass
   templateUrl: './home.html',
   styleUrl: './home.css',
 })
-export class Home {
+export class Home implements OnInit, OnDestroy {
   inCreateLobbyMenu: boolean = false;
   savedLobbyName: string = '';
   savedRequiresPassword: boolean = false;
@@ -25,6 +25,14 @@ export class Home {
   lobbies = inject(LobbiesService);
   currLobby = inject(CurrentLobbyService);
   auth = inject(AuthService);
+
+  ngOnInit(): void {
+    this.lobbies.init();
+  }
+
+  ngOnDestroy(): void {
+    this.lobbies.dispose();
+  }
 
   openCreateMenu() {
     this.inCreateLobbyMenu = true;

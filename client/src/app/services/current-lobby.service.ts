@@ -1,9 +1,10 @@
 import { Injectable, inject, NgZone } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
-import { LobbySocketClient } from './lobby-socket-client.service';
+import { SocketService } from './socket.service';
 import { AuthService } from './auth.service';
 import { ErrorService } from './error.service';
 import { InLobbyEvent, LobbyCreatedResponse, lobbyFactory, LobbyResponse, Result } from 'shared_types';
+import { Socket } from 'socket.io-client';
 
 export interface Lobby {
     id: string,
@@ -19,12 +20,11 @@ export interface Joiner {
     isReady: boolean;
 }
 
-
 @Injectable({ providedIn: 'root' })
 export class CurrentLobbyService {
 
     private auth = inject(AuthService);
-    private socketService = inject(LobbySocketClient);
+    private socketService = inject(SocketService);
     private zone = inject(NgZone);
     private errorService = inject(ErrorService);
 
@@ -35,10 +35,15 @@ export class CurrentLobbyService {
         return this.lobbySubject.getValue();
     }
 
+    get socket(): Socket {
+        return this.socketService.socket()!;
+    }
+
     private roomSubName: string | null = null;
 
     create(name: string, password: string | null) {
-        this.socketService.socket.emit('lobby.create', lobbyFactory.create(name, password), (response: Result<LobbyCreatedResponse>) => {
+        
+        this.socket.emit('lobby.create', lobbyFactory.create(name, password), (response: Result<LobbyCreatedResponse>) => {
             if (this.errorService.unwrap(response)) {
                 this.zone.run(() => {
                     this.setupSubscriptions(response.content.id);
@@ -48,7 +53,7 @@ export class CurrentLobbyService {
     }
 
     join(lobbyId: string, password?: string) {
-        this.socketService.socket.emit('lobby.join', lobbyFactory.join(lobbyId, password), (response: Result<void>) => {
+        this.socket.emit('lobby.join', lobbyFactory.join(lobbyId, password), (response: Result<void>) => {
             if (this.errorService.unwrap(response)) {
                 this.zone.run(() => {
                     this.setupSubscriptions(lobbyId);
@@ -57,15 +62,14 @@ export class CurrentLobbyService {
         });
     }
 
-    /// Duplicated functionality??? Maybe uneeded?
     private setupSubscriptions(lobbyId: string) {
         if (this.roomSubName) {
-            this.socketService.socket.off(this.roomSubName);
+            this.socket.off(this.roomSubName);
         }
 
         this.roomSubName = `lobby.${lobbyId}.event`;
 
-        this.socketService.socket.on(this.roomSubName, (event: InLobbyEvent) => {
+        this.socket.on(this.roomSubName, (event: InLobbyEvent) => {
             this.zone.run(() => {
                 let lobby = this.lobby;
                 switch (event.type) {
@@ -113,7 +117,7 @@ export class CurrentLobbyService {
             });
         });
 
-        this.socketService.socket.emit('lobbies.get', lobbyId, (res: Result<LobbyResponse>) => {
+        this.socket.emit('lobbies.get', lobbyId, (res: Result<LobbyResponse>) => {
             if (this.errorService.unwrap(res)) {
                 const lobby: Lobby = {
                     id: lobbyId,
@@ -138,21 +142,21 @@ export class CurrentLobbyService {
     }
 
     leave() {
-        this.socketService.socket.emit('lobby.leave', (res: Result<void>) => this.errorService.unwrap(res));
+        this.socket.emit('lobby.leave', (res: Result<void>) => this.errorService.unwrap(res));
 
         if (this.roomSubName) {
-            this.socketService.socket.off(this.roomSubName);
+            this.socket.off(this.roomSubName);
             this.roomSubName = null;
         }
         this.lobbySubject.next(null);
     }
 
     setReady(isReady: boolean) {
-        this.socketService.socket.emit('lobby.ready', isReady, (res: Result<void>) => this.errorService.unwrap<void>(res));
+        this.socket.emit('lobby.ready', isReady, (res: Result<void>) => this.errorService.unwrap<void>(res));
     }
 
     kick(targetId: number) {
-        this.socketService.socket.emit('lobby.kick', targetId, (res: Result<void>) => this.errorService.unwrap<void>(res));
+        this.socket.emit('lobby.kick', targetId, (res: Result<void>) => this.errorService.unwrap<void>(res));
     }
 
     startGame() {
