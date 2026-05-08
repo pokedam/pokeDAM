@@ -11,12 +11,10 @@ export class SocketInitializer {
     private error = inject(ErrorService);
     private routeCtx = inject(RouteContextService);
 
-    init() {        
+    init() {
         effect(() => {
             const auth = this.auth.auth();
-            console.log("auth: ", auth);
-            if (auth && this.routeCtx.requiresSocket()) 
-                {
+            if (auth && this.routeCtx.requiresSocket()) {
                 this.socketService.connect(auth.idToken)
                     .subscribe({
                         error: (err) => {

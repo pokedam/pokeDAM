@@ -66,12 +66,10 @@ export class AuthService {
   public getUser(): Observable<Auth> {
     return this.http.get<User>(`/user`).pipe(
       map((user) => {
-        console.dir(user);
         let auth: Auth = {
           idToken: storage.idToken || '',
           user
         };
-        console.dir(auth);
         this._auth.set(auth);
         return auth;
       }),
@@ -79,14 +77,21 @@ export class AuthService {
   }
 
   public setUser(req: UserChangeRequest): Observable<Auth> {
-    this._auth.update((auth) => {
-      if (auth != null) {
+    return this.http.patch<User>(`/user`, req).pipe(
+      map(_ => {
+        let auth = this._auth();
+        if (auth == null) throw new Error('No authenticated user');
+
         if (req.nickname) auth.user.nickname = req.nickname;
         if (req.email) auth.user.email = req.email;
         if (req.avatarId) auth.user.avatarId = req.avatarId;
-      }
-      return auth;
-    });   
-    return throwError(() => new Error('No authenticated user'));
+
+        this._auth.set(auth);
+
+        return auth;
+
+      })
+    );
+
   }
 }

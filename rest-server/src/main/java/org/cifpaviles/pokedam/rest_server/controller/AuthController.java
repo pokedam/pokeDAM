@@ -68,7 +68,6 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest req) {
-        System.out.println("Login attempt: " + req.email);
         Optional<User> res = userRepository.findByEmail(req.email);
 
         if (res.isPresent()) {

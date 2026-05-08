@@ -15,7 +15,8 @@ export interface ProfileData {
   avatarUrl: string | null;
 }
 
-function contentOrNull(str: string): string | null {
+function contentOrNull(str: string | null): string | null {
+  if (str === null) return null;
   const trimmed = str.trim();
   return trimmed.length == 0 ? null : trimmed;
 }
@@ -180,10 +181,8 @@ export class Profile implements OnInit, DoCheck {
 
   logout() {
     this.authService.logout();
-    console.log("Logged out");
     this.authService.loginAnonymous().pipe(
       tap(a => {
-        console.log("Logged in anonymously: ", a);
         this.router.navigate(['/login']);
       }),
       catchError(_ => {
@@ -200,14 +199,15 @@ export class Profile implements OnInit, DoCheck {
     }
 
     const vals = this.form.getRawValue();
-
-    return this.authService.setUser({
-      nickname: contentOrNull(vals.nickname || ''),
+    const data = {
+      nickname: contentOrNull(vals.nickname),
       avatarId: this.avatarId,
-      email: contentOrNull(vals.email || ''),
-      password: contentOrNull(vals.password || ''),
-    }).pipe(
+      email: contentOrNull(vals.email),
+      password: contentOrNull(vals.password),
+    };
+    return this.authService.setUser(data).pipe(
       map((auth) => {
+
         if (auth) {
           this.initialize(auth.user);
           return true;
@@ -215,8 +215,11 @@ export class Profile implements OnInit, DoCheck {
         return false;
       }),
       catchError((err) => {
-        this.emailErr = "Email already in use";
-        this.cdr.detectChanges();
+        if (err.status === 409) {
+          this.emailErr = "Email already in use";
+          this.cdr.detectChanges();
+        } else this.errorService.show('Connection failed');
+
         return of(false);
       }),
 

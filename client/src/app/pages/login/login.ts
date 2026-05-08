@@ -82,18 +82,17 @@ export class Login implements OnInit {
     }
 
     const vals = this.form.getRawValue();
-
-    return this.authService.login({
+    const data = {
       email: vals.email,
       password: vals.password,
-    }).pipe(
+    };
+
+    return this.authService.login(data).pipe(
       map((a) => {
-        console.log(`logged in as ${a.user.nickname}`);
         this.router.navigate(['/profile']);
         return true;
       }),
       catchError((err) => {
-        console.error(`Login failed: ${err.message}`);
         this.errorService.show('Login failed: ' + err.message);
         return of(false);
       })

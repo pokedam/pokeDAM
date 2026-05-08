@@ -49,7 +49,6 @@ export class HttpService {
     _handleHttpErr<T>(obs: Observable<T>): Observable<T> {
         return obs.pipe(
             catchError((err) => {
-                console.log("HTTP error:", err);
                 if (err instanceof HttpErrorResponse) {
                     throw result.err(err.error, err.status);
                 }
