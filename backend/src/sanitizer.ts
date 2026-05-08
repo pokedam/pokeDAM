@@ -2,8 +2,8 @@ import type { Request, Response, NextFunction } from 'express';
 import xss from 'xss';
 
 export const sanitizer = {
-    middleware: sanitizeMiddleware,
-    socketMiddleware: sanitizeSocketMiddleware,
+    middleware: middleware,
+    socketMiddleware: socketMiddleware,
 };
 
 // Función recursiva para sanear objetos, arrays y strings
@@ -23,7 +23,7 @@ function sanitize(input: any): any {
 }
 
 // Middleware para Express
-function sanitizeMiddleware(req: Request, res: Response, next: NextFunction) {
+function middleware(req: Request, res: Response, next: NextFunction) {
     req.body = sanitize(req.body);
     for (const key in req.query) {
         req.query[key] = sanitize(req.query[key]);
@@ -32,7 +32,7 @@ function sanitizeMiddleware(req: Request, res: Response, next: NextFunction) {
 }
 
 // Middleware para Socket.IO
-function sanitizeSocketMiddleware(socket: any, next: (err?: any) => void) {
+function socketMiddleware(socket: any, next: (err?: any) => void) {
     if (socket.handshake && socket.handshake.auth) {
         socket.handshake.auth = sanitize(socket.handshake.auth);
     }

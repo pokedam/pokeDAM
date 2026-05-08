@@ -1,6 +1,6 @@
-import { Component, inject } from '@angular/core';
-import { AsyncPipe } from '@angular/common';
+import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { AuthService } from '../../services/auth.service';
+import { ErrorService } from '../../services/error.service';
 import { LobbiesService, LobbyInfo } from '../../services/lobbies.service';
 import { CurrentLobbyService } from '../../services/current-lobby.service';
 import { LobbiesBrowser } from '../../components/battle-arena/lobbies-browser/lobbies-browser';
@@ -11,11 +11,11 @@ import { JoinLobbyPassword } from '../../components/battle-arena/join-lobby-pass
 @Component({
   selector: 'home',
   standalone: true,
-  imports: [LobbiesBrowser, InLobby, CreateLobby, JoinLobbyPassword, AsyncPipe],
+  imports: [LobbiesBrowser, InLobby, CreateLobby, JoinLobbyPassword],
   templateUrl: './home.html',
   styleUrl: './home.css',
 })
-export class Home {
+export class Home implements OnInit, OnDestroy {
   inCreateLobbyMenu: boolean = false;
   savedLobbyName: string = '';
   savedRequiresPassword: boolean = false;
@@ -25,6 +25,15 @@ export class Home {
   lobbies = inject(LobbiesService);
   currLobby = inject(CurrentLobbyService);
   auth = inject(AuthService);
+  errors = inject(ErrorService);
+
+  ngOnInit() {
+    this.lobbies.init();
+  }
+
+  ngOnDestroy() {
+    this.lobbies.dispose();
+  }
 
   openCreateMenu() {
     this.inCreateLobbyMenu = true;
@@ -42,7 +51,9 @@ export class Home {
     this.currLobby.create(
       config.name,
       config.password
-    );
+    ).subscribe({
+      error: (err) => this.showError(err),
+    });
     this.inCreateLobbyMenu = false;
   }
 
@@ -51,13 +62,17 @@ export class Home {
       this.joiningLobbyId = lobbyId;
       this.joiningLobbyName = lobby.name;
     } else {
-      this.currLobby.join(lobbyId);
+      this.currLobby.join(lobbyId).subscribe({
+        error: (err) => this.showError(err),
+      });
     }
   }
 
   confirmJoin(password: string) {
     if (this.joiningLobbyId) {
-      this.currLobby.join(this.joiningLobbyId, password);
+      this.currLobby.join(this.joiningLobbyId, password).subscribe({
+        error: (err) => this.showError(err),
+      });
       this.joiningLobbyId = null;
       this.joiningLobbyName = null;
     }
@@ -69,17 +84,42 @@ export class Home {
   }
 
   leaveLobby() {
-    this.currLobby.leave();
-
+    this.currLobby.leave().subscribe({
+      error: (err) => this.showError(err),
+    });
   }
 
   toggleReady() {
-    let userId = this.auth.auth()!.user.id;
-    let isReady = this.currLobby.lobby!.joiners.get(userId)!.isReady;
-    this.currLobby.setReady(!isReady);
+    const lobby = this.currLobby.lobby();
+    if (!lobby) return;
+
+    const userId = this.auth.auth()!.user.id;
+    const joiner = lobby.joiners.get(userId);
+    if (!joiner) return;
+
+    this.currLobby.setReady(!joiner.isReady).subscribe({
+      error: (err) => this.showError(err),
+    });
   }
 
   startGame() {
     this.currLobby.startGame();
+  }
+
+  private showError(error: unknown) {
+    if (typeof error === 'string') {
+      this.errors.show(error);
+      return;
+    }
+
+    if (error && typeof error === 'object' && 'message' in error) {
+      const message = (error as { message?: unknown }).message;
+      if (typeof message === 'string' && message.length > 0) {
+        this.errors.show(message);
+        return;
+      }
+    }
+
+    this.errors.show('Unexpected error');
   }
 }

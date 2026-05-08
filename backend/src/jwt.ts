@@ -1,6 +1,8 @@
 
 import type { Request, Response, NextFunction } from 'express';
 import coreJwt from 'jsonwebtoken';
+import type { SocketAuthErrorData } from 'shared_types';
+import type { Socket } from 'socket.io';
 
 export const jwt = {
     socketMiddleware,
@@ -9,7 +11,7 @@ export const jwt = {
 };
 
 const SECRET = process.env.JWT_SECRET || fallbackJwt();
-const EXPIRE_TIME = 60 * 15;
+const EXPIRE_TIME = 5;//60 * 15;
 
 function fallbackJwt(): string {
     const jwt = 'mi_secreto_super_seguro_para_jwt_aqui_va';
@@ -18,21 +20,19 @@ function fallbackJwt(): string {
 }
 
 // Middleware para Socket.IO
-function socketMiddleware(socket: any, next: (err?: any) => void) {
+function socketMiddleware(socket: Socket, next: (err?: any) => void) {
     const token = socket.handshake.auth.token || socket.handshake.query.token;
     if (!token) {
         return next(new Error("Authentication error: No token provided"));
     }
     coreJwt.verify(token as string, SECRET, (err, decoded: any) => {
-        if (err) {
-            return next(new Error("Authentication error: Invalid token"));
-        }
+        if (err)
+            return next(err);
+
         (socket as any).userId = parseInt(decoded.sub as string, 10);
         next();
     });
 }
-
-
 // Extender el tipo de Request de Express para incluir nuestro usuario autenticado
 declare global {
     namespace Express {

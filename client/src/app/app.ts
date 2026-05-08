@@ -24,13 +24,13 @@ export class App implements OnInit {
     // If app has credentials, get user associated
     this.auth.getUser()
       .pipe(
-        catchError((err) => {
+        catchError((_) => {
           // Log error for debugging
           // Failed, fallback to anonymous login
           this.error.show('Session expired, log in again');
           return this.auth.loginAnonymous().pipe(
-            catchError((_) => {
-              // Failed anonymous too.
+            catchError((err) => {
+              console.error('Anonymous login failed', err);
               this.error.show('Connection failed.');
               return EMPTY;
             }),

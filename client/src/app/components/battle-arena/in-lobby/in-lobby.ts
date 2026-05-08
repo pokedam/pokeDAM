@@ -17,7 +17,7 @@ export class InLobby {
   authService = inject(AuthService);
 
   get currentLobby(): Lobby {
-    return this.lobbyService.lobby!;
+    return this.lobbyService.lobby()!;
   }
 
   get userIndex(): number {
@@ -59,7 +59,7 @@ export class InLobby {
 
   toggleReady() {
     let userId = this.authService.auth()!.user.id;
-    let isReady = this.lobbyService.lobby!.joiners.get(userId)!.isReady;
+    let isReady = this.lobbyService.lobby()!.joiners.get(userId)!.isReady;
     this.lobbyService.setReady(!isReady);
   }
 

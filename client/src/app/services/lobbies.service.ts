@@ -1,64 +1,62 @@
-import { Injectable, inject, NgZone } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
-import { LobbySocketClient } from './lobby-socket-client.service';
-import { ErrorService } from './error.service';
-import { LobbyBrowserEvent, LobbySummaryResponse, Result } from 'shared_types';
-import { LobbiesBrowser } from '../components/battle-arena/lobbies-browser/lobbies-browser';
+import { inject, Injectable, signal } from '@angular/core';
+import { Subscription } from 'rxjs';
+import { SocketService } from './socket.service';
+import { LobbyBrowserEvent, LobbySummaryResponse } from 'shared_types';
 
 export interface LobbyInfo {
-  name: string;
-  hasPassword: boolean;
-  playerCount: number;
-  maxPlayers: number;
+    name: string;
+    hasPassword: boolean;
+    playerCount: number;
+    maxPlayers: number;
 }
 
 @Injectable({ providedIn: 'root' })
 export class LobbiesService {
 
-  private socketService = inject(LobbySocketClient);
-  private zone = inject(NgZone);
-  private errorService = inject(ErrorService);
+    private _socket = inject(SocketService);
+    private _lobbies = signal<Map<string, LobbyInfo>>(new Map(), { equal: (_, __) => false });
+    private _sub?: Subscription;
 
-  private lobbiesSubject = new BehaviorSubject<Map<string, LobbyInfo>>(new Map());
-  lobbies$ = this.lobbiesSubject.asObservable();
-  get lobbies() {
-    return this.lobbiesSubject.getValue();
-  }
+    lobbies = this._lobbies.asReadonly();
 
+    init() {
+        this.dispose(); // Asegurarnos de no duplicar suscripciones
 
-  constructor() {
-    this.init();
-  }
+        this._socket.emitMessage<void, LobbySummaryResponse[]>('lobbies.getAll')
+            .subscribe(response => {
+                const map = new Map<string, LobbyInfo>();
+                for (const lobby of response) {
+                    map.set(lobby.id, lobby);
+                }
+                this._lobbies.set(map);
+            });
 
-  private init() {
-    this.socketService.connected$.subscribe(() => {
-      this.socketService.socket.emit('lobbies.getAll', (response: Result<LobbySummaryResponse[]>) => {
-        if (this.errorService.unwrap(response)) {
-          const map = new Map<string, LobbyInfo>();
-          for (const lobby of response.content)
-            map.set(lobby.id, lobby);
+        this._sub = this._socket.listenEvent<LobbyBrowserEvent>('lobbies.event')
+            .subscribe(event => {
+                this._lobbies.update(lobbies => {
+                    switch (event.type) {
+                        case 'created':
+                            lobbies.set(event.res.id, event.res);
+                            break;
+                        case 'changed':
+                            if (event.count === 0) {
+                                lobbies.delete(event.id);
+                            } else {
+                                const lobby = lobbies.get(event.id);
+                                if (lobby) {
+                                    lobby.playerCount = event.count;
+                                }
+                            }
+                            break;
+                    }
+                    return lobbies;
+                });
+            });
+    }
 
-          this.zone.run(() => {
-            this.lobbiesSubject.next(map);
-          });
-        }
-      });
-
-      this.socketService.socket.on('lobbies.event', (event: LobbyBrowserEvent) => {
-
-        this.zone.run(() => {
-          switch (event.type) {
-            case 'created':
-              this.lobbies.set(event.res.id, event.res);
-              break;
-            case 'changed':
-              if (event.count == 0) this.lobbies.delete(event.id)
-              else this.lobbies.get(event.id)!.playerCount = event.count;
-              break;
-          }
-          this.lobbiesSubject.next(this.lobbies);
-        });
-      });
-    });
-  }
+    dispose() {
+        this._sub?.unsubscribe();
+        this._sub = undefined;
+        this._lobbies.set(new Map());
+    }
 }

@@ -14,14 +14,10 @@ export interface Auth {
   providedIn: 'root'
 })
 export class AuthService {
-  private http = inject(HttpService);
-  //private errorService = inject(ErrorService);
+  private _http = inject(HttpService);
+  private _auth = signal<Auth | null>(null, { equal: (_, __) => false });
 
-  private _auth = signal<Auth | null>(null);
-
-  public get auth() {
-    return this._auth.asReadonly();
-  }
+  auth = this._auth.asReadonly();
 
   public refreshTokens(): Observable<Auth> {
     var refreshToken = storage.refreshToken;
@@ -29,8 +25,9 @@ export class AuthService {
       return throwError(() => new Error('No refresh token available'));
     }
 
-    return this.http.post<JwtAuth>(`/auth/refresh`, { refreshToken }).pipe(
+    return this._http.post<JwtAuth>(`/auth/refresh`, { refreshToken }).pipe(
       tap((res) => {
+        console.log("Refreshed tokens:", res);
         storage.idToken = res.idToken;
         storage.refreshToken = res.refreshToken;
         this._auth.set(res);
@@ -39,7 +36,7 @@ export class AuthService {
   }
 
   public loginAnonymous(): Observable<Auth> {
-    return this.http.post<shared.JwtAuth>(`/auth/anonymous`, {}).pipe(
+    return this._http.post<shared.JwtAuth>(`/auth/anonymous`, {}).pipe(
       tap((res) => {
         storage.idToken = res.idToken;
         storage.refreshToken = res.refreshToken;
@@ -49,7 +46,7 @@ export class AuthService {
   }
 
   public login(req: LoginRequest): Observable<Auth> {
-    return this.http.post<shared.JwtAuth>(`/auth/login`, req).pipe(
+    return this._http.post<shared.JwtAuth>(`/auth/login`, req).pipe(
       tap((res) => {
         storage.idToken = res.idToken;
         storage.refreshToken = res.refreshToken;
@@ -65,7 +62,7 @@ export class AuthService {
   }
 
   public getUser(): Observable<Auth> {
-    return this.http.get<User>(`/user`).pipe(
+    return this._http.get<User>(`/user`).pipe(
       map((user) => {
         console.dir(user);
         let auth: Auth = {
@@ -83,7 +80,7 @@ export class AuthService {
     var auth = this._auth();
     if (auth !== null) {
       let a: Auth = auth;
-      return this.http.patch<void>(`/user`, req).pipe(
+      return this._http.patch<void>(`/user`, req).pipe(
         map(() => {
           if (req.nickname) a.user.nickname = req.nickname;
           if (req.email) a.user.email = req.email;

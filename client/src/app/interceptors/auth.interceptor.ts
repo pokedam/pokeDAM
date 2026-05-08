@@ -27,11 +27,15 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   return next(firstReq).pipe(
     catchError((error: HttpErrorResponse) => {
       if (error.status === 401) {
+        console.log("Failed first request, refreshing")
         const authService = injector.get(AuthService);
         return authService.refreshTokens().pipe(
-          switchMap((newToken) => next(req.clone({
-            setHeaders: { Authorization: `Bearer ${newToken}` },
-          }))),
+          switchMap((newAuth) => {
+            console.log("Interceptor continues!");
+            return next(req.clone({
+              setHeaders: { Authorization: `Bearer ${newAuth.idToken}` },
+            }));
+          }),
         );
       }
       return throwError(() => error);
