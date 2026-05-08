@@ -1,7 +1,8 @@
-import { Component, EventEmitter, inject, Input, Output } from '@angular/core';
+import { Component, inject, } from '@angular/core';
 import { Lobby, Joiner as Joiner, CurrentLobbyService } from '../../../services/current-lobby.service';
 import { AuthService } from '../../../services/auth.service';
 import { ContentHeader } from '../../content-header/content-header';
+import { ErrorService } from '../../../services/error.service';
 
 
 @Component({
@@ -15,9 +16,10 @@ import { ContentHeader } from '../../content-header/content-header';
 export class InLobby {
   lobbyService = inject(CurrentLobbyService);
   authService = inject(AuthService);
+  error = inject(ErrorService);
 
   get currentLobby(): Lobby {
-    return this.lobbyService.lobby!;
+    return this.lobbyService.lobby()!;
   }
 
   get userIndex(): number {
@@ -31,7 +33,9 @@ export class InLobby {
   protected Object = Object;
 
   kick(targetId: number) {
-    this.lobbyService.kick(targetId);
+    this.lobbyService.kick(targetId).subscribe({
+      error: (err) => this.error.show(err.message),
+    });
   }
 
   get displayName(): string {
@@ -53,14 +57,17 @@ export class InLobby {
   }
 
   leaveLobby() {
-    this.lobbyService.leave();
-
+    this.lobbyService.leave().subscribe({
+      error: (err) => this.error.show(err.message),
+    });
   }
 
   toggleReady() {
     let userId = this.authService.auth()!.user.id;
-    let isReady = this.lobbyService.lobby!.joiners.get(userId)!.isReady;
-    this.lobbyService.setReady(!isReady);
+    let isReady = this.lobbyService.lobby()!.joiners.get(userId)!.isReady;
+    this.lobbyService.setReady(!isReady).subscribe({
+      error: (err) => this.error.show(err.message),
+    });
   }
 
   startGame() {

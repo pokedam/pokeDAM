@@ -1,18 +1,19 @@
 import { Injectable, signal } from '@angular/core';
 import { DisconnectDescription, io, Socket } from 'socket.io-client';
 import { Observable } from 'rxjs';
+import { Result } from 'shared_types/dist/result';
 
 
 @Injectable({ providedIn: 'root' })
 export class SocketService {
-  private _connected = signal<Socket | null>(null);
+  private _socket = signal<Socket | null>(null);
 
-  readonly socket = this._connected.asReadonly();
+  readonly socket = this._socket.asReadonly();
 
   connect(token: string): Observable<unknown> {
 
     return new Observable((observer) => {
-      this._connected.update((oldSocket) => {
+      this._socket.update((oldSocket) => {
         if (oldSocket) {
           if ((oldSocket.auth as any).token === token) return oldSocket; //already connected
           oldSocket.disconnect();
@@ -24,12 +25,12 @@ export class SocketService {
           });
         //this._socket = socket;
 
-        socket.on('connect', () => { 
-          this._connected.set(socket);
+        socket.on('connect', () => {
+          this._socket.set(socket);
           observer.next(undefined);
         });
         socket.on('connect_error', (err) => {
-          this._connected.set(null);
+          this._socket.set(null);
           observer.error(err);
           observer.complete();
         });
@@ -40,31 +41,35 @@ export class SocketService {
   }
 
   disconnect(): void {
-    this._connected.update((socket) => {
+    this._socket.update((socket) => {
       socket?.disconnect();
       return null;
     });
   }
 
-  // emit<Ev extends EventNames<DefaultEventsMap>>(ev: Ev, ...args: EventParams<DefaultEventsMap, Ev>) {
-  //   this._socket?.emit(ev, ...args);
-  // }
+  emit<In, Out>(route: string, data?: In): Observable<Out> {
+    return new Observable((observer) => {
+      const socket = this._socket()
+      if (!socket) return;
 
-  // on<Ev extends ReservedOrUserEventNames<SocketReservedEvents, DefaultEventsMap>>(
-  //   event: string,
-  //   listener: ReservedOrUserListener<SocketReservedEvents, DefaultEventsMap, Ev>,
-  // ) {
-  //   this._socket?.on(event, listener);
-  // }
+      const callback = (response: Result<Out>) => {
+        if (response.success) observer.next(response.content);
+        else observer.error(response);
+        observer.complete();
+      };
 
-  // off<Ev extends ReservedOrUserEventNames<SocketReservedEvents, DefaultEventsMap>>(
-  //   event: string,
-  //   listener?: ReservedOrUserListener<SocketReservedEvents, DefaultEventsMap, Ev>,
-  // ) {
-  //   this._socket?.off(event, listener as any);
-  // }
+      if (typeof data === 'undefined') socket.emit(route, callback);
+      else socket.emit(route, data, callback);
+    });
+  }
 
+  on<Out>(route: string, listener: (data: Out) => void) {
+    this._socket()?.on(route, listener);
+  }
 
+  off<Out>(route: string, listener?: (data: Out) => void) {
+    this._socket()?.off(route, listener);
+  }
 }
 
 interface SocketReservedEvents {

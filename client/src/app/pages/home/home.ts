@@ -7,6 +7,7 @@ import { LobbiesBrowser } from '../../components/battle-arena/lobbies-browser/lo
 import { InLobby } from '../../components/battle-arena/in-lobby/in-lobby';
 import { CreateLobby } from '../../components/battle-arena/create-lobby/create-lobby';
 import { JoinLobbyPassword } from '../../components/battle-arena/join-lobby-password/join-lobby-password';
+import { ErrorService } from '../../services/error.service';
 
 @Component({
   selector: 'home',
@@ -25,6 +26,11 @@ export class Home implements OnInit, OnDestroy {
   lobbies = inject(LobbiesService);
   currLobby = inject(CurrentLobbyService);
   auth = inject(AuthService);
+  error = inject(ErrorService);
+
+  get lobby() {
+    return this.currLobby.lobby();
+  }
 
   ngOnInit(): void {
     this.lobbies.init();
@@ -50,7 +56,9 @@ export class Home implements OnInit, OnDestroy {
     this.currLobby.create(
       config.name,
       config.password
-    );
+    ).subscribe({
+      error: (err) => this.error.show(err.message),
+    });
     this.inCreateLobbyMenu = false;
   }
 
@@ -59,13 +67,17 @@ export class Home implements OnInit, OnDestroy {
       this.joiningLobbyId = lobbyId;
       this.joiningLobbyName = lobby.name;
     } else {
-      this.currLobby.join(lobbyId);
+      this.currLobby.join(lobbyId).subscribe({
+        error: (err) => this.error.show(err.message),
+      });
     }
   }
 
   confirmJoin(password: string) {
     if (this.joiningLobbyId) {
-      this.currLobby.join(this.joiningLobbyId, password);
+      this.currLobby.join(this.joiningLobbyId, password).subscribe({
+        error: (err) => this.error.show(err.message),
+      });
       this.joiningLobbyId = null;
       this.joiningLobbyName = null;
     }
@@ -83,8 +95,10 @@ export class Home implements OnInit, OnDestroy {
 
   toggleReady() {
     let userId = this.auth.auth()!.user.id;
-    let isReady = this.currLobby.lobby!.joiners.get(userId)!.isReady;
-    this.currLobby.setReady(!isReady);
+    let isReady = this.currLobby.lobby()!.joiners.get(userId)!.isReady;
+    this.currLobby.setReady(!isReady).subscribe({
+      error: (err) => this.error.show(err.message),
+    });
   }
 
   startGame() {

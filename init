@@ -64,7 +64,7 @@ CLIENT_PID=$!
 cd ..
 
 echo "========================================================"
-echo "✅ All services have started in the same terminal:"
+echo "✅ All services have started:"
 echo "   - Backend PID: $BACKEND_PID"
 echo "   - Client PID: $CLIENT_PID"
 echo "   - Rest-Server PID: $REST_SERVER_PID"

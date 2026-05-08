@@ -32,8 +32,8 @@ export class Login implements OnInit {
 
   form!: FormGroup;
 
-  emailErr: String | null = null;
-  passwordErr: String | null = null;
+  emailErr: string | null = null;
+  passwordErr: string | null = null;
 
   @ViewChild('loginBtn') loginBtn!: AsyncButton;
 

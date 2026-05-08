@@ -1,5 +1,5 @@
 import { EffectRef, Injectable, Injector, inject, NgZone, effect } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, catchError, EMPTY, map } from 'rxjs';
 import { SocketService } from './socket.service';
 import { ErrorService } from './error.service';
 import { LobbyBrowserEvent, LobbySummaryResponse, Result } from 'shared_types';
@@ -46,23 +46,35 @@ export class LobbiesService {
     if (this.effectRef) return;
 
     this.effectRef = effect(() => {
-      const socket = this.socketService.socket();
-      if (!socket) return;
 
-      socket.emit('lobbies.getAll', (response: Result<LobbySummaryResponse[]>) => {
-        if (this.errorService.unwrap(response)) {
+      this.socketService.emit<void, LobbySummaryResponse[]>('lobbies.getAll').pipe(
+        map(res => {
           const map = new Map<string, LobbyInfo>();
-          for (const lobby of response.content)
+          for (const lobby of res)
             map.set(lobby.id, lobby);
+          this.lobbiesSubject.next(map);
+        }),
+        catchError(err => {
+          this.errorService.show(err.message);
+          return EMPTY;
+        }),
+      ).subscribe();
 
-          this.zone.run(() => {
-            this.lobbiesSubject.next(map);
-          });
-        }
-      });
 
-      socket.off('lobbies.event', this.onLobbyEvent);
-      socket.on('lobbies.event', this.onLobbyEvent);
+      // this.socketService.emit('lobbies.getAll', (response: Result<LobbySummaryResponse[]>) => {
+      //   if (this.errorService.unwrap(response)) {
+      //     const map = new Map<string, LobbyInfo>();
+      //     for (const lobby of response.content)
+      //       map.set(lobby.id, lobby);
+
+      //     this.zone.run(() => {
+      //       this.lobbiesSubject.next(map);
+      //     });
+      //   }
+      // }).subscribe();
+
+      this.socketService.off('lobbies.event', this.onLobbyEvent);
+      this.socketService.on('lobbies.event', this.onLobbyEvent);
 
     }, { injector: this.injector });
   }
@@ -70,6 +82,6 @@ export class LobbiesService {
   dispose(): void {
     this.effectRef?.destroy();
     this.effectRef = null;
-    this.socketService.socket()?.off('lobbies.event', this.onLobbyEvent);
+    this.socketService.off('lobbies.event', this.onLobbyEvent);
   }
 }

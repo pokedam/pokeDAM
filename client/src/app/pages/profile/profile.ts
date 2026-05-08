@@ -45,9 +45,9 @@ export class Profile implements OnInit, DoCheck {
   form!: FormGroup;
 
   isLogged: boolean = false;
-  nicknameErr: String | null = null;
-  emailErr: String | null = null;
-  passwordErr: String | null = null;
+  nicknameErr: string | null = null;
+  emailErr: string | null = null;
+  passwordErr: string | null = null;
   avatarId: number | null = null;
 
   @ViewChild('saveBtn') saveBtn!: AsyncButton;
@@ -57,7 +57,7 @@ export class Profile implements OnInit, DoCheck {
   // }
 
   ngOnInit() {
-    this.loadPokemonAvatars();    
+    this.loadPokemonAvatars();
     this.initialize(this.authService.auth()!.user);
   }
 

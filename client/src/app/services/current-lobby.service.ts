@@ -1,10 +1,10 @@
-import { Injectable, inject, NgZone } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { Injectable, inject, NgZone, signal } from '@angular/core';
 import { SocketService } from './socket.service';
 import { AuthService } from './auth.service';
 import { ErrorService } from './error.service';
-import { InLobbyEvent, LobbyCreatedResponse, lobbyFactory, LobbyResponse, Result } from 'shared_types';
+import { InLobbyEvent, LobbyCreatedResponse, LobbyCreationRequest, lobbyFactory, LobbyJoinRequest, LobbyResponse, Result } from 'shared_types';
 import { Socket } from 'socket.io-client';
+import { map, Observable, switchMap, tap } from 'rxjs';
 
 export interface Lobby {
     id: string,
@@ -22,141 +22,106 @@ export interface Joiner {
 
 @Injectable({ providedIn: 'root' })
 export class CurrentLobbyService {
-
     private auth = inject(AuthService);
-    private socketService = inject(SocketService);
-    private zone = inject(NgZone);
-    private errorService = inject(ErrorService);
+    private socket = inject(SocketService);
 
-    private lobbySubject = new BehaviorSubject<Lobby | null>(null);
-    lobby$ = this.lobbySubject.asObservable();
+    private _lobby = signal<Lobby | null>(null, { equal: (_, __) => false });
 
-    get lobby(): Lobby | null {
-        return this.lobbySubject.getValue();
+    lobby = this._lobby.asReadonly();
+
+    create(name: string, password: string | null): Observable<LobbyCreatedResponse> {
+        return this.socket.emit<LobbyCreationRequest, LobbyCreatedResponse>('lobby.create', { name, password }).pipe(
+            switchMap(res => this.setupSubscriptions(res.id).pipe(map(_ => res)))
+        );
     }
 
-    get socket(): Socket {
-        return this.socketService.socket()!;
+    join(lobbyId: string, password?: string): Observable<void> {
+        return this.socket.emit<LobbyJoinRequest, void>('lobby.join', { id: lobbyId, password, }).pipe(
+            switchMap(_ => this.setupSubscriptions(lobbyId))
+        );
     }
 
-    private roomSubName: string | null = null;
+    private setupSubscriptions(lobbyId: string): Observable<void> {
 
-    create(name: string, password: string | null) {
-        
-        this.socket.emit('lobby.create', lobbyFactory.create(name, password), (response: Result<LobbyCreatedResponse>) => {
-            if (this.errorService.unwrap(response)) {
-                this.zone.run(() => {
-                    this.setupSubscriptions(response.content.id);
-                });
-            }
-        });
-    }
-
-    join(lobbyId: string, password?: string) {
-        this.socket.emit('lobby.join', lobbyFactory.join(lobbyId, password), (response: Result<void>) => {
-            if (this.errorService.unwrap(response)) {
-                this.zone.run(() => {
-                    this.setupSubscriptions(lobbyId);
-                });
-            }
-        });
-    }
-
-    private setupSubscriptions(lobbyId: string) {
-        if (this.roomSubName) {
-            this.socket.off(this.roomSubName);
+        const lobby = this._lobby();
+        if (lobby?.id) {
+            this.socket.off(`lobby.${lobby.id}.event`);
         }
 
-        this.roomSubName = `lobby.${lobbyId}.event`;
+        this.socket.on(`lobby.${lobbyId}.event`, (event: InLobbyEvent) => {
 
-        this.socket.on(this.roomSubName, (event: InLobbyEvent) => {
-            this.zone.run(() => {
-                let lobby = this.lobby;
+            this._lobby.update(lobby => {
+                if (!lobby) return lobby;
                 switch (event.type) {
 
                     case 'joined':
-                        if (lobby) {
-                            lobby.joiners.set(event.id, {
-                                nickname: event.nickname,
-                                isReady: false
-                            });
-                            this.lobbySubject.next(lobby);
-                        }
-
-                        break;
+                        lobby.joiners.set(event.id, {
+                            nickname: event.nickname,
+                            isReady: false
+                        });
+                        return lobby
 
                     case 'left':
-                        if (lobby) {
-                            lobby.joiners.delete(event.id);
-                            this.lobbySubject.next(event.id == this.auth.auth()!.user.id ? null : lobby);
-                        }
-                        break;
+                        lobby.joiners.delete(event.id);
+                        return event.id == this.auth.auth()!.user.id ? null : lobby;
 
                     case 'host left':
-                        if (lobby) {
-                            if (event.newHostId) {
-                                const leftId = lobby.hostId;
-                                lobby.hostId = event.newHostId;
-                                lobby.hostNickname = lobby.joiners.get(event.newHostId)!.nickname;
-                                lobby.joiners.delete(event.newHostId);
-                                this.lobbySubject.next(leftId == this.auth.auth()!.user.id ? null : lobby);
-                            }
-                            else this.lobbySubject.next(null);
+                        if (event.newHostId) {
+                            const leftId = lobby.hostId;
+                            lobby.hostId = event.newHostId;
+                            lobby.hostNickname = lobby.joiners.get(event.newHostId)!.nickname;
+                            lobby.joiners.delete(event.newHostId);
+                            return leftId == this.auth.auth()!.user.id ? null : lobby;
                         }
-                        break;
+                        return null;
 
                     case 'ready':
-                        if (lobby) {
-                            lobby.joiners.get(event.id)!.isReady = event.isReady;
-                            this.lobbySubject.next(lobby);
-                        }
-                        break;
-
-
+                        lobby.joiners.get(event.id)!.isReady = event.isReady;
+                        return lobby;
                 }
+
             });
+
         });
 
-        this.socket.emit('lobbies.get', lobbyId, (res: Result<LobbyResponse>) => {
-            if (this.errorService.unwrap(res)) {
+        return this.socket.emit<string, LobbyResponse>('lobbies.get', lobbyId).pipe(
+            map(res => {
                 const lobby: Lobby = {
                     id: lobbyId,
-                    name: res.content.name,
-                    hostId: res.content.hostId,
-                    hostNickname: res.content.hostNickname,
+                    name: res.name,
+                    hostId: res.hostId,
+                    hostNickname: res.hostNickname,
                     joiners: new Map(
-                        (res.content.joiners).map(item => [
+                        (res.joiners).map(item => [
                             item.id,
                             item,
                         ])
                     ),
-                    maxPlayers: res.content.maxPlayers
+                    maxPlayers: res.maxPlayers
                 };
-                lobby.id = lobbyId;
-                this.zone.run(() => {
-                    this.lobbySubject.next(lobby);
-                });
-            }
-
-        });
+                this._lobby.set(lobby);
+            }),
+        );
     }
 
-    leave() {
-        this.socket.emit('lobby.leave', (res: Result<void>) => this.errorService.unwrap(res));
+    leave(): Observable<void> {
+        return this.socket.emit<void, void>('lobby.leave').pipe(
+            tap(_ => {
+                let id = this._lobby()?.id;
+                if (id) this.socket.off(id);
+            })
+        );
 
-        if (this.roomSubName) {
-            this.socket.off(this.roomSubName);
-            this.roomSubName = null;
-        }
-        this.lobbySubject.next(null);
     }
 
-    setReady(isReady: boolean) {
-        this.socket.emit('lobby.ready', isReady, (res: Result<void>) => this.errorService.unwrap<void>(res));
+    setReady(isReady: boolean): Observable<void> {
+        return this.socket.emit('lobby.ready', isReady);
+        //this.socket.emit('lobby.ready', isReady, (res: Result<void>) => this.errorService.unwrap<void>(res));
     }
 
     kick(targetId: number) {
-        this.socket.emit('lobby.kick', targetId, (res: Result<void>) => this.errorService.unwrap<void>(res));
+        return this.socket.emit('lobby.kick', targetId);
+        //this.socket.emit('lobby.kick', targetId, (res: Result<void>) => this.errorService.unwrap<void>(res));
     }
 
     startGame() {

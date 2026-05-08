@@ -1,4 +1,4 @@
-@if (currLobby.lobby$ | async; as lobby) {
+@if (lobby) {
 <app-in-lobby />
 } @else if (joiningLobbyId) {
 <app-join-lobby-password [lobbyName]="joiningLobbyName!" (onCancel)="cancelJoin()" (onJoin)="confirmJoin($event)">
