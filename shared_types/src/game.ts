@@ -1,56 +1,55 @@
-export type PokemonType = 'normal' | 'fire' | 'water' | 'grass' | 'electric' | 'ice' | 'fighting' | 'poison' | 'ground' | 'flying' | 'psychic' | 'bug' | 'rock' | 'ghost' | 'dragon' | 'steel' | 'fairy';
+import { PlayerPokemon } from "./pokemon";
 
-export type Gender = 'male' | 'female' | 'genderless';
-
-export interface Movs {
-
+interface MovMap {
+    'destructor': SingleDamage;
 }
 
-export const POKEMONS: Pokemon[] = [];
-
-
-
-export interface Pokemon {
-    type: PokemonType,
-    id: number;
-    name: string;
-    statsBase: Stats;
+export interface SingleDamage {
+    player_idx: number;
+    pokemon_idx: number;
+    damage: number;
 }
 
-export interface Stats {
-    hp: number;
-    attack: number;
-    defense: number;
-    speed: number;
-    specialAttack: number;
-    specialDefense: number;
+export type Movs = keyof MovMap;
+export type Mov<T extends Movs> = MovMap[T];
+
+
+
+export type ActionPayload = {
+    [K in Movs]: { name: K; mov: Mov<K> }
+};
+
+export interface Game {
+    players: InGamePlayer[];
 }
 
-export interface PcPlayerPokemon {
-    isSelected: boolean;
+export interface InGamePlayer {
+
+    pokemons: InGamePokemon[];
+}
+
+export interface InGamePokemon {
     pokemon: PlayerPokemon;
+    hp: number;
 }
 
-export interface PlayerPokemon {
-    id: number;
-    alias: string | null;
-    pokemon: number;
-    lvl: number;
-    exp: number;
-    iv: Stats;
-    movs: Movs[];
-    gender: Gender;
-    shiny: boolean;
-}
+type MovBuilders = {
+    [K in Movs]: () => Mov<K>;
+};
+
+const creators: MovBuilders = {
+    destructor: (): SingleDamage => {
+        throw new Error("Function not implemented.");
+    }
+};
 
 
+type MovExecutors = {
+    [K in Movs]: (args: Mov<K>) => Promise<void>;
+};
 
-
-// recibes: PcPlayerPokemon[], mostrarlos todos por pantalla
-
-
-
-// Botón de guardar para seleccionar tu equipo de 6 pokemons
-
-
-// envias number[] donde el numero es el indice del PcPlayerPokemon seleccionado en el array recibido
+const executors: MovExecutors = {
+    destructor: (args: SingleDamage): Promise<void> => {
+        throw new Error("Function not implemented.");
+    }
+};

@@ -5,7 +5,7 @@ import { Server } from 'socket.io';
 
 import { sanitizer } from './sanitizer.js';
 import { jwt } from './jwt.js';
-import { lobbyController } from './lobby/lobby.controller.js';
+import { lobbyController } from './sockets/lobby.controller.js';
 import * as endpoints from './endpoints/index.js';
 
 // =============

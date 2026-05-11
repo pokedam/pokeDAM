@@ -14,7 +14,6 @@ const players: Map<number, string> = new Map();
 
 function response(lobby: Lobby): LobbyResponse {
     return {
-
         name: lobby.name,
         hostId: lobby.hostId,
         hostNickname: lobby.hostNickname,
@@ -49,7 +48,7 @@ function getAll(): LobbySummaryResponse[] {
 }
 
 
-export async function create(hostId: number, request: LobbyCreationRequest, maxPlayers: number = 8): Promise<Result<LobbySummaryResponse>> {
+async function create(hostId: number, request: LobbyCreationRequest, maxPlayers: number = 8): Promise<Result<LobbySummaryResponse>> {
     if (players.get(hostId)) return result.conflict(`Player is already in a lobby`);
     let res = (await dbService.user.get(hostId));
     if (!res.success) return res;
