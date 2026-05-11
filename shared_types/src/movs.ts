@@ -2,7 +2,6 @@ import { PlayerPokemon } from "./pokemon";
 
 interface MovMap {
     'destructor': SingleDamage;
-    'other': SingleDamage,
 }
 
 export interface SingleDamage {
@@ -22,7 +21,7 @@ export type MovPayload = {
 }[keyof MovMap];
 
 
-export interface MovRequest{
+export interface MovRequest {
     payload: MovPayload;
     turn: number;
 }

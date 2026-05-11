@@ -10,12 +10,20 @@ router.get('', async (req: Request, res: Response): Promise<void> => {
     send(res, await db.user.get(req.userId));
 });
 
-router.get('/:userId', async (req: Request, res: Response): Promise<void> => {
+router.get('/find/:userId', async (req: Request, res: Response): Promise<void> => {
     send(res, await db.user.get(Number(req.params.userId)));
 });
-
 
 router.patch('', async (req: Request, res: Response): Promise<void> => {
     const request: UserChangeRequest = req.body;
     send(res, await db.user.set(req.userId, request));
+});
+
+router.get('/pokemons', async (req: Request, res: Response): Promise<void> => {
+    send(res, await db.user.getPokemons(req.userId));
+});
+
+router.patch('/pokemons', async (req: Request, res: Response): Promise<void> => {
+    const request: number[] = req.body;
+    send(res, await db.user.setPokemons(req.userId, request));
 });

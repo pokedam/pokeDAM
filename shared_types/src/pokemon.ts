@@ -36,6 +36,12 @@ export interface PlayerPokemon {
     gender: Gender;
     shiny: boolean;
 }
+
+export interface PokemonResponse {
+    id: number;
+    pokemonId: number;
+    isActive: boolean;
+}
 // recibes: PcPlayerPokemon[], mostrarlos todos por pantalla
 
 // Botón de guardar para seleccionar tu equipo de 6 pokemons

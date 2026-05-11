@@ -15,7 +15,7 @@ public class Pokemon {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     public Long id;
-    
+
     @ManyToOne
     public User owner;
 
@@ -23,7 +23,7 @@ public class Pokemon {
     // public String alias;
 
     @Column(nullable = false)
-    public Integer pokemon;
+    public int pokemon;
 
     // @Column(nullable = false)
     // public Integer lvl;
