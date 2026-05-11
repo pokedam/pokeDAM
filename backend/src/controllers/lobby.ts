@@ -7,11 +7,9 @@ import type {
     LobbyResponse,
     LobbySummaryResponse
 } from 'shared_types';
-import { lobbyService } from './lobby.service.js';
-import type { LeftResponse } from './lobby.models.js';
+import { lobbyService, type LeftResponse } from '../services/lobby.js';
 
-
-type Callback<T> = (response: Result<T>) => void;
+type Callback<T> = (response: Result<T>) => void; 
 
 
 export function lobbyController(io: Server, userId: number, socket: Socket): void {
@@ -64,6 +62,10 @@ export function lobbyController(io: Server, userId: number, socket: Socket): voi
 
     socket.on('lobby.leave', (callback: Callback<void>) => {
         callback(handleLeave());
+    });
+
+    socket.on('lobby.start', async (callback: Callback<void>) => {
+        let res = lobbyService.start(userId);
     });
 
     socket.on('disconnect', handleLeave);

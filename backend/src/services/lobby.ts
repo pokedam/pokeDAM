@@ -1,4 +1,3 @@
-import { v4 } from "uuid";
 import type {
     LobbyCreationRequest,
     LobbyJoinRequest,
@@ -7,10 +6,44 @@ import type {
     Result
 } from 'shared_types';
 import { result } from 'shared_types';
-import type { LeftResponse, Lobby, LobbyJoinResponse } from "./lobby.models.js";
-import { dbService } from "../db/client.js";
-const lobbies: Map<string, Lobby> = new Map();
-const players: Map<number, string> = new Map();
+import { db } from "../db/client.js";
+import * as store from "./store.js";
+import type { PlayerId } from './store.js';
+
+export interface Lobby {
+    name: string;
+    password?: string | null;
+    hostId: PlayerId;
+    hostNickname: string;
+    joiners: Map<PlayerId, Joiner>;
+    maxPlayers: number;
+}
+
+export interface Joiner {
+    isReady: boolean;
+    nickname: string;
+}
+
+export interface LobbyJoinResponse {
+    nickname: string;
+    playerCount: number;
+}
+
+export type LeftResponse = HostLeftResponse | JoinerLeftResponse;
+
+interface HostLeftResponse {
+    type: "host";
+    newHostId: number | null;
+    lobbyId: string;
+    playerCount: number;
+}
+
+interface JoinerLeftResponse {
+    type: "joiner";
+    joinerId: number;
+    lobbyId: string;
+    playerCount: number;
+}
 
 function response(lobby: Lobby): LobbyResponse {
     return {
@@ -35,22 +68,18 @@ function summaryResponse(id: string, lobby: Lobby): LobbySummaryResponse {
     };
 }
 
-/////////////////////
-// Service actions //
-/////////////////////
 function get(id: string): Result<LobbyResponse> {
-    const lobby = lobbies.get(id);
+    const lobby = store.lobbies.get(id);
     return lobby ? result.ok(response(lobby)) : result.notFound(`No lobby with ID ${id} found`);
 }
 
 function getAll(): LobbySummaryResponse[] {
-    return Array.from(lobbies.entries()).map(([id, lobby]) => summaryResponse(id, lobby));
+    return Array.from(store.lobbies.all(), ([id, lobby]) => summaryResponse(id, lobby));
 }
 
-
 async function create(hostId: number, request: LobbyCreationRequest, maxPlayers: number = 8): Promise<Result<LobbySummaryResponse>> {
-    if (players.get(hostId)) return result.conflict(`Player is already in a lobby`);
-    let res = (await dbService.user.get(hostId));
+    if (store.groups.get(hostId)) return result.conflict(`Player is already in a lobby`);
+    let res = (await db.user.get(hostId));
     if (!res.success) return res;
     const lobby = {
         name: request.name ?? res.content.nickname,
@@ -60,21 +89,21 @@ async function create(hostId: number, request: LobbyCreationRequest, maxPlayers:
         joiners: new Map(),
         maxPlayers
     };
-    const lobbyId = v4();
-    lobbies.set(lobbyId, lobby);
-    players.set(hostId, lobbyId);
+
+    const lobbyId = store.lobbies.set(lobby);
+    store.players.set(hostId, lobbyId);
     return result.ok(summaryResponse(lobbyId, lobby));
 }
 
 async function join(playerId: number, req: LobbyJoinRequest): Promise<Result<LobbyJoinResponse>> {
-    if (players.get(playerId)) return result.conflict(`Player is already in a lobby`);
+    if (store.players.get(playerId)) return result.conflict(`Player is already in a lobby`);
 
-    const lobby = lobbies.get(req.id);
+    const lobby = store.lobbies.get(req.id);
     if (!lobby) return result.conflict(`No lobby with ID ${req.id} found`);
 
     if (lobby.password && lobby.password !== req.password)
         return result.forbidden("Invalid lobby password");
-    let res = (await dbService.user.get(playerId));
+    let res = (await db.user.get(playerId));
     if (!res.success) return res;
     let nickname = res.content.nickname;
     lobby.joiners.set(playerId, {
@@ -82,7 +111,7 @@ async function join(playerId: number, req: LobbyJoinRequest): Promise<Result<Lob
         nickname,
     });
 
-    players.set(playerId, req.id);
+    store.players.set(playerId, req.id);
     return result.ok({
         nickname,
         playerCount: lobby.joiners.size + 1,
@@ -90,28 +119,30 @@ async function join(playerId: number, req: LobbyJoinRequest): Promise<Result<Lob
 }
 
 function leave(playerId: number): Result<LeftResponse> {
-    const lobbyId = players.get(playerId);
+    const lobbyId = store.players.get(playerId);
     if (!lobbyId) return result.conflict(`Leave failed: Player is not in a lobby`);
-    return leaveLobby(playerId, lobbyId);
+
+    const lobby = store.lobbies.get(lobbyId);
+    if (!lobby) return result.conflict(`Leave failed: No lobby with ID ${lobbyId} found`);
+
+    return leaveInternal(playerId, lobbyId, lobby);
 }
 
 function kick(targetId: number, playerId: number): Result<LeftResponse> {
-    let lobbyId = players.get(targetId);
+    let lobbyId = store.players.get(targetId);
     if (!lobbyId) return result.conflict(`Cannot kick player: Player is not in a lobby`);
 
-    const lobby = lobbies.get(lobbyId);
+    const lobby = store.lobbies.get(targetId);
     if (!lobby) return result.conflict(`Cannot kick player: Associated lobby is not available`);
 
     if (lobby.hostId !== playerId) return result.forbidden(`Cannot kick player: You are not the host of their current lobby`);
 
-    return leaveLobby(targetId, lobbyId);
+    return leaveInternal(targetId, lobbyId, lobby);
 }
 
-function leaveLobby(playerId: number, lobbyId: string): Result<LeftResponse> {
-    const lobby = lobbies.get(lobbyId);
-    if (!lobby) return result.conflict(`Leave failed: No lobby with ID ${lobbyId} found`);
+function leaveInternal(playerId: number, lobbyId: string, lobby: Lobby): Result<LeftResponse> {
 
-    players.delete(playerId);
+    store.players.delete(playerId);
 
     if (lobby.hostId === playerId) {
         const iterator = lobby.joiners.entries().next();
@@ -126,7 +157,7 @@ function leaveLobby(playerId: number, lobbyId: string): Result<LeftResponse> {
             return result.ok({ type: 'host', newHostId, lobbyId, playerCount: lobby.joiners.size + 1 });
         }
 
-        lobbies.delete(lobbyId);
+        store.groups.delete(lobbyId);
         return result.ok({ type: 'host', newHostId: null, lobbyId, playerCount: 0 });
     } else
         if (!lobby.joiners.delete(playerId))
@@ -136,10 +167,10 @@ function leaveLobby(playerId: number, lobbyId: string): Result<LeftResponse> {
 }
 
 function isReady(playerId: number, isReady: boolean): Result<string> {
-    const lobbyId = players.get(playerId);
+    const lobbyId = store.players.get(playerId);
     if (!lobbyId) return result.conflict("Change ready status failed: Player is not in a lobby");
 
-    const lobby = lobbies.get(lobbyId);
+    const lobby = store.lobbies.get(lobbyId);
     if (!lobby) return result.conflict("Change ready status failed: Associated lobby is not available");
 
     const player = lobby.joiners.get(playerId);
@@ -147,6 +178,10 @@ function isReady(playerId: number, isReady: boolean): Result<string> {
 
     player.isReady = isReady;
     return result.ok(lobbyId);
+}
+
+function start(playerId: number): Result<void> {
+    throw new Error("Not implemented");
 }
 
 ////////////
@@ -162,5 +197,5 @@ export const lobbyService = {
     leave,
     kick,
     isReady,
-
+    start,
 };

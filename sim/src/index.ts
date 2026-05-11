@@ -1,15 +1,12 @@
-export * from './result';
-export * from './lobby';
-export * from './auth';
-export * from './game';
+import type { PlayerPokemon } from 'shared_types';
 
-export interface PokemonGenerated {
-    id: number;
-    name: string;
-    sprite: string;
+export interface Player {
+    pokemons: InGamePokemon[];
+    actives: (InGamePokemon | null)[];
 }
 
-// @ts-ignore: Auto-generated import.
-import dataset from './generated/pokemon.json';
+export interface InGamePokemon extends PlayerPokemon {
+    hp: number;
+}
 
-export const POKEMONS: PokemonGenerated[] = dataset || [];
+export type Board = Player[];

@@ -1,8 +1,10 @@
 package org.cifpaviles.pokedam.rest_server.controller;
 
 import org.cifpaviles.pokedam.rest_server.exception.ApiException;
+import org.cifpaviles.pokedam.rest_server.models.PokemonResponse;
 import org.cifpaviles.pokedam.rest_server.models.UserChangeRequest;
 import org.cifpaviles.pokedam.rest_server.models.UserResponse;
+import org.cifpaviles.pokedam.rest_server.repository.PokemonRepository;
 import org.cifpaviles.pokedam.rest_server.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -24,11 +26,34 @@ public class UserController {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private PokemonRepository pokemonRepository;
+
     @GetMapping("/{userId}")
     public ResponseEntity<UserResponse> getUser(@PathVariable("userId") Long userId) {
         var user = userRepository.findById(userId)
                 .orElseThrow(() -> new ApiException(MISSING_USER, HttpStatus.NOT_FOUND));
         return ResponseEntity.ok(new UserResponse(user));
+    }
+
+    @GetMapping("/{userId}/pokemons")
+    public ResponseEntity<PokemonResponse[]> getPokemons(@PathVariable("userId") Long userId) {
+        userRepository.findById(userId)
+                .orElseThrow(() -> new ApiException(MISSING_USER, HttpStatus.NOT_FOUND));
+                
+        var pokemons = pokemonRepository.findAllByOwnerId(userId);
+        PokemonResponse[] response = new PokemonResponse[pokemons.size()];
+
+        for (int i = 0; i < pokemons.size(); i++) {
+            var pokemon = pokemons.get(i);
+            PokemonResponse dto = new PokemonResponse();
+            dto.id = pokemon.id;
+            dto.pokemon = pokemon.pokemon;
+            dto.isActive = pokemon.isActive;
+            response[i] = dto;
+        }
+
+        return ResponseEntity.ok(response);
     }
 
     @PatchMapping("/{userId}")

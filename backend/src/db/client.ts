@@ -79,7 +79,7 @@ export const api = {
     },
 };
 
-export const dbService = {
+export const db = {
     auth,
     user,
 };

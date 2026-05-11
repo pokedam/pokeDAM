@@ -1,14 +1,8 @@
+import { Movs } from "./movs";
+
 export type PokemonType = 'normal' | 'fire' | 'water' | 'grass' | 'electric' | 'ice' | 'fighting' | 'poison' | 'ground' | 'flying' | 'psychic' | 'bug' | 'rock' | 'ghost' | 'dragon' | 'steel' | 'fairy';
-
 export type Gender = 'male' | 'female' | 'genderless';
-
-export interface Movs {
-
-}
-
 export const POKEMONS: Pokemon[] = [];
-
-
 
 export interface Pokemon {
     type: PokemonType,
@@ -42,15 +36,8 @@ export interface PlayerPokemon {
     gender: Gender;
     shiny: boolean;
 }
-
-
-
-
 // recibes: PcPlayerPokemon[], mostrarlos todos por pantalla
 
-
-
 // Botón de guardar para seleccionar tu equipo de 6 pokemons
-
 
 // envias number[] donde el numero es el indice del PcPlayerPokemon seleccionado en el array recibido

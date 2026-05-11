@@ -9,7 +9,7 @@ export const jwt = {
 };
 
 const SECRET = process.env.JWT_SECRET || fallbackJwt();
-const EXPIRE_TIME = 60 * 15;
+const EXPIRE_TIME_SECS = 60 * 15;
 
 function fallbackJwt(): string {
     const jwt = 'mi_secreto_super_seguro_para_jwt_aqui_va';
@@ -64,6 +64,6 @@ function middleware(req: Request, res: Response, next: NextFunction): void {
 
 
 function generate(userId: number): string {
-    return coreJwt.sign({ sub: String(userId) }, SECRET, { expiresIn: EXPIRE_TIME }); //
+    return coreJwt.sign({ sub: String(userId) }, SECRET, { expiresIn: EXPIRE_TIME_SECS }); //
 }
 
