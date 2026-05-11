@@ -1,17 +1,16 @@
 .pc-page-container {
   width: 100%;
   min-height: calc(100vh - 60px); /* Adjust to topbar height */
-  background-color: rgba(0, 0, 0, 0.7);
   display: flex;
   justify-content: center;
-  align-items: center;
-  padding: 20px;
+  align-items: stretch;
+  padding: 0;
   box-sizing: border-box;
 }
 
 .pc-container {
-  width: 90%;
-  max-width: 800px;
+  width: 100%;
+  max-width: 100%;
   height: 80vh;
   background-color: #2b7050; /* Retro green PC feel */
   border: 6px solid #e0e0e0;
@@ -20,7 +19,8 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  font-family: monospace; /* Simple retro font fallback */
+  font-family: 'Press Start 2P', cursive;
+  margin: 0;
 }
 
 .pc-header {
@@ -37,6 +37,9 @@
   margin: 0;
   font-size: 20px;
   letter-spacing: 2px;
+  text-transform: uppercase;
+  font-weight: bold;
+  text-shadow: 1px 1px 0px #000;
 }
 
 .close-btn {
@@ -54,6 +57,7 @@
   padding: 20px;
   gap: 20px;
   overflow: hidden;
+  align-items: stretch;
 }
 
 .pc-box {
@@ -63,6 +67,7 @@
   border-radius: 8px;
   display: flex;
   flex-direction: column;
+  min-height: 0;
 }
 
 .box-header {
@@ -87,17 +92,34 @@
 
 .grid-container {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-auto-rows: minmax(0, 1fr);
   gap: 10px;
   padding: 15px;
   overflow-y: auto;
   flex: 1;
+  min-height: 0;
+  height: 100%;
+}
+
+.grid-cell {
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.15);
+  border: 2px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  transition: all 0.2s;
 }
 
 .grid-cell {
   width: 60px;
   height: 60px;
-  background-color: rgba(255, 255, 255, 0.4);
+  background-color: rgba(255, 255, 255, 0.15);
   border: 2px solid transparent;
   border-radius: 4px;
   cursor: pointer;
@@ -109,14 +131,14 @@
 }
 
 .grid-cell:hover {
-  background-color: rgba(255, 255, 255, 0.8);
-  border-color: #fff;
+  background-color: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.5);
 }
 
 .grid-cell.selected {
-  background-color: #fff;
+  background-color: rgba(255, 255, 255, 0.35);
   border-color: #ffcc00;
-  box-shadow: 0 0 10px #ffcc00;
+  box-shadow: 0 0 10px rgba(255, 204, 0, 0.4);
 }
 
 .grid-cell img {
@@ -151,52 +173,106 @@
 }
 
 .team-section {
-  background-color: #fff;
+  position: relative;
+  background-color: rgba(32, 90, 53, 0.95);
   border: 4px solid #1a4f36;
   border-radius: 8px;
   padding: 15px;
   flex: 1;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+}
+
+.team-section::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.04) 30%, rgba(0, 0, 0, 0.18) 100%);
+  opacity: 1;
+}
+
+.team-section::after {
+  content: '';
+  position: absolute;
+  width: 86px;
+  height: 86px;
+  border-radius: 50%;
+  background: radial-gradient(circle at center, #fff 44%, #000 48%, #000 53%, #fff 57%);
+  border: 6px solid rgba(0, 0, 0, 0.9);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0.2;
 }
 
 .team-section h3 {
   margin-top: 0;
   font-size: 14px;
   text-align: center;
-  color: #1a4f36;
-  border-bottom: 2px solid #ccc;
+  color: #f9f3d1;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.4);
   padding-bottom: 5px;
+  position: relative;
+  z-index: 1;
 }
 
 .team-slots {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  flex: 1;
+  padding-top: 10px;
+  align-content: start;
+  min-height: 0;
 }
 
 .team-slot {
   display: flex;
   align-items: center;
-  background-color: #f0f0f0;
-  border: 2px dashed #999;
-  border-radius: 4px;
-  height: 40px;
+  justify-content: space-between;
+  background-color: #2f7c61;
+  border: 2px solid #1a4f36;
+  border-radius: 8px;
+  min-height: 84px;
   cursor: pointer;
-  padding: 0 10px;
-  gap: 10px;
+  padding: 0 12px;
+  gap: 12px;
+  position: relative;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.18);
+}
+
+.team-slot::before {
+  display: none;
 }
 
 .team-slot:hover {
-  border-style: solid;
-  border-color: #ff4444;
+  border-color: #ffcc00;
+  background-color: #3c8866;
 }
 
 .team-slot img {
-  width: 30px;
-  height: 30px;
+  width: 64px;
+  height: 64px;
   image-rendering: pixelated;
+}
+
+.remove-btn {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: #ff4444;
+  color: white;
+  border: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
 }
 
 .lvl-badge {
@@ -231,6 +307,7 @@
 .save-btn {
   background-color: #ffcc00;
   color: #000;
+  width: 100%;
 }
 
 .save-btn:hover:not(:disabled) {
@@ -239,4 +316,27 @@
 
 .cancel-btn {
   background-color: #ddd;
+}
+
+.move-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.move-actions p {
+  margin: 0;
+  font-size: 12px;
+  text-align: center;
+}
+
+.move-btn {
+  background-color: #4CAF50;
+  color: white;
+  padding: 10px;
+  font-size: 14px;
+}
+
+.move-btn:hover {
+  background-color: #45a049;
 }

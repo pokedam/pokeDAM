@@ -9,9 +9,9 @@
       <!-- Cajas de PC -->
       <div class="pc-box">
         <div class="box-header">
-          <button class="arrow-btn">&lt;</button>
-          <span>CAJA 1</span>
-          <button class="arrow-btn">&gt;</button>
+          <button class="arrow-btn" (click)="prevBox()">&lt;</button>
+          <span>CAJA {{ currentBox + 1 }}/3</span>
+          <button class="arrow-btn" (click)="nextBox()">&gt;</button>
         </div>
         <div class="grid-container">
           @for (pcPokemon of pcPokemons; track $index) {
@@ -32,15 +32,14 @@
       <!-- Panel Lateral (Equipo y Guardar) -->
       <div class="side-panel">
         <div class="team-section">
-          <h3>EQUIPO ACTUAL ({{ selectedCount }}/6)</h3>
+          <h3>EQUIPO GUARDADO ({{ currentTeam.length }}/6)</h3>
           <div class="team-slots">
-            @for (pcPokemon of pcPokemons; track $index) {
-              @if (pcPokemon.isSelected) {
-                <div class="team-slot" (click)="toggleSelection($index)">
-                  <img [src]="getPokemonImageUrl(pcPokemon.pokemon.pokemon)" alt="Team member">
-                  <span class="lvl-badge">Nv{{ pcPokemon.pokemon.lvl }}</span>
-                </div>
-              }
+            @for (pokemon of currentTeam; track $index) {
+              <div class="team-slot">
+                <img [src]="getPokemonImageUrl(pokemon.pokemon)" alt="Team member">
+                <span class="lvl-badge">Nv{{ pokemon.lvl }}</span>
+                <button class="remove-btn" (click)="removeFromTeam($index)">X</button>
+              </div>
             }
           </div>
         </div>
@@ -49,6 +48,16 @@
           <button class="retro-btn save-btn" [disabled]="selectedCount === 0" (click)="saveTeam()">
             GUARDAR EQUIPO
           </button>
+          @if (selectedCount > 0) {
+            <div class="move-actions">
+              <p>Mover seleccionados a:</p>
+              @for (i of [0,1,2]; track i) {
+                @if (i !== currentBox) {
+                  <button class="retro-btn move-btn" (click)="moveSelectedToBox(i)">Caja {{ i + 1 }}</button>
+                }
+              }
+            </div>
+          }
           <button class="retro-btn cancel-btn" (click)="closeModal()">SALIR</button>
         </div>
       </div>

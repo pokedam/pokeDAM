@@ -1,4 +1,4 @@
-<div class="pokemon-entry">
+<div class="pokemon-entry" [class.selected]="selected" [class.hit]="pokemon.hit">
   <div class="pokemon-content">
     <div class="pokemon-avatar">
       <img [src]="pokemon.avatarUrl" [alt]="pokemon.name" />

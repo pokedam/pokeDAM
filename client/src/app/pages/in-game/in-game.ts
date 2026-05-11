@@ -199,6 +199,17 @@ export class InGame implements OnInit {
       alert('Selecciona al menos un objetivo.');
       return;
     }
+    // Set hit animation
+    this.selectedTargets.forEach(target => {
+      target.hit = true;
+    });
+    // Clear hit after animation
+    setTimeout(() => {
+      this.selectedTargets.forEach(target => {
+        target.hit = false;
+      });
+    }, 500);
+
     alert(`¡${this.selectedOurPokemon?.name} usó ${this.selectedAttack?.name} contra ${this.selectedTargets.map(t => t.name).join(', ')}!`);
 
     this.currentMenu = 'main';

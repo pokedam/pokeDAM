@@ -22,7 +22,7 @@
     @for (pokemon of player.activePokemons; track pokemon.id) {
       <app-pokemon-chip 
         [pokemon]="pokemon"
-        [class.selected]="selectedPokemons.includes(pokemon)"
+        [selected]="selectedPokemons.includes(pokemon)"
         (click)="pokemonSelect.emit({player: player, pokemon: pokemon})">
       </app-pokemon-chip>
     }

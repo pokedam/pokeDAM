@@ -12,4 +12,5 @@ import { LifeBar } from '../life-bar/life-bar';
 })
 export class PokemonChip {
   @Input({ required: true }) pokemon!: Pokemon;
+  @Input() selected = false;
 }

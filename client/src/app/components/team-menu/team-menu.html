@@ -1,0 +1,23 @@
+<div class="team-page-container">
+  <div class="team-container">
+    <div class="team-header">
+      <h2>EQUIPO POKÉMON</h2>
+      <button class="close-btn" (click)="closeModal()">X</button>
+    </div>
+
+    <div class="team-body">
+      @if (team.length === 0) {
+        <p>No hay Pokémon en el equipo.</p>
+      } @else {
+        <div class="team-grid">
+          @for (pokemon of team; track pokemon.id) {
+            <div class="team-slot">
+              <img [src]="getPokemonImageUrl(pokemon.pokemon)" alt="Pokemon">
+              <span class="lvl-badge">Nv{{ pokemon.lvl }}</span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+</div>

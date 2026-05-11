@@ -19,6 +19,7 @@ export interface Pokemon {
     avatarUrl: string; // Required pokemon photo
     statusConditions: PokemonStatus[];
     attacks?: Attack[];
+    hit?: boolean;
 }
 
 export interface Player {

@@ -2,10 +2,12 @@ import { PlayerPokemon } from "./pokemon";
 
 interface MovMap {
     'destructor': SingleDamage;
+    'terremoto': SingleDamage;
+    
 }
 
 export interface SingleDamage {
-    player_idx: number;
+    player_id: number;
     pokemon_idx: number;
     damage: number;
 }
@@ -40,8 +42,11 @@ type MovBuilders = {
 const creators: MovBuilders = {
     destructor: (): SingleDamage => {
         throw new Error("Function not implemented.");
+    },
+    terremoto: (): SingleDamage => {
+        throw new Error("Function not implemented.");
     }
-};
+} as MovBuilders;
 
 
 type MovExecutors = {
@@ -51,5 +56,8 @@ type MovExecutors = {
 const executors: MovExecutors = {
     destructor: (args: SingleDamage): Promise<void> => {
         throw new Error("Function not implemented.");
+    },
+    terremoto: (args: SingleDamage): Promise<void> => {
+        throw new Error("Function not implemented.");
     }
-};
+} as MovExecutors;

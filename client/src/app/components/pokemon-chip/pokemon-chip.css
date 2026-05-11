@@ -1,8 +1,7 @@
-.pokemon-entry {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  font-size: 8px;
+.pokemon-entry.selected {
+  background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+  border-radius: 4px;
+  padding: 2px;
 }
 
 .pokemon-content {
@@ -80,9 +79,14 @@
 .status-chip.con { background-color: #f95587; }
 .status-chip.hel { background-color: #96d9d6; color: #000; }
 
-/* Mobile responsiveness: In very narrow columns, stack vertically or make smaller */
-@media (max-width: 480px) {
-  .pokemon-name-row {
-    font-size: 6px;
-  }
+.pokemon-entry.hit {
+  animation: hit 0.5s ease-in-out;
+}
+
+@keyframes hit {
+  0% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  50% { transform: translateX(5px); }
+  75% { transform: translateX(-5px); }
+  100% { transform: translateX(0); }
 }
