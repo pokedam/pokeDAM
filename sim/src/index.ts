@@ -7,6 +7,10 @@ export interface Player {
 
 export interface InGamePokemon extends PlayerPokemon {
     hp: number;
+    movsPp: number[];
 }
 
 export type Board = Player[];
+
+export { movs } from "./movs";
+export type { ValidationContext } from "./movs";

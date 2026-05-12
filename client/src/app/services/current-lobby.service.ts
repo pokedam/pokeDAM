@@ -1,9 +1,7 @@
-import { Injectable, inject, NgZone, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { SocketService } from './socket.service';
 import { AuthService } from './auth.service';
-import { ErrorService } from './error.service';
-import { InLobbyEvent, LobbyCreatedResponse, LobbyCreationRequest, lobbyFactory, LobbyJoinRequest, LobbyResponse, Result } from 'shared_types';
-import { Socket } from 'socket.io-client';
+import { InLobbyEvent, LobbyCreatedResponse, LobbyCreationRequest, LobbyJoinRequest, LobbyResponse } from 'shared_types';
 import { map, Observable, switchMap, tap } from 'rxjs';
 
 export interface Lobby {

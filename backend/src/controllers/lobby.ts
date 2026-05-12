@@ -9,8 +9,7 @@ import type {
 } from 'shared_types';
 import { lobbyService, type LeftResponse } from '../services/lobby.js';
 
-type Callback<T> = (response: Result<T>) => void; 
-
+type Callback<T> = (response: Result<T>) => void;
 
 export function lobbyController(io: Server, userId: number, socket: Socket): void {
     socket.on('lobbies.get', (lobbyId: string, callback: Callback<LobbyResponse>) => {

@@ -1,4 +1,4 @@
-import { Movs } from "./movs";
+import { Mov } from "./movs";
 
 export type PokemonType = 'normal' | 'fire' | 'water' | 'grass' | 'electric' | 'ice' | 'fighting' | 'poison' | 'ground' | 'flying' | 'psychic' | 'bug' | 'rock' | 'ghost' | 'dragon' | 'steel' | 'fairy';
 export type Gender = 'male' | 'female' | 'genderless';
@@ -32,7 +32,7 @@ export interface PlayerPokemon {
     lvl: number;
     exp: number;
     iv: Stats;
-    movs: Movs[];
+    movs: Mov[];
     gender: Gender;
     shiny: boolean;
 }

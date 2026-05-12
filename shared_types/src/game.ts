@@ -1,8 +1,8 @@
 export type Effectiveness = 4 | 2 | 1 | 0.5 | 0.25 | 0;
 
-export interface Damage{
+export interface Damage {
     amount: number;
-    effectiveness: Effectiveness;   
+    effectiveness: Effectiveness;
     isCrit: boolean;
 }
 
@@ -17,7 +17,7 @@ export interface DamageEvent {
     damage: Damage;
 }
 
-export interface PokemonFainted{
+export interface PokemonFainted {
     key: 'pokemon_fainted';
     player_idx: number;
     pokemon_idx: number;
@@ -26,3 +26,36 @@ export interface PokemonFainted{
 export type TurnHistory = GameEvent[];
 
 export type GameHistory = TurnHistory[];
+
+
+export interface GameRequest {
+    payload: { [Key in Mov]: Payload<Key> }[Mov];
+    pokemonIdx: number;
+    movIdx: number;
+}
+
+type MovEntry<Payload> = {
+    payload: Payload;
+    pp: number;
+};
+
+type EnforceMovMap<M extends Record<string, MovEntry<unknown>>> = M;
+
+type MovMap = EnforceMovMap<{
+    destructor: {
+        payload: SingleDamage;
+        pp: 10;
+    },
+    other: {
+        payload: number;
+        pp: 10;
+    };
+}>;
+
+export interface SingleDamage {
+    player_idx: number;
+    pokemon_idx: number;
+}
+
+export type Mov = keyof MovMap;
+export type Payload<T extends Mov> = MovMap[T]['payload'];
