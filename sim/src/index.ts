@@ -13,4 +13,4 @@ export interface InGamePokemon extends PlayerPokemon {
 export type Board = Player[];
 
 export { movs } from "./movs";
-export type { ValidationContext } from "./movs";
+export * from "./movs";

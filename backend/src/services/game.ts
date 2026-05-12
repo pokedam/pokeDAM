@@ -1,9 +1,8 @@
 import type { GameHistory, GameRequest, Mov, Payload, TurnHistory } from "shared_types";
-import { movs, type Board, type ValidationContext } from "sim";
+import { movs, type Board, type ExecutionContext, type ValidationContext } from "sim";
 import type { GroupId, PlayerId } from "./store.js";
 import * as store from "./store.js";
 import FastPriorityQueue from "fastpriorityqueue";
-import type { ExecutionContext } from "sim/dist/movs.js";
 
 const TURN_INTERVAL_MS = 60_000;
 

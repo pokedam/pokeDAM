@@ -7,11 +7,11 @@ export interface ValidationContext<T extends Mov> {
     payload: Payload<T>;
 }
 
-interface ExecutionContext<T extends Mov> extends ValidationContext<T> {
+export interface ExecutionContext<T extends Mov> extends ValidationContext<T> {
     history: TurnHistory;
 }
 
-export type MovLogic = {
+type MovLogic = {
     [K in Mov]: {
         validate: (ctx: ValidationContext<K>) => number | null;
         execute: (ctx: ExecutionContext<K>) => void;
@@ -24,11 +24,7 @@ export const movs: MovLogic = {
         execute: (ctx): void => { }
     },
     other: {
-        validate: function (ctx): number | null {
-            throw new Error("Function not implemented.");
-        },
-        execute: function (ctx: ExecutionContext<"other">): void {
-            throw new Error("Function not implemented.");
-        }
+        validate: (ctx): number | null => null,
+        execute: (ctx): void => { }
     }
 };
