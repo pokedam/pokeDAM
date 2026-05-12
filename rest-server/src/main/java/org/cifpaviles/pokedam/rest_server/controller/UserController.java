@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
+import org.cifpaviles.pokedam.rest_server.entity.Pokemon;
 import org.cifpaviles.pokedam.rest_server.exception.ApiException;
 import org.cifpaviles.pokedam.rest_server.models.PokemonResponse;
 import org.cifpaviles.pokedam.rest_server.models.UserChangeRequest;
@@ -64,10 +65,7 @@ public class UserController {
     }
 
     @GetMapping("/{userId}/pokemons")
-    public ResponseEntity<PokemonResponse[]> getPokemons(@PathVariable("userId") Long userId) {
-        userRepository.findById(userId)
-                .orElseThrow(() -> new ApiException(MISSING_USER, HttpStatus.NOT_FOUND));
-
+    public ResponseEntity<PokemonResponse[]> getPokemons(@PathVariable("userId") Long userId) {        
         var pokemons = pokemonRepository.findAllByOwnerId(userId);
         PokemonResponse[] response = new PokemonResponse[pokemons.size()];
 
@@ -75,7 +73,24 @@ public class UserController {
             var pokemon = pokemons.get(i);
             PokemonResponse dto = new PokemonResponse();
             dto.id = pokemon.id;
-            dto.pokemon = pokemon.pokemon;
+            dto.pokedexIdx = pokemon.pokedexIdx;
+            dto.isActive = pokemon.isActive;
+            response[i] = dto;
+        }
+
+        return ResponseEntity.ok(response);
+    }
+    
+    @GetMapping("/{userId}/pokemons/active")
+    public ResponseEntity<PokemonResponse[]> getActivePokemons(@PathVariable("userId") Long userId) {
+        List<Pokemon> pokemons = pokemonRepository.findAllByOwnerIdAndIsActiveTrue(userId);
+        PokemonResponse[] response = new PokemonResponse[pokemons.size()];
+
+        for (int i = 0; i < pokemons.size(); i++) {
+            var pokemon = pokemons.get(i);
+            PokemonResponse dto = new PokemonResponse();
+            dto.id = pokemon.id;
+            dto.pokedexIdx = pokemon.pokedexIdx;
             dto.isActive = pokemon.isActive;
             response[i] = dto;
         }

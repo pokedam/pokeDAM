@@ -14,3 +14,6 @@ export interface PokemonGenerated {
 import dataset from './generated/pokemon.json';
 
 export const POKEMONS: PokemonGenerated[] = dataset || [];
+
+
+

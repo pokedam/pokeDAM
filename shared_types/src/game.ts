@@ -34,28 +34,24 @@ export interface GameRequest {
     movIdx: number;
 }
 
-type MovEntry<Payload> = {
-    payload: Payload;
-    pp: number;
+type MovMap = {
+    destructor: SingleDamage,
+    other: number,
 };
 
-type EnforceMovMap<M extends Record<string, MovEntry<unknown>>> = M;
+const pps = {
+    "destructor": 32,
+    "other": 16,
+} satisfies { [M in Mov]: number };
 
-type MovMap = EnforceMovMap<{
-    destructor: {
-        payload: SingleDamage;
-        pp: 10;
-    },
-    other: {
-        payload: number;
-        pp: 10;
-    };
-}>;
+export function getPP<M extends Mov>(mov: M): number {
+    return pps[mov];
+}
 
 export interface SingleDamage {
-    player_idx: number;
-    pokemon_idx: number;
+    playerIdx: number;
+    pokemonIdx: number;
 }
 
 export type Mov = keyof MovMap;
-export type Payload<T extends Mov> = MovMap[T]['payload'];
+export type Payload<T extends Mov> = MovMap[T];

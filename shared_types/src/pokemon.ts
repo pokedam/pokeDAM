@@ -1,4 +1,5 @@
-import { Mov } from "./movs";
+import { Mov } from "./game";
+
 
 export type PokemonType = 'normal' | 'fire' | 'water' | 'grass' | 'electric' | 'ice' | 'fighting' | 'poison' | 'ground' | 'flying' | 'psychic' | 'bug' | 'rock' | 'ghost' | 'dragon' | 'steel' | 'fairy';
 export type Gender = 'male' | 'female' | 'genderless';
@@ -20,27 +21,34 @@ export interface Stats {
     specialDefense: number;
 }
 
-export interface PcPlayerPokemon {
-    isSelected: boolean;
-    pokemon: PlayerPokemon;
-}
+// export interface PcPlayerPokemon {
+//     isSelected: boolean;
+//     pokemon: PlayerPokemon;
+// }
 
-export interface PlayerPokemon {
+// export interface PlayerPokemon {
+//     id: number;
+//     alias: string | null;
+//     pokemon: number;
+//     lvl: number;
+//     exp: number;
+//     iv: Stats;
+//     movs: Mov[];
+//     gender: Gender;
+//     shiny: boolean;
+// }
+
+export interface PokemonResponse {
     id: number;
-    alias: string | null;
-    pokemon: number;
-    lvl: number;
-    exp: number;
-    iv: Stats;
-    movs: Mov[];
-    gender: Gender;
-    shiny: boolean;
+    pokedexIdx: number;
+    isActive: boolean;
 }
 
 export interface PokemonResponse {
     id: number;
-    pokemonId: number;
-    isActive: boolean;
+    pokedexIdx: number;
+    movs: Mov[];
+    stats: Stats;
 }
 // recibes: PcPlayerPokemon[], mostrarlos todos por pantalla
 

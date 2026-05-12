@@ -1,11 +1,11 @@
-import type { PlayerPokemon } from 'shared_types';
+import type { PlayerPokemon, PokemonResponse } from 'shared_types';
 
 export interface Player {
     pokemons: InGamePokemon[];
     actives: (InGamePokemon | null)[];
 }
 
-export interface InGamePokemon extends PlayerPokemon {
+export interface InGamePokemon extends PokemonResponse {
     hp: number;
     movsPp: number[];
 }

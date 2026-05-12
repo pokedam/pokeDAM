@@ -17,6 +17,5 @@ export function gameController(io: Server, userId: number, socket: Socket): void
         }
 
         callback(result.ok(undefined));
-    });
+    });    
 }
-

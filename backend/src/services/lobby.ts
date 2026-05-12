@@ -180,10 +180,6 @@ function isReady(playerId: number, isReady: boolean): Result<string> {
     return result.ok(lobbyId);
 }
 
-function start(playerId: number): Result<void> {
-    throw new Error("Not implemented");
-}
-
 ////////////
 // Export //
 ////////////
@@ -197,5 +193,4 @@ export const lobbyService = {
     leave,
     kick,
     isReady,
-    start,
 };

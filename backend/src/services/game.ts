@@ -1,8 +1,9 @@
-import type { GameHistory, GameRequest, Mov, Payload, TurnHistory } from "shared_types";
-import { movs, type Board, type ExecutionContext, type ValidationContext } from "sim";
+import { getPP, type GameHistory, type GameRequest, type Mov, type Payload, type TurnHistory } from "shared_types";
+import { movs, type Board, type ExecutionContext, type InGamePokemon, type ValidationContext } from "sim";
 import type { GroupId, PlayerId } from "./store.js";
 import * as store from "./store.js";
 import FastPriorityQueue from "fastpriorityqueue";
+import { db } from "../db/client.js";
 
 const TURN_INTERVAL_MS = 60_000;
 
@@ -32,7 +33,7 @@ interface ValidatedRequest {
     priority: number;
 }
 
-export function gameRequest(id: PlayerId, request: GameRequest) {
+function play(id: PlayerId, request: GameRequest) {
     const gameId = store.players.get(id);
     if (!gameId) throw new Error(`Game not found`);
 
@@ -51,7 +52,7 @@ export function gameRequest(id: PlayerId, request: GameRequest) {
     const mov = pokemon.movs[request.movIdx];
     if (mov == null) throw new Error(`Move not found`);
 
-    const movPp = pokemon.movsPp[request.movIdx];
+    const movPp = pokemon.pps[request.movIdx];
     if (movPp == undefined) throw new Error(`Move PP not found`);
     if (movPp <= 0) throw new Error(`No PP left`);
     const ctx: ValidationContext<typeof mov> = {
@@ -81,10 +82,50 @@ function executeRequest<K extends Mov>(movKey: K, ctx: ExecutionContext<K>) {
 }
 
 
-export function initTimeouts() {
+function init() {
     if (schedulerTimer) clearTimeout(schedulerTimer);
     const next = heap.peek();
     schedulerTimer = next ? setTimeout(processTimeouts, Math.max(0, next.time - Date.now())) : null;
+}
+
+async function create(id: GroupId) {
+    const lobby = store.lobbies.get(id);
+    if (!lobby) throw new Error(`Lobby not found`);
+    const board: Board = [];
+    const states = new Map<PlayerId, PlayerState>();
+
+    const buildBoardEntry = async (playerId: PlayerId) => {
+        const result = await db.user.getActivePokemons(playerId);
+        if (!result.success) throw result;
+        const pokemons: InGamePokemon[] = result.content.map(pokemon => ({
+            ...pokemon,
+            hp: pokemon.stats.hp,
+            pps: pokemon.movs.map(mov => getPP(mov))
+        }));
+
+        return {
+            pokemons,
+            actives: [pokemons[0] ?? null, pokemons[1] ?? null, pokemons[2] ?? null],
+        };
+    };
+
+    const playerIds = [lobby.hostId, ...lobby.joiners.keys()];
+    for (const [playerIdx, playerId] of playerIds.entries()) {
+        states.set(playerId, {
+            request: null,
+            playerIdx,
+        });
+    }
+
+    const game: Game = {
+        board: await Promise.all(playerIds.map(playerId => buildBoardEntry(playerId))),
+        states,
+        history: [],
+        turn: 0
+    };
+
+    //TODO: add game to the store
+
 }
 
 function processTurn(game: Game, id: GroupId) {
@@ -146,6 +187,11 @@ function processTimeouts(): void {
         processTurn(game, trigger.id);
     }
 
-    initTimeouts();
+    init();
 }
 
+export const gameService = {
+    init,
+    create,
+    play,
+};
