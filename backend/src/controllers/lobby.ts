@@ -1,14 +1,12 @@
 import { Server, Socket } from 'socket.io';
 import { result, type Result, lobbyFactory } from 'shared_types';
 import type {
-    Err,
     GroupId,
     GroupResponse,
     LobbyCreatedResponse,
     LobbyCreationRequest,
     LobbyJoinRequest,
     LobbyResponse,
-    LobbySummaryResponse,
     PlayerId,
     StartGameEvent
 } from 'shared_types';

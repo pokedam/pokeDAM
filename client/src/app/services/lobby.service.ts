@@ -30,7 +30,7 @@ export interface Joiner {
 }
 
 @Injectable({ providedIn: 'root' })
-export class CurrentLobbyService {
+export class LobbyService {
     private auth = inject(AuthService);
     private socket = inject(SocketService);
 

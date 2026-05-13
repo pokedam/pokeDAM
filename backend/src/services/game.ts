@@ -3,7 +3,6 @@ import {
     type BoardResponse,
     type GameHistory,
     type GameRequest,
-    type GameResponse,
     type GroupId,
     type Id,
     type InGamePokemon,
@@ -11,10 +10,9 @@ import {
     type Payload,
     type Player,
     type PlayerId,
-    type PlayerResponse,
     type TurnHistory,
     type ValidatedRequest
-} from "shared_types";
+} from "shared_types"; 
 
 import * as store from "./store.js";
 import FastPriorityQueue from "fastpriorityqueue";
@@ -38,15 +36,13 @@ export interface Game {
     turn: number;
 }
 
-export function gameToResponse(game: Game): GameResponse {
-    return {
-        type: 'game', board: Array.from(game.board).map(([id, player]) => ({
-            id,
-            pokemons: player.pokemons,
-            actives: player.actives,
-            request: player.request != null,
-        }))
-    };
+export function gameToResponse(game: Game): BoardResponse {
+    return Array.from(game.board).map(([id, player]) => ({
+        id,
+        pokemons: player.pokemons,
+        actives: player.actives,
+        request: player.request != null,
+    }));
 }
 
 interface ValidationContext<T extends Mov> {
@@ -79,7 +75,7 @@ export const movs: MovLogic = {
 
 
 
-function play(id: PlayerId, request: GameRequest) {
+function play(id: PlayerId, request: GameRequest): TurnHistory | undefined{
     const gameId = store.games.id(id);
     if (!gameId) throw new Error(`Game not found`);
 
@@ -114,7 +110,7 @@ function play(id: PlayerId, request: GameRequest) {
         if (!player.request) return; // Wait for all players to submit their requests
     }
 
-    processTurn(game, gameId);
+    return processTurn(game, gameId);
 }
 
 function validateRequest<K extends Mov>(movKey: K, ctx: ValidationContext<K>): number | null {
@@ -132,7 +128,7 @@ function init() {
     schedulerTimer = next ? setTimeout(processTimeouts, Math.max(0, next.time - Date.now())) : null;
 }
 
-async function create(playerId: Id): Promise<[GroupId, GameResponse]> {
+async function create(playerId: Id): Promise<[GroupId, BoardResponse]> {
     const groupId = store.lobbies.id(playerId);
     if (!groupId) throw new Error(`lobby not found`);
 
@@ -166,7 +162,7 @@ async function create(playerId: Id): Promise<[GroupId, GameResponse]> {
     return [groupId, gameToResponse(game)];
 }
 
-function processTurn(game: Game, id: GroupId) {
+function processTurn(game: Game, id: GroupId): TurnHistory {
     game.turn += 1;
 
     const priorityQueue = new FastPriorityQueue<{
@@ -206,6 +202,8 @@ function processTurn(game: Game, id: GroupId) {
         time: Date.now() + TURN_INTERVAL_MS,
         turn: game.turn,
     });
+    
+    return history;
 }
 
 function processTimeouts(): void {

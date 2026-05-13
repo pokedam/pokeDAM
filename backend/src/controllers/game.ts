@@ -7,7 +7,11 @@ type Callback<T> = (response: Result<T>) => void;
 export function gameController(io: Server, userId: number, socket: Socket): void {
     socket.on('play', (request: GameRequest, callback: Callback<void>) => {
         try {
-            gameService.play(userId, request);
+            const history = gameService.play(userId, request);
+            if(history){
+                //TODO: Emit 
+            }
+
         } catch (e) {
             if (e instanceof Error) {
                 callback(result.badRequest(e.message));

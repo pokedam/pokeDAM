@@ -9,7 +9,6 @@ export interface Auth {
   user: User,
 }
 
-
 @Injectable({
   providedIn: 'root'
 })

@@ -12,16 +12,9 @@ export interface LobbyResponse {
     maxPlayers: number;
 }
 
-export type GroupResponse = LobbiesResponse | GameResponse;
-
-export interface LobbiesResponse {
-    type: "lobbies",
-    lobbies: LobbySummaryResponse[],
-}
-
-export interface GameResponse {
-    type: "game",
-    board: BoardResponse,
+export interface GroupResponse {
+    lobbies: LobbySummaryResponse[];
+    board: BoardResponse | null;
 }
 
 export interface LobbySummaryResponse {
@@ -91,7 +84,7 @@ export interface HostLeftEvent {
 
 export interface StartGameEvent {
     type: "start",
-    board: GameResponse,
+    board: BoardResponse,
 }
 
 export interface TurnCompletedEvent {
