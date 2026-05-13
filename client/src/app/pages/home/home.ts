@@ -1,4 +1,4 @@
-import { Component, effect, inject } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { AsyncPipe } from '@angular/common';
 import { AuthService } from '../../services/auth.service';
 import { LobbyService } from '../../services/lobby.service';
@@ -44,7 +44,13 @@ interface InGameState {
 export class Home {
   savedLobbyName: string = '';
   savedHasPassword: boolean = false;
-  state: GameState = { type: 'browser' };
+  private uiState = signal<GameState>({ type: 'browser' });
+  readonly state = computed<GameState>(() => {
+    const lobby = this.currLobby.lobby();
+
+    if (lobby) return { type: 'inLobby' };
+    return this.uiState();
+  });
 
   socketService = inject(SocketService);
   currLobby = inject(LobbyService);
@@ -53,27 +59,17 @@ export class Home {
 
   constructor() {
     this.socketService.init();
-
-    // Keep state in sync with the current lobby signal.
-    effect(() => {
-      const lobby = this.currLobby.lobby();
-      console.log('Current lobby:', lobby?.id ?? 'none');
-      this.state = lobby ? { type: 'inLobby' } : { type: 'browser' }; 
-    });
   }
 
-  get lobby() {
-    return this.currLobby.lobby();
-  }
 
   openCreateMenu() {
-    this.state = { type: 'creation' };
+    this.uiState.set({ type: 'creation' });
   }
 
   closeCreateMenu(state: { name: string, requiresPassword: boolean }) {
     this.savedLobbyName = state.name;
     this.savedHasPassword = state.requiresPassword;
-    this.state = { type: 'browser' };
+    this.uiState.set({ type: 'browser' });
   }
 
   createLobby(config: { name: string, password: string | null }) {
@@ -83,33 +79,36 @@ export class Home {
       config.name,
       config.password
     ).subscribe({
+      next: () => this.uiState.set({ type: 'browser' }),
       error: (err) => this.error.show(err.message),
     });
   }
 
   joinLobby(lobbyId: string, lobby: LobbyInfo) {
     if (lobby.hasPassword) {
-      this.state = { type: 'pass', id: lobbyId, name: lobby.name };
+      this.uiState.set({ type: 'pass', id: lobbyId, name: lobby.name });
       //this.joiningLobbyId = lobbyId;
       //this.joiningLobbyName = lobby.name;
     } else {
       this.currLobby.join(lobbyId).subscribe({
+        next: () => this.uiState.set({ type: 'browser' }),
         error: (err) => this.error.show(err.message),
       });
     }
   }
 
   confirmJoin(password: string) {
-    if (this.state.type === 'pass') {
-      this.currLobby.join(this.state.id, password).subscribe({
+    const local = this.uiState();
+    if (local.type === 'pass') {
+      this.currLobby.join(local.id, password).subscribe({
         error: (err) => this.error.show(err.message),
       });
-      this.state = { type: 'browser' };
+      this.uiState.set({ type: 'browser' });
     }
   }
 
-  cancelJoin() { 
-    this.state = { type: 'browser' };
+  cancelJoin() {
+    this.uiState.set({ type: 'browser' });
   }
 
   leaveLobby() {

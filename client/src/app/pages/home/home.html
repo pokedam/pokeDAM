@@ -1,7 +1,6 @@
-@switch (state.type){
+@switch (state().type){
 @case('browser'){
-<app-lobbies-browser [lobbies]="(socketService.lobbies$ | async)!" [currentUser]="auth.auth()!.user.nickname"
-  (onCreateLobby)="openCreateMenu()" (onJoinLobby)="joinLobby($event.lobbyId, $event.lobby)">
+<app-lobbies-browser (onCreateLobby)="openCreateMenu()" (onJoinLobby)="joinLobby($event.lobbyId, $event.lobby)">
 </app-lobbies-browser>
 }
 @case ('pass') {
