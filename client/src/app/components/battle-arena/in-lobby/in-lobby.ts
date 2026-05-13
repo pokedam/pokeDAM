@@ -1,5 +1,5 @@
 import { Component, inject, } from '@angular/core';
-import { Lobby, Joiner as Joiner, CurrentLobbyService } from '../../../services/group.service';
+import { Lobby, Joiner as Joiner, LobbyService } from '../../../services/lobby.service';
 import { AuthService } from '../../../services/auth.service';
 import { ContentHeader } from '../../content-header/content-header';
 import { ErrorService } from '../../../services/error.service';
@@ -14,7 +14,7 @@ import { ErrorService } from '../../../services/error.service';
 })
 
 export class InLobby {
-  lobbyService = inject(CurrentLobbyService);
+  lobbyService = inject(LobbyService);
   authService = inject(AuthService);
   error = inject(ErrorService);
 

@@ -2,8 +2,8 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 //import { Lobby, LobbyInfo } from '../../../services/lobby-socket.service';
 
 import { CommonModule } from '@angular/common';
-import { LobbyInfo } from '../../../services/lobbies.service';
 import { ContentHeader } from '../../content-header/content-header';
+import { LobbyInfo } from '../../../services/socket.service';
 
 @Component({
   selector: 'app-lobbies-browser',

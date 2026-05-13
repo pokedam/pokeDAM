@@ -1,13 +1,13 @@
-import { Component, inject, OnDestroy, OnInit } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { AsyncPipe } from '@angular/common';
 import { AuthService } from '../../services/auth.service';
-import { LobbiesService, LobbyInfo } from '../../services/lobbies.service';
-import { CurrentLobbyService } from '../../services/group.service';
+import { LobbyService } from '../../services/lobby.service';
 import { LobbiesBrowser } from '../../components/battle-arena/lobbies-browser/lobbies-browser';
 import { InLobby } from '../../components/battle-arena/in-lobby/in-lobby';
 import { CreateLobby } from '../../components/battle-arena/create-lobby/create-lobby';
 import { JoinLobbyPassword } from '../../components/battle-arena/join-lobby-password/join-lobby-password';
 import { ErrorService } from '../../services/error.service';
+import { LobbyInfo, SocketService } from '../../services/socket.service';
 
 @Component({
   selector: 'home',
@@ -16,28 +16,24 @@ import { ErrorService } from '../../services/error.service';
   templateUrl: './home.html',
   styleUrl: './home.css',
 })
-export class Home implements OnInit, OnDestroy {
+export class Home  {
   inCreateLobbyMenu: boolean = false;
   savedLobbyName: string = '';
   savedRequiresPassword: boolean = false;
   joiningLobbyId: string | null = null;
   joiningLobbyName: string | null = null;
 
-  lobbies = inject(LobbiesService);
-  currLobby = inject(CurrentLobbyService);
+  socketService = inject(SocketService);
+  currLobby = inject(LobbyService);
   auth = inject(AuthService);
   error = inject(ErrorService);
 
+  constructor(){
+    this.socketService.init();
+  }
+
   get lobby() {
     return this.currLobby.lobby();
-  }
-
-  ngOnInit(): void {
-    this.lobbies.init();
-  }
-
-  ngOnDestroy(): void {
-    this.lobbies.dispose();
   }
 
   openCreateMenu() {
@@ -90,7 +86,6 @@ export class Home implements OnInit, OnDestroy {
 
   leaveLobby() {
     this.currLobby.leave();
-
   }
 
   toggleReady() {
@@ -100,5 +95,4 @@ export class Home implements OnInit, OnDestroy {
       error: (err) => this.error.show(err.message),
     });
   }
-
 }

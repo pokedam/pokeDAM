@@ -1,4 +1,4 @@
-import { PokemonResponseFull, Stats } from "./pokemon";
+import { Stats } from "./pokemon";
 
 export type Effectiveness = 4 | 2 | 1 | 0.5 | 0.25 | 0;
 
@@ -40,7 +40,7 @@ export interface GameRequest {
 }
 
 type MovMap = {
-    destructor: SingleDamage,
+    destructor: SingleTarget,
     other: number,
 };
 
@@ -53,9 +53,13 @@ export function getPP<M extends Mov>(mov: M): number {
     return pps[mov];
 }
 
-export interface SingleDamage {
+export interface SingleTarget {
     playerIdx: number;
     pokemonIdx: number;
+}
+
+export interface MultiTarget{
+    targets: SingleTarget[];
 }
 
 export type Mov = keyof MovMap;

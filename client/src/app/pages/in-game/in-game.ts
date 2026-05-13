@@ -12,7 +12,7 @@ import { SingleTarget, MultiTarget } from 'shared_types';
   styleUrl: './in-game.css',
 })
 export class InGame implements OnInit {
-  constructor(private cdr: ChangeDetectorRef) {}
+  constructor(private cdr: ChangeDetectorRef) { }
 
   currentMenu: 'main' | 'attacks' | 'target-selection' = 'main';
   selectedOurPokemon: Pokemon | null = null;
@@ -86,29 +86,6 @@ export class InGame implements OnInit {
         { id: 34, name: 'Nidoking', level: 39, hp: 18, maxHp: 160, avatarUrl: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/34.png', statusConditions: [] }
       ]
     }
-
-    // {
-    //   id: 'player-7',
-    //   name: 'Player 7',
-    //   isCurrentTurn: false,
-    //   pokeStates: ['active', 'available', 'available'],
-    //   activePokemons: [
-    //     { id: 28, name: 'Sandslash', level: 34, hp: 70, maxHp: 130, avatarUrl: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/28.png', statusConditions: ['ENV'] },
-    //     { id: 76, name: 'Golem', level: 37, hp: 140, maxHp: 150, avatarUrl: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/76.png', statusConditions: [] },
-    //     { id: 107, name: 'Hitmonchan', level: 35, hp: 20, maxHp: 120, avatarUrl: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/107.png', statusConditions: [] }
-    //   ]
-    // },
-    // {
-    //   id: 'player-8',
-    //   name: 'Player 8',
-    //   isCurrentTurn: false,
-    //   pokeStates: ['active', 'available', 'ko', 'ko', 'ko', 'ko', 'ko', 'ko'],
-    //   activePokemons: [
-    //     { id: 142, name: 'Aerodactyl', level: 43, hp: 90, maxHp: 150, avatarUrl: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/142.png', statusConditions: [] },
-    //     { id: 18, name: 'Pidgeot', level: 36, hp: 50, maxHp: 120, avatarUrl: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/18.png', statusConditions: ['PAR'] },
-    //     { id: 212, name: 'Scizor', level: 40, hp: 22, maxHp: 140, avatarUrl: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/212.png', statusConditions: [] }
-    //   ]
-    // }
   ];
 
   // Inicialización de datos del juego.
@@ -230,9 +207,9 @@ export class InGame implements OnInit {
 
       // Construimos el objeto SingleTarget con los índices encontrados.
       payload = {
-        player_idx: playerIdx,
-        pokemon_idx: pokemonIdx
-      } as SingleTarget;
+        playerIdx,
+        pokemonIdx
+      };
 
       console.log(`Confirmando acción de objetivo único: ${this.selectedAttack.name}`, payload);
     }
@@ -243,15 +220,15 @@ export class InGame implements OnInit {
         const playerIdx = this.players.findIndex(p => p.activePokemons.includes(target));
         const pokemonIdx = this.players[playerIdx].activePokemons.indexOf(target);
         return {
-          player_idx: playerIdx,
-          pokemon_idx: pokemonIdx
+          playerIdx,
+          pokemonIdx
         };
       });
 
       // Construimos el objeto MultiTarget que agrupa todos los objetivos.
       payload = {
         targets
-      } as MultiTarget;
+      };
 
       console.log(`Confirmando acción multi-objetivo: ${this.selectedAttack.name}`, payload);
     }

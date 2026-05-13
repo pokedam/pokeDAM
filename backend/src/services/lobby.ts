@@ -16,7 +16,7 @@ import { gameToResponse } from './game.js';
 export interface Lobby {
     name: string;
     password?: string | null;
-    hostId: PlayerId;
+    hostId: PlayerId; 
     hostNickname: string;
     joiners: Map<PlayerId, Joiner>;
     maxPlayers: number;
@@ -78,9 +78,9 @@ function get(id: Id): Result<LobbyResponse> {
 
 function initialResponse(id: Id): GroupResponse {
     const game = store.games.get(id);
-    return game ? gameToResponse(game) : {
-        type: 'lobbies',
-        lobbies: Array.from(store.lobbies.all(), ([id, lobby]) => summaryResponse(id, lobby))
+    return {
+        board: game ? gameToResponse(game) : null,
+        lobbies:Array.from(store.lobbies.all(), ([id, lobby]) => summaryResponse(id, lobby)),
     };
 }
 
