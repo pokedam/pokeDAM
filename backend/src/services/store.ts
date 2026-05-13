@@ -1,11 +1,7 @@
 import { v4 } from "uuid";
 import type { Lobby } from "./lobby.js";
 import type { Game } from "./game.js";
-
-export type GroupId = string;
-export type PlayerId = number;
-
-export type Id = GroupId | PlayerId;
+import type { GroupId, Id, PlayerId } from "shared_types";
 
 export type Group = Lobby | Game;
 
@@ -20,11 +16,12 @@ const _groups: Map<GroupId, Group> = new Map();
 const _players: Map<PlayerId, GroupId> = new Map();
 
 export const groups = {
+    id: (id: Id): GroupId | undefined => {
+        return typeof id === 'number' ? _players.get(id) : id;
+    },
     get: (id: Id): Group | undefined => {
-        if (typeof id === 'number') {
-            const groupId = _players.get(id);
-            if (groupId) return _groups.get(groupId);
-        } else return _groups.get(id);
+        let groupId = groups.id(id);
+        if (groupId) return _groups.get(groupId);
     },
     set: (value: Group, id?: Id): GroupId => {
         const actualId = id
@@ -40,6 +37,7 @@ export const groups = {
 };
 
 export const lobbies = {
+    id: groups.id,
     get: (id: Id): Lobby | undefined => {
         const res = groups.get(id);
         if (res && 'name' in res) return res;
@@ -56,22 +54,22 @@ export const lobbies = {
 };
 
 export const games = {
+    id: groups.id,
     get: (id: Id): Game | undefined => {
         const res = groups.get(id);
         if (res && !('name' in res)) return res;
     },
     set: groups.set,
     delete: groups.delete,
-    all: function* (): Iterable<[GroupId, Game]> { 
-        for(const [id, group] of _groups.entries()) {
+    all: function* (): Iterable<[GroupId, Game]> {
+        for (const [id, group] of _groups.entries()) {
             if (!('name' in group))
                 yield [id, group]
         }
-    }        
+    }
 };
 
 export const players = {
-    get: (id: PlayerId): GroupId | undefined => _players.get(id),
     set: (id: PlayerId, groupId: GroupId) => _players.set(id, groupId),
     delete: (id: PlayerId) => _players.delete(id),
 };

@@ -42,6 +42,18 @@ const resultProto: ResultProto<any> = {
   }
 };
 
+function _err(err: any): ErrBase {
+  return err.status && err.message ? {
+    success: false,
+    status: err.status,
+    message: err.message,
+  } : {
+    success: false,
+    status: 500,
+    message: 'Internal server error',
+  };
+}
+
 export const result = {
   ok<T>(content: T): Ok<T> {
     return Object.assign(Object.create(resultProto), {
@@ -51,35 +63,32 @@ export const result = {
     });
   },
 
-  err(message: string, status: number): Err {
-    return Object.assign(Object.create(resultProto), {
-      success: false,
-      status,
-      message,
-    });
+  err(err: any): Err {
+    return Object.assign(Object.create(resultProto), _err(err));
   },
 
-  badRequest<T = never>(message: string): Err {
-    return this.err(message, 400);
+  badRequest(message: string): Err {
+    return this.err({ message, status: 400 });
   },
 
-  unauthorized<T = never>(message: string): Err {
-    return this.err(message, 401);
+  unauthorized(message: string): Err {
+    return this.err({ message, status: 401 });
   },
 
   forbidden(message: string): Err {
-    return this.err(message, 403);
+    return this.err({ message, status: 403 });
   },
 
-  notFound<T = never>(message: string): Err {
-    return this.err(message, 404);
+  notFound(message: string): Err {
+    return this.err({ message, status: 404 });
   },
 
-  conflict<T = never>(message: string): Result<T> {
-    return this.err(message, 409);
+  conflict(message: string): Err {
+    return this.err({ message, status: 409 });
   },
 
-  internal<T = never>(message: string): Result<T> {
-    return this.err(message, 500);
+  internal(message?: string): Err {
+    return this.err({ message: message ?? 'Internal server error', status: 500 });
   },
+
 };

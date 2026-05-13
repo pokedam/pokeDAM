@@ -38,13 +38,15 @@ export interface Stats {
 //     shiny: boolean;
 // }
 
+
+
 export interface PokemonResponse {
     id: number;
     pokedexIdx: number;
     isActive: boolean;
 }
 
-export interface PokemonResponse {
+export interface PokemonResponseFull {
     id: number;
     pokedexIdx: number;
     movs: Mov[];

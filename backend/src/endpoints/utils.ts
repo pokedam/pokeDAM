@@ -1,11 +1,11 @@
-import type { Result } from "shared_types";
+import { result, type Result } from "shared_types";
 import type { Response } from "express";
 
-export function send<T = any>(res: Response<T | string>, result: Result<T>,) {
-    if (result.success) {
-        let a = result.content;
-        res.json(a);
-    } else {
-        res.status(result.status ?? 500).json(result.message);
+export async function checked<T = any>(res: Response<T | string>, callback: (() => Promise<T>)): Promise<void> {
+    try {
+        res.json(await callback());
+    } catch (err: any) {
+        let e = result.err(err);
+        res.status(e.status).json(e.message);
     }
 }

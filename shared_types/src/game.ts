@@ -1,4 +1,10 @@
+import { PokemonResponseFull, Stats } from "./pokemon";
+
 export type Effectiveness = 4 | 2 | 1 | 0.5 | 0.25 | 0;
+
+export type PlayerId = number;
+export type GroupId = string;
+export type Id = PlayerId | GroupId;
 
 export interface Damage {
     amount: number;
@@ -27,7 +33,6 @@ export type TurnHistory = GameEvent[];
 
 export type GameHistory = TurnHistory[];
 
-
 export interface GameRequest {
     payload: { [Key in Mov]: Payload<Key> }[Mov];
     pokemonIdx: number;
@@ -55,3 +60,30 @@ export interface SingleDamage {
 
 export type Mov = keyof MovMap;
 export type Payload<T extends Mov> = MovMap[T];
+
+export interface Player {
+    pokemons: InGamePokemon[];
+    actives: (InGamePokemon | null)[];
+    request: ValidatedRequest | null;
+}
+
+export interface ValidatedRequest extends GameRequest {
+    priority: number;
+}
+
+export interface InGamePokemon {
+    id: number;
+    pokedexIdx: number;
+    movs: { mov: Mov, pp: number }[];
+    stats: Stats;
+    hp: number;
+}
+
+export interface PlayerResponse {
+    id: PlayerId;
+    pokemons: InGamePokemon[];
+    actives: (InGamePokemon | null)[];
+    request: boolean;
+}
+
+export type BoardResponse = PlayerResponse[];

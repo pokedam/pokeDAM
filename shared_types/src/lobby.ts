@@ -1,3 +1,5 @@
+import { BoardResponse, PlayerResponse } from "./game";
+
 export interface LobbyResponse {
     name: string;
     hostId: number;
@@ -8,6 +10,18 @@ export interface LobbyResponse {
         nickname: string;
     }[];
     maxPlayers: number;
+}
+
+export type GroupResponse = LobbiesResponse | GameResponse;
+
+export interface LobbiesResponse {
+    type: "lobbies",
+    lobbies: LobbySummaryResponse[],
+}
+
+export interface GameResponse {
+    type: "game",
+    board: BoardResponse,
 }
 
 export interface LobbySummaryResponse {
@@ -45,7 +59,13 @@ export interface LobbyChangedEvent {
 
 export type LobbyBrowserEvent = LobbyCreatedEvent | LobbyChangedEvent;
 
-export type InLobbyEvent = PlayerReadyEvent | PlayerJoinedEvent | PlayerLeftEvent | HostLeftEvent;
+export type InLobbyEvent =
+    | PlayerReadyEvent
+    | PlayerJoinedEvent
+    | PlayerLeftEvent
+    | HostLeftEvent
+    | StartGameEvent
+    | TurnCompletedEvent;
 
 export interface PlayerReadyEvent {
     type: 'ready';
@@ -67,6 +87,15 @@ export interface PlayerLeftEvent {
 export interface HostLeftEvent {
     type: 'host left';
     newHostId: number | null;
+}
+
+export interface StartGameEvent {
+    type: "start",
+    board: GameResponse,
+}
+
+export interface TurnCompletedEvent {
+    type: "turn",
 }
 
 export const lobbyFactory = {

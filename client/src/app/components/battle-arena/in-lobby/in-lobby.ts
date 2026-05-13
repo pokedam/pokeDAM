@@ -1,5 +1,5 @@
 import { Component, inject, } from '@angular/core';
-import { Lobby, Joiner as Joiner, CurrentLobbyService } from '../../../services/current-lobby.service';
+import { Lobby, Joiner as Joiner, CurrentLobbyService } from '../../../services/group.service';
 import { AuthService } from '../../../services/auth.service';
 import { ContentHeader } from '../../content-header/content-header';
 import { ErrorService } from '../../../services/error.service';
@@ -71,6 +71,11 @@ export class InLobby {
   }
 
   startGame() {
-    this.lobbyService.startGame();
+    this.lobbyService.startGame().subscribe({
+      next: () => console.log("Start Game Emitted"),
+      error: err => this.error.show(err.message),
+
+    });
+    console.log("Start Game Sended");
   }
 }

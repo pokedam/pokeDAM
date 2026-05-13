@@ -4,7 +4,7 @@ import { PokemonResponse as RawPokemonResponse } from 'shared_types';
 import { HttpService } from './http.service';
 
 export interface PokemonResponse {
-  pokemonId: number;
+  pokedexIdx: number;
   isActive: boolean;
 }
 
