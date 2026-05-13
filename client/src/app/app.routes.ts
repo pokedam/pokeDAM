@@ -7,8 +7,8 @@ import { Login } from './pages/login/login';
 
 export const routes: Routes = [
   { path: '', component: Presentation },
-  { path: 'play', component: Home, data: { socket: true}  },
-  { path: 'in-game', component: InGame, data: { socket: true}  },
+  { path: 'play', component: Home },
+  { path: 'in-game', component: InGame },
   { path: 'profile', component: Profile },
-  { path: 'login', component: Login}
+  { path: 'login', component: Login }
 ];

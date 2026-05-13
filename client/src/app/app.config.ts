@@ -4,8 +4,6 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 
 import { routes } from './app.routes';
 import { authInterceptor } from './interceptors/auth.interceptor';
-//import { SocketInitializer } from './services/socket-init.service';
-import { RouteContextService } from './services/route-context.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -14,8 +12,5 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(
       withInterceptors([authInterceptor])
     ),
-    provideAppInitializer(() => {
-      inject(RouteContextService).init();
-    })
   ]
 };

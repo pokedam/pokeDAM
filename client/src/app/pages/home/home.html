@@ -1,14 +1,22 @@
-@if (lobby) {
-<app-in-lobby />
-} @else if (joiningLobbyId) {
-<app-join-lobby-password [lobbyName]="joiningLobbyName!" (onCancel)="cancelJoin()" (onJoin)="confirmJoin($event)">
-</app-join-lobby-password>
-} @else if (!inCreateLobbyMenu) {
+@switch (state.type){
+@case('browser'){
 <app-lobbies-browser [lobbies]="(socketService.lobbies$ | async)!" [currentUser]="auth.auth()!.user.nickname"
   (onCreateLobby)="openCreateMenu()" (onJoinLobby)="joinLobby($event.lobbyId, $event.lobby)">
 </app-lobbies-browser>
-} @else {
-<app-create-lobby [userName]="auth.auth()!.user.nickname" [initialName]="savedLobbyName"
+}
+@case ('pass') {
+<app-join-lobby-password [lobbyName]="state.name" (onCancel)="cancelJoin()" (onJoin)="confirmJoin($event)">
+</app-join-lobby-password>
+}
+@case ('creation') {
+<app-create-lobby [initialName]="savedLobbyName" [initialHasPassword]="savedHasPassword"
   (onCancel)="closeCreateMenu($event)" (onCreateLobby)="createLobby($event)">
 </app-create-lobby>
+}
+@case ('inLobby') {
+<app-in-lobby />
+}
+@case('inGame'){
+<div>In game</div>
+}
 }

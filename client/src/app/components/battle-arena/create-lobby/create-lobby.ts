@@ -1,6 +1,7 @@
-import { Component, EventEmitter, Output, Input, OnInit, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import { Component, EventEmitter, Output, Input, OnInit, ViewChild, ElementRef, AfterViewInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ContentHeader } from '../../content-header/content-header';
+import { AuthService } from '../../../services/auth.service';
 
 @Component({
   selector: 'app-create-lobby',
@@ -13,18 +14,27 @@ export class CreateLobby implements OnInit, AfterViewInit {
   @ViewChild('nameInput') nameInput!: ElementRef<HTMLInputElement>;
   @ViewChild('passwordInput') passwordInput!: ElementRef<HTMLInputElement>;
 
-  @Input({ required: true }) userName!: string;
-  @Input() initialName: string = '';
+  //@Input({ required: true }) userName!: string;
+  @Input() initialName: string | null = null;
+  @Input() initialHasPassword: boolean = false;
 
   @Output() onCancel = new EventEmitter<{ name: string, requiresPassword: boolean }>();
   @Output() onCreateLobby = new EventEmitter<{ name: string, password: string | null }>();
+
+  auth = inject(AuthService);
 
   name: string = '';
   password: string | null = null;
   hasPassword: boolean = false;
 
   ngOnInit() {
-    this.name = this.initialName || `${this.userName}'s Game`;
+    if(this.initialName != null && this.initialName.trim().length != 0) this.name = this.initialName;
+    else{
+      const nickname = this.auth.auth()?.user.nickname;
+      this.name = nickname ? `${nickname}'s Game` : 'New Game';
+    }
+    
+    this.hasPassword = this.initialHasPassword;
   }
 
   ngAfterViewInit() {
@@ -42,7 +52,7 @@ export class CreateLobby implements OnInit, AfterViewInit {
   }
 
   cancel() {
-    this.onCancel.emit({ name: this.name, requiresPassword: this.password != null });
+    this.onCancel.emit({ name: this.name, requiresPassword: this.hasPassword });
   }
 
   hasValidPassword(): boolean {
