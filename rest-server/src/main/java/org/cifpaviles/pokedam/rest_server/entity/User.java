@@ -1,18 +1,18 @@
 package org.cifpaviles.pokedam.rest_server.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.cifpaviles.pokedam.rest_server.models.UserChangeRequest;
 
-import java.util.Arrays;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "app_user")
@@ -123,7 +123,7 @@ public class User {
     public String password;
 
     @Column(length = 500, nullable = false)
-    public String refreshToken;
+    public String refreshToken;        
 
     public static String generateRandomTrainerName() {
         int num = ThreadLocalRandom.current().nextInt(1, 1000); // 1..999

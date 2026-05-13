@@ -1,18 +1,27 @@
-import { Injectable, inject, NgZone, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { SocketService } from './socket.service';
 import { AuthService } from './auth.service';
-import { ErrorService } from './error.service';
-import { InLobbyEvent, LobbyCreatedResponse, LobbyCreationRequest, lobbyFactory, LobbyJoinRequest, LobbyResponse, Result } from 'shared_types';
-import { Socket } from 'socket.io-client';
+import { InGamePokemon, InLobbyEvent, LobbyCreatedResponse, LobbyCreationRequest, LobbyJoinRequest, LobbyResponse, PlayerId, PlayerResponse } from 'shared_types';
 import { map, Observable, switchMap, tap } from 'rxjs';
 
 export interface Lobby {
     id: string,
     name: string;
-    hostId: number;
+    hostId: PlayerId;
     hostNickname: string;
-    joiners: Map<number, Joiner>;
+    joiners: Map<PlayerId, Joiner>;
     maxPlayers: number;
+}
+
+export interface Player {
+    pokemons: InGamePokemon[];
+    actives: (InGamePokemon | null)[];
+    request: boolean;
+}
+
+export interface Game {
+    id: string,
+    board: Map<PlayerId, Player>,
 }
 
 export interface Joiner {
@@ -78,6 +87,12 @@ export class CurrentLobbyService {
                     case 'ready':
                         lobby.joiners.get(event.id)!.isReady = event.isReady;
                         return lobby;
+                    case 'start':
+                        console.log("Game Started", event.board);
+                        return lobby;
+                    case 'turn':
+                        console.log("Turn Completed");
+                        return lobby;
                 }
 
             });
@@ -125,6 +140,6 @@ export class CurrentLobbyService {
     }
 
     startGame() {
-        //TODO: Initialize game when game system exists.
+        return this.socket.emit<void, void>('lobby.start');
     }
 }

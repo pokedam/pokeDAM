@@ -11,8 +11,8 @@ trap cleanup SIGINT SIGTERM EXIT # Capture Ctrl+C to clean up processes
 
 echo "🚀 Initializing PokeDAM project..."
 
-# 1. shared_types: npm install and npm run build
-echo "📦 [1/4] Processing 'shared_types'..."
+# 1. shared_types
+echo "📦 [1/5] Processing 'shared_types'..."
 cd shared_types || exit
 npm install
 
@@ -28,7 +28,7 @@ done
 npm run build
 cd ..
 
-# 2. backend and client: npm install
+# 3. backend and client: npm install
 echo "📦 [2/4] Installing dependencies for 'backend'..."
 cd backend || exit
 npm install

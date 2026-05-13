@@ -1,55 +1,89 @@
-import { PlayerPokemon } from "./pokemon";
+import { PokemonResponseFull, Stats } from "./pokemon";
 
-interface MovMap {
-    'destructor': SingleDamage;
+export type Effectiveness = 4 | 2 | 1 | 0.5 | 0.25 | 0;
+
+export type PlayerId = number;
+export type GroupId = string;
+export type Id = PlayerId | GroupId;
+
+export interface Damage {
+    amount: number;
+    effectiveness: Effectiveness;
+    isCrit: boolean;
+}
+
+export type GameEvent = DamageEvent | PokemonFainted;
+
+export interface DamageEvent {
+    key: 'damage';
+    dealer_player: number;
+    dealer_pokemon: number;
+    target_player: number;
+    target_pokemon: number;
+    damage: Damage;
+}
+
+export interface PokemonFainted {
+    key: 'pokemon_fainted';
+    player_idx: number;
+    pokemon_idx: number;
+}
+
+export type TurnHistory = GameEvent[];
+
+export type GameHistory = TurnHistory[];
+
+export interface GameRequest {
+    payload: { [Key in Mov]: Payload<Key> }[Mov];
+    pokemonIdx: number;
+    movIdx: number;
+}
+
+type MovMap = {
+    destructor: SingleDamage,
+    other: number,
+};
+
+const pps = {
+    "destructor": 32,
+    "other": 16,
+} satisfies { [M in Mov]: number };
+
+export function getPP<M extends Mov>(mov: M): number {
+    return pps[mov];
 }
 
 export interface SingleDamage {
-    player_idx: number;
-    pokemon_idx: number;
-    damage: number;
+    playerIdx: number;
+    pokemonIdx: number;
 }
 
-export type Movs = keyof MovMap;
-export type Mov<T extends Movs> = MovMap[T];
+export type Mov = keyof MovMap;
+export type Payload<T extends Mov> = MovMap[T];
 
-
-
-export type ActionPayload = {
-    [K in Movs]: { name: K; mov: Mov<K> }
-};
-
-export interface Game {
-    players: InGamePlayer[];
-}
-
-export interface InGamePlayer {
-
+export interface Player {
     pokemons: InGamePokemon[];
+    actives: (InGamePokemon | null)[];
+    request: ValidatedRequest | null;
+}
+
+export interface ValidatedRequest extends GameRequest {
+    priority: number;
 }
 
 export interface InGamePokemon {
-    pokemon: PlayerPokemon;
+    id: number;
+    pokedexIdx: number;
+    movs: { mov: Mov, pp: number }[];
+    stats: Stats;
     hp: number;
 }
 
-type MovBuilders = {
-    [K in Movs]: () => Mov<K>;
-};
+export interface PlayerResponse {
+    id: PlayerId;
+    pokemons: InGamePokemon[];
+    actives: (InGamePokemon | null)[];
+    request: boolean;
+}
 
-const creators: MovBuilders = {
-    destructor: (): SingleDamage => {
-        throw new Error("Function not implemented.");
-    }
-};
-
-
-type MovExecutors = {
-    [K in Movs]: (args: Mov<K>) => Promise<void>;
-};
-
-const executors: MovExecutors = {
-    destructor: (args: SingleDamage): Promise<void> => {
-        throw new Error("Function not implemented.");
-    }
-};
+export type BoardResponse = PlayerResponse[];

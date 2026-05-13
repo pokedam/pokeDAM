@@ -32,54 +32,44 @@ rest.interceptors.request.use((config: any) => {
     return config;
 });
 
-async function propagate<T = any, D = any, H = {}>(entrypoint: Promise<AxiosResponse<T, D, H>>): Promise<Result<T>> {
-    try {
-        return result.ok((await entrypoint).data);
-    } catch (error) {
-        if (axios.isAxiosError(error) && error.response)
-            return result.err(error.response.data?.message ?? 'Unknown', error.response.status);
-        else
-            return result.internal('Internal server error');
-    }
-}
 
 export const api = {
     async post<T = any, R extends AxiosResponse<T> = AxiosResponse<T>, D = any>(
         url: string,
         data?: D,
         config?: AxiosRequestConfig<D>
-    ): Promise<Result<T>> {
+    ): Promise<T> {
         let res = rest.post<T, R, D>(url, data, config);
-        return await propagate(res);
+        return (await res).data;
     },
 
     async get<T = any, R extends AxiosResponse<T> = AxiosResponse<T>>(
         url: string,
         config?: AxiosRequestConfig
-    ): Promise<Result<T>> {
+    ): Promise<T> {
         let res = rest.get<T, R>(url, config);
-        return await propagate(res);
+        return (await res).data;
     },
 
     async patch<T = any, R extends AxiosResponse<T> = AxiosResponse<T>, D = any>(
         url: string,
         data?: D,
         config?: AxiosRequestConfig<D>
-    ): Promise<Result<T>> {
+    ): Promise<T> {
         let res = rest.patch<T, R, D>(url, data, config);
-        return await propagate(res);
+        return (await res).data;
     },
 
     async delete<T = any, R extends AxiosResponse<T> = AxiosResponse<T>>(
         url: string,
         config?: AxiosRequestConfig
-    ): Promise<Result<T>> {
+    ): Promise<T> {
         let res = rest.delete<T, R>(url, config);
-        return await propagate(res);
+        return (await res).data;
     },
 };
 
-export const dbService = {
+export const db = {
     auth,
     user,
 };

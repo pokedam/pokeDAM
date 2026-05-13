@@ -1,14 +1,9 @@
+import { Mov } from "./game";
+
+
 export type PokemonType = 'normal' | 'fire' | 'water' | 'grass' | 'electric' | 'ice' | 'fighting' | 'poison' | 'ground' | 'flying' | 'psychic' | 'bug' | 'rock' | 'ghost' | 'dragon' | 'steel' | 'fairy';
-
 export type Gender = 'male' | 'female' | 'genderless';
-
-export interface Movs {
-
-}
-
 export const POKEMONS: Pokemon[] = [];
-
-
 
 export interface Pokemon {
     type: PokemonType,
@@ -26,31 +21,39 @@ export interface Stats {
     specialDefense: number;
 }
 
-export interface PcPlayerPokemon {
-    isSelected: boolean;
-    pokemon: PlayerPokemon;
-}
+// export interface PcPlayerPokemon {
+//     isSelected: boolean;
+//     pokemon: PlayerPokemon;
+// }
 
-export interface PlayerPokemon {
+// export interface PlayerPokemon {
+//     id: number;
+//     alias: string | null;
+//     pokemon: number;
+//     lvl: number;
+//     exp: number;
+//     iv: Stats;
+//     movs: Mov[];
+//     gender: Gender;
+//     shiny: boolean;
+// }
+
+
+
+export interface PokemonResponse {
     id: number;
-    alias: string | null;
-    pokemon: number;
-    lvl: number;
-    exp: number;
-    iv: Stats;
-    movs: Movs[];
-    gender: Gender;
-    shiny: boolean;
+    pokedexIdx: number;
+    isActive: boolean;
 }
 
-
-
-
+export interface PokemonResponseFull {
+    id: number;
+    pokedexIdx: number;
+    movs: Mov[];
+    stats: Stats;
+}
 // recibes: PcPlayerPokemon[], mostrarlos todos por pantalla
 
-
-
 // Botón de guardar para seleccionar tu equipo de 6 pokemons
-
 
 // envias number[] donde el numero es el indice del PcPlayerPokemon seleccionado en el array recibido

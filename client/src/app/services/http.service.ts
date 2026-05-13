@@ -50,7 +50,7 @@ export class HttpService {
         return obs.pipe(
             catchError((err) => {
                 if (err instanceof HttpErrorResponse) {
-                    throw result.err(err.error, err.status);
+                    throw result.err({ message: err.error, status: err.status });
                 }
                 throw err;
             })

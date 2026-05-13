@@ -5,8 +5,9 @@ import { Server } from 'socket.io';
 
 import { sanitizer } from './sanitizer.js';
 import { jwt } from './jwt.js';
-import { lobbyController } from './sockets/lobby.controller.js';
+import { lobbyController } from './controllers/lobby.js';
 import * as endpoints from './endpoints/index.js';
+import { gameService } from './services/game.js';
 
 // =============
 // EXPRESS
@@ -52,4 +53,5 @@ io.on('connection', (socket) => {
 const PORT = process.env.PORT || 8080;
 server.listen(PORT, () => {
     console.log(`Servidor REST y WebSocket corriendo en http://localhost:${PORT}`);
+    gameService.init();
 });

@@ -1,4 +1,4 @@
-package org.cifpaviles.pokedam.rest_server.entity;
+package org.cifpaviles.pokedam.rest_server.models;
 
 public enum Gender {
     MALE,

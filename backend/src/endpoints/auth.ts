@@ -1,21 +1,18 @@
 import express from 'express';
 import type { Request, Response, } from 'express';
-import { dbService } from '../db/client.js';
-import { send } from './utils.js';
-import type { LoginRequest } from 'shared_types';
+import { db } from '../db/client.js';
+import { checked } from './utils.js';
 
 export const router = express.Router();
 
 router.post('/anonymous', async (_: Request, res: Response) => {
-    send(res, await dbService.auth.anonymous());
+    await checked(res, db.auth.anonymous);
 });
 
 router.post('/refresh', async (req: Request, res: Response) => {
-    const token = req.body.refreshToken;
-    send(res, await dbService.auth.refresh(token));
+    await checked(res, () => db.auth.refresh(req.body.refreshToken));
 });
 
 router.post('/login', async (req: Request, res: Response) => {
-    const loginRequest: LoginRequest = req.body;
-    send(res, await dbService.auth.login(loginRequest));
+    await checked(res, () => db.auth.login(req.body));
 });

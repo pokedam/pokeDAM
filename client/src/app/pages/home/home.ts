@@ -2,7 +2,7 @@ import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { AsyncPipe } from '@angular/common';
 import { AuthService } from '../../services/auth.service';
 import { LobbiesService, LobbyInfo } from '../../services/lobbies.service';
-import { CurrentLobbyService } from '../../services/current-lobby.service';
+import { CurrentLobbyService } from '../../services/group.service';
 import { LobbiesBrowser } from '../../components/battle-arena/lobbies-browser/lobbies-browser';
 import { InLobby } from '../../components/battle-arena/in-lobby/in-lobby';
 import { CreateLobby } from '../../components/battle-arena/create-lobby/create-lobby';
@@ -101,7 +101,4 @@ export class Home implements OnInit, OnDestroy {
     });
   }
 
-  startGame() {
-    this.currLobby.startGame();
-  }
 }
