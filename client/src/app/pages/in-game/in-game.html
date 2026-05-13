@@ -1,45 +1,50 @@
 <div class="in-game-container">
   <!-- Top section for battle visuals, etc. -->
-  <div class="battle-scene">
+  <!-- <div class="retro-box battle-scene"> -->
+  <div class="players-grid" [class.locked]="actionExecuted">
     @for (player of players; track player.id) {
-      <app-player-tile 
-        [player]="player"
-        [selectedPokemons]="getSelectedPokemonsForTile(player)"
-        (pokemonSelect)="onPokemonSelect($event)">
-      </app-player-tile>
+    <app-player-tile [player]="player" [selectedPokemons]="getSelectedPokemonsForTile(player)"
+      [class.targetable-player]="currentMenu === 'target-selection' && player.id !== 'player-1'"
+      [class.non-targetable-player]="currentMenu === 'target-selection' && player.id === 'player-1'"
+      (pokemonSelect)="onPokemonSelect($event)">
+    </app-player-tile>
     }
   </div>
+  <!-- </div> -->
 
   <!-- Bottom panel with retro style UI -->
   <div class="bottom-panel">
     <!-- Action Menu (Left) -->
-    <div class="retro-box actions-menu">
-      <button class="retro-btn action-btn" (click)="onLuchaClick()">LUCHA</button>
-      <button class="retro-btn action-btn">MOCHILA</button>
-      <button class="retro-btn action-btn">POKÉMON</button>
-      <button class="retro-btn action-btn">HUIR</button>
+    @if (actionExecuted) {
+    <div class="retro-box actions-menu single-action">
+      <button class="retro-btn action-btn main-action" (click)="onPokemonButtonClick()">
+        CANCELAR
+      </button>
     </div>
+    }
 
     <!-- Dialogue Box (Right) -->
     <div class="dialogue-section">
       @if (currentMenu === 'main') {
-        <app-dialogue></app-dialogue>
+      <app-dialogue></app-dialogue>
       } @else if (currentMenu === 'attacks') {
-        <div class="retro-box attacks-box">
-          <div class="attacks-grid">
-            @for (attack of selectedOurPokemon?.attacks; track attack.id) {
-              <button class="retro-btn action-btn attack-btn" (click)="onAttackSelect(attack)">
-                <span class="attack-name">{{ attack.name }}</span>
-                <span class="attack-type">{{ attack.type }}</span>
-              </button>
-            }
-          </div>
-          <button class="retro-btn action-btn cancel-btn" (click)="currentMenu = 'main'">VOLVER</button>
+      <div class="retro-box attacks-box">
+        <div class="attacks-grid">
+          @for (attack of selectedOurPokemon?.attacks; track attack.id) {
+          <button class="retro-btn action-btn attack-btn" (click)="onAttackSelect(attack)">
+            <span class="attack-name">{{ attack.name }}</span>
+            <span class="attack-type">{{ attack.type }}</span>
+          </button>
+          }
         </div>
+      </div>
       } @else if (currentMenu === 'target-selection') {
-        <div class="retro-box attacks-box target-box">
-          <p class="target-text">Selecciona {{ selectedAttack?.targetCount }} objetivo(s). (Elegidos: {{ selectedTargets.length }})</p>
-        </div>
+      <div class="retro-box attacks-box target-box">
+        <p class="target-text">
+          Selecciona {{ selectedAttack?.targetCount }} objetivo(s).<br>
+          <small>(Elegidos: {{ selectedTargets.length }})</small>
+        </p>
+      </div>
       }
     </div>
   </div>

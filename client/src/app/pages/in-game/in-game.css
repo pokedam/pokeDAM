@@ -1,102 +1,69 @@
 .in-game-container {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  width: 100%;
-  /* Assuming a standard max-width for the retro feel and centered */
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 20px;
+  gap: 10px;
 }
 
-.battle-scene {
-  flex-grow: 1;
-  background-color: var(--pkmn-red-bg);
-  border: 4px solid var(--border-main);
-  border-radius: 8px;
-  margin-bottom: 20px;
-  position: relative;
-
-  /* Make the scene a responsive grid container for players */
+.players-grid {
   display: grid;
-  /* Maximum 2 players per row, wrap on small screens (handled by media query) */
-  grid-template-columns: repeat(2, 1fr);
-  /* Occupy available height, with a minimum height matching the content to trigger scroll if wrapping into single column too much */
-  grid-auto-rows: minmax(min-content, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 15px;
-  padding: 15px;
-  overflow-y: auto;
-
-  /* Firefox Scrollbar (Retro matching) */
-  scrollbar-width: auto;
-  scrollbar-color: var(--border-main) var(--pkmn-red-bg);
 }
 
-/* Webkit Scrollbar Retro Style */
-.battle-scene::-webkit-scrollbar {
-  width: 16px;
-}
-
-.battle-scene::-webkit-scrollbar-track {
-  background: var(--pkmn-red-bg);
-  border-left: 4px solid var(--border-main);
-}
-
-.battle-scene::-webkit-scrollbar-thumb {
-  background-color: var(--border-main);
-  border: 3px solid var(--pkmn-red-bg);
-}
-
-@media (max-width: 500px) {
-  .battle-scene {
-    grid-template-columns: 1fr;
-  }
+.players-grid.locked {
+  pointer-events: none;
 }
 
 .bottom-panel {
   display: flex;
-  gap: 20px;
-  /* Fixed height enough to accommodate the dialogue and action menu */
-  height: 140px;
+  gap: 10px;
+  height: 180px;
+  padding-bottom: 10px;
 }
 
 /* Actions Menu Grid */
 .actions-menu {
-  /* Smaller width than the dialogue */
-  flex: 0 0 250px;
+  flex: 0 0 280px;
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-template-rows: 1fr 1fr;
-  gap: 10px;
-  /* Override padding for smaller buttons */
-  padding: 15px;
+  gap: 12px;
+}
+
+.actions-menu.single-action {
+  flex: 0 0 180px;
+  display: flex;
+}
+
+.main-action {
+  width: 100%;
+  height: 100%;
+  background-color: var(--pkmn-gb-mid2);
+  color: white;
+}
+
+.main-action:hover {
+  background-color: var(--pkmn-gb-mid1);
 }
 
 .action-btn {
-  /* Make buttons fit inside the grid cell */
-  padding: 5px;
-  font-size: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  /* Removed margin so they align perfectly in the grid */
-  margin: 0;
-  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.2);
-}
-
-.action-btn:active {
-  transform: translate(2px, 2px);
-  box-shadow: 0px 0px 0px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
 }
 
 .dialogue-section {
   flex: 1;
-  /* To properly align the dialogue box which already has internal styles */
   display: flex;
   align-items: stretch;
+  height: 100%;
 }
 
-/* Override dialogue margins inside the in-game display */
+::ng-deep .dialogue-section app-dialogue {
+  width: 100%;
+  max-width: none !important;
+  flex: 1;
+  display: flex;
+}
+
 ::ng-deep .dialogue-section app-dialogue .dialogue-container {
   margin-top: 0;
   padding: 0;
@@ -104,7 +71,9 @@
 }
 
 ::ng-deep .dialogue-section app-dialogue .dialogue-box {
-  height: 100%;
+  height: 100% !important;
+  width: 100%;
+  flex: 1;
 }
 
 /* Attack Menu Styles */
@@ -113,8 +82,9 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  padding: 10px;
-  box-sizing: border-box;
+  gap: 8px;
+  overflow: hidden;
+  flex: 1;
 }
 
 .attacks-grid {
@@ -122,40 +92,123 @@
   grid-template-columns: 1fr 1fr;
   grid-template-rows: 1fr 1fr;
   gap: 10px;
-  flex-grow: 1;
-  margin-bottom: 10px;
+  flex: 1;
+  width: 100%;
+  height: 100%;
 }
 
 .attack-btn {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   justify-content: center;
-  align-items: center;
-  margin: 0;
+  padding: 8px 15px;
+  transition: all 0.1s;
+  background: #fdfdfd;
+  height: 100%;
+  width: 100%;
+}
+
+.attack-btn:hover {
+  background-color: #f0f0f0;
+  transform: translateY(-2px);
+  box-shadow: 4px 6px 0px rgba(0, 0, 0, 0.2);
 }
 
 .attack-name {
   font-weight: bold;
+  font-size: 10px;
+  text-transform: uppercase;
+  margin-bottom: 1px;
 }
 
 .attack-type {
-  font-size: 10px;
-  margin-top: 4px;
-}
-
-.target-text {
-  flex-grow: 1;
-  font-size: 14px;
-  line-height: 1.5;
+  font-size: 7px;
+  background-color: var(--border-main);
+  color: white;
+  padding: 1px 4px;
+  border-radius: 3px;
   text-transform: uppercase;
 }
 
-.target-actions {
-  display: flex;
-  gap: 10px;
-  height: 40px;
+.target-box {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  background-color: #fffafa;
 }
 
-.confirm-btn, .cancel-btn {
-  flex: 1;
+.target-text {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--pkmn-dark-red);
+}
+
+@media (max-width: 768px) {
+  .bottom-panel {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .actions-menu {
+    flex: none;
+    width: 100%;
+  }
+}
+
+/* Selección de Pokémon: Resaltado visual */
+::ng-deep app-pokemon-chip {
+  cursor: pointer;
+  transition: transform 0.1s ease;
+  border: 4px solid transparent;
+  border-radius: 6px;
+  display: block;
+}
+
+::ng-deep app-pokemon-chip:hover {
+  transform: scale(1.02);
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+::ng-deep app-pokemon-chip.selected {
+  border-color: var(--pkmn-blue);
+  background-color: #eef4ff;
+  box-shadow: 0 0 10px rgba(0, 0, 255, 0.2);
+  transform: scale(1.05);
+  z-index: 10;
+}
+
+/* Si es nuestro Pokémon seleccionado, usamos un color diferente (verde) */
+::ng-deep app-player-tile:first-child app-pokemon-chip.selected {
+  border-color: var(--pkmn-gb-mid2);
+  background-color: #f0fff0;
+  box-shadow: 0 0 10px rgba(52, 104, 86, 0.2);
+}
+
+/* Feedback visual para selección de objetivos */
+.targetable-player {
+  transition: all 0.3s ease;
+}
+
+.targetable-player ::ng-deep app-pokemon-chip:not(.selected) {
+  border: 4px solid rgba(204, 0, 0, 0.15);
+  /* Rojo suave para indicar objetivo potencial */
+  box-shadow: 0 0 8px rgba(204, 0, 0, 0.1);
+}
+
+.targetable-player ::ng-deep app-pokemon-chip:not(.selected):hover {
+  border-color: var(--pkmn-red);
+  background-color: rgba(255, 0, 0, 0.05);
+  transform: scale(1.03);
+}
+
+.non-targetable-player {
+  opacity: 0.6;
+  filter: grayscale(0.3);
+  transition: opacity 0.3s ease;
+}
+
+.non-targetable-player:hover {
+  opacity: 0.8;
+  /* Se aclara un poco al pasar el ratón para indicar que aún es interactivo (para cambiar) */
 }
