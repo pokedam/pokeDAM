@@ -5,6 +5,7 @@
   <div class="topbar-actions desktop-only">
     <button class="retro-btn menu-btn play-btn" routerLink="/play">Jugar</button>
     <button class="retro-btn menu-btn">Pokédex</button>
+    <button class="retro-btn menu-btn history-btn" routerLink="/history">Historial</button>
     <button class="retro-btn menu-btn profile-btn" routerLink="/profile">
       <div class="avatar-container">
         <app-avatar-circle [avatar]="user.avatarId !== null ? user.avatarId : user.nickname"></app-avatar-circle>
@@ -57,6 +58,12 @@
       <button class="drawer-nav-item">
         <span class="drawer-item-icon">📖</span>
         <span>Pokédex</span>
+      </button>
+    </li>
+    <li>
+      <button class="drawer-nav-item" routerLink="/history" (click)="closeDrawer()">
+        <span class="drawer-item-icon">📜</span>
+        <span>Historial</span>
       </button>
     </li>
   </ul>

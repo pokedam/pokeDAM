@@ -4,11 +4,13 @@ import { InGame } from './pages/in-game/in-game';
 import { Presentation } from './pages/presentation/presentation';
 import { Profile } from './pages/profile/profile';
 import { Login } from './pages/login/login';
+import { GameHistory } from './pages/game-history/game-history';
 
 export const routes: Routes = [
   { path: '', component: Presentation },
   { path: 'play', component: Home, data: { socket: true}  },
   { path: 'in-game', component: InGame, data: { socket: true}  },
   { path: 'profile', component: Profile },
-  { path: 'login', component: Login}
+  { path: 'login', component: Login},
+  { path: 'history', component: GameHistory }
 ];
