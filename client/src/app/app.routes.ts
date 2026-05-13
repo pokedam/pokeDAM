@@ -14,5 +14,6 @@ export const routes: Routes = [
   { path: 'profile', component: Profile },
   { path: 'login', component: Login},
   { path: 'pc', component: PcMenu },
+  { path: 'matches', component: TeamMenu },
   { path: 'team', component: TeamMenu }
 ];

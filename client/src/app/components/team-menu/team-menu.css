@@ -1,7 +1,7 @@
-.team-page-container {
+.matches-page-container {
   width: 100%;
   min-height: calc(100vh - 60px);
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: rgba(0, 0, 0, 0.65);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -9,10 +9,10 @@
   box-sizing: border-box;
 }
 
-.team-container {
-  width: 90%;
-  max-width: 600px;
-  height: 80vh;
+.matches-container {
+  width: 95%;
+  max-width: 1000px;
+  min-height: 80vh;
   background-color: #2b7050;
   border: 6px solid #e0e0e0;
   border-radius: 12px;
@@ -24,23 +24,32 @@
   color: #fff;
 }
 
-.team-header {
+.matches-header {
   background-color: #1a4f36;
   color: #fff;
-  padding: 10px 20px;
+  padding: 14px 24px;
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
+  position: relative;
   border-bottom: 4px solid #103322;
 }
 
-.team-header h2 {
+.matches-header h2 {
   margin: 0;
   font-size: 20px;
   letter-spacing: 2px;
   text-transform: uppercase;
   font-weight: bold;
   text-shadow: 1px 1px 0px rgba(0,0,0,0.4);
+}
+
+.close-btn {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1;
 }
 
 .close-btn {
@@ -120,4 +129,122 @@
   border-radius: 4px;
   text-transform: uppercase;
   font-weight: bold;
+}
+
+.matches-body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1.05fr 1.45fr;
+  gap: 18px;
+  padding: 24px;
+  background-color: #2b7050;
+}
+
+.matches-left,
+.matches-right {
+  background: rgba(247, 247, 247, 0.08);
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 18px;
+  overflow-y: auto;
+}
+
+.matches-list-header {
+  font-size: 14px;
+  margin-bottom: 12px;
+  color: #f9f9f9;
+}
+
+.match-item {
+  width: 100%;
+  text-align: left;
+  border: 2px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.05);
+  color: #fff;
+  padding: 16px;
+  margin-bottom: 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.match-item:hover,
+.match-item.selected {
+  transform: translateY(-1px);
+  border-color: #ffcc00;
+  background: rgba(255,255,255,0.1);
+}
+
+.match-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  font-size: 13px;
+}
+
+.match-opponent {
+  font-weight: bold;
+}
+
+.match-status {
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.match-status.ganada {
+  background: #31a54f;
+  color: #fff;
+}
+
+.match-status.perdida {
+  background: #c94d4d;
+  color: #fff;
+}
+
+.match-status.empate {
+  background: #d4a22a;
+  color: #111;
+}
+
+.match-info,
+.match-score {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #d9d9d9;
+}
+
+.match-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.match-detail.empty {
+  align-items: center;
+  justify-content: center;
+  min-height: 220px;
+  text-align: center;
+}
+
+.match-detail h3 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+
+.detail-row {
+  font-size: 13px;
+  color: #f3f3f3;
+}
+
+.match-summary {
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.08);
+  color: #eee;
+  line-height: 1.5;
 }

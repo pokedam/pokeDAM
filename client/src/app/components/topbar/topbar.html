@@ -5,7 +5,7 @@
   <div class="topbar-actions desktop-only">
     <button class="retro-btn menu-btn play-btn" routerLink="/play">Jugar</button>
     <button class="retro-btn menu-btn" routerLink="/pc">PC</button>
-    <button class="retro-btn menu-btn pokeball-btn" routerLink="/team"><span class="pokeball-icon"></span></button>
+    <button class="retro-btn menu-btn pokeball-btn" routerLink="/matches" title="Partidas"><span class="pokeball-icon"></span></button>
     <button class="retro-btn menu-btn profile-btn" routerLink="/profile">
       <div class="avatar-container">
         <app-avatar-circle [avatar]="user.avatarId !== null ? user.avatarId : user.nickname"></app-avatar-circle>
@@ -61,9 +61,9 @@
       </button>
     </li>
     <li>
-      <button class="drawer-nav-item" routerLink="/team">
+      <button class="drawer-nav-item" routerLink="/matches" (click)="closeDrawer()">
         <span class="drawer-item-icon pokeball-icon"></span>
-        <span>Equipo</span>
+        <span>Partidas</span>
       </button>
     </li>
   </ul>

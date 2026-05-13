@@ -1,23 +1,46 @@
-<div class="team-page-container">
-  <div class="team-container">
-    <div class="team-header">
-      <h2>EQUIPO POKÉMON</h2>
+<div class="matches-page-container">
+  <div class="matches-container">
+    <div class="matches-header">
+      <h2>PARTIDAS JUGADAS</h2>
       <button class="close-btn" (click)="closeModal()">X</button>
     </div>
 
-    <div class="team-body">
-      @if (team.length === 0) {
-        <p>No hay Pokémon en el equipo.</p>
-      } @else {
-        <div class="team-grid">
-          @for (pokemon of team; track pokemon.id) {
-            <div class="team-slot">
-              <img [src]="getPokemonImageUrl(pokemon.pokemon)" alt="Pokemon">
-              <span class="lvl-badge">Nv{{ pokemon.lvl }}</span>
-            </div>
+    <div class="matches-body">
+      <div class="matches-left">
+        <div class="matches-list-header">Tus partidas</div>
+        @if (matches.length === 0) {
+          <p>No hay partidas registradas.</p>
+        } @else {
+          @for (match of matches; track match.id) {
+            <button class="match-item" [class.selected]="match === selectedMatch" (click)="selectMatch(match)">
+              <div class="match-row">
+                <span class="match-opponent">vs {{ match.opponent }}</span>
+                <span class="match-status {{ match.status.toLowerCase() }}">{{ match.status }}</span>
+              </div>
+              <div class="match-info">{{ match.playedAt }} · {{ match.duration }}</div>
+              <div class="match-score">{{ match.score }}</div>
+            </button>
           }
-        </div>
-      }
+        }
+      </div>
+
+      <div class="matches-right">
+        @if (selectedMatch) {
+          <div class="match-detail">
+            <h3>Partida contra {{ selectedMatch.opponent }}</h3>
+            <div class="detail-row"><strong>Resultado:</strong> {{ selectedMatch.status }}</div>
+            <div class="detail-row"><strong>Fecha:</strong> {{ selectedMatch.playedAt }}</div>
+            <div class="detail-row"><strong>Duración:</strong> {{ selectedMatch.duration }}</div>
+            <div class="detail-row"><strong>Puntaje:</strong> {{ selectedMatch.score }}</div>
+            <div class="detail-row"><strong>Pokémon usados:</strong> {{ selectedMatch.pokemons.join(', ') }}</div>
+            <div class="match-summary">{{ selectedMatch.summary }}</div>
+          </div>
+        } @else {
+          <div class="match-detail empty">
+            <p>Selecciona una partida para ver más detalles.</p>
+          </div>
+        }
+      </div>
     </div>
   </div>
 </div>
