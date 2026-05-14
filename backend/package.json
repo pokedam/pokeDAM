@@ -23,7 +23,6 @@
     "jsonwebtoken": "^9.0.3",
     "sequelize": "^6.37.8",
     "shared_types": "file:../shared_types",
-    "sim": "file:../sim",
     "socket.io": "^4.8.3",
     "sqlite3": "^6.0.1",
     "uuid": "^13.0.0",
