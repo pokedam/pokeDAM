@@ -1,21 +1,33 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
-import { AsyncPipe } from '@angular/common';
+import { Component, computed, inject, signal } from '@angular/core';
 import { AuthService } from '../../services/auth.service';
-import { LobbyService } from '../../services/lobby.service';
-import { LobbiesBrowser } from '../../components/battle-arena/lobbies-browser/lobbies-browser';
-import { InLobby } from '../../components/battle-arena/in-lobby/in-lobby';
-import { CreateLobby } from '../../components/battle-arena/create-lobby/create-lobby';
-import { JoinLobbyPassword } from '../../components/battle-arena/join-lobby-password/join-lobby-password';
+import { GroupService } from '../../services/group.service';
+import { LobbiesBrowser } from '../../components/group-screens/lobbies-browser/lobbies-browser';
+import { InLobby } from '../../components/group-screens/in-lobby/in-lobby';
+import { CreateLobby } from '../../components/group-screens/create-lobby/create-lobby';
+import { JoinLobbyPassword } from '../../components/group-screens/join-lobby-password/join-lobby-password';
 import { ErrorService } from '../../services/error.service';
-import { LobbyInfo, SocketService } from '../../services/socket.service';
+import { LobbiesEntry, LobbiesService } from '../../services/lobbies.service';
+import { SocketService } from '../../services/socket.service';
 import { GroupId } from 'shared_types';
+import { InGame } from '../../components/group-screens/in-game/in-game';
+import { Loading } from '../../components/group-screens/loading/loading';
 
-type GameState = PasswordState | LobbyCreationState | LobbyBrowserState | InLobbyState | InGameState;
+type GameState =
+  | PasswordState
+  | LobbyCreationState
+  | LobbyBrowserState
+  | InLobbyState
+  | InGameState
+  | LoadingState;
 
 interface PasswordState {
   type: 'pass';
   id: GroupId;
   name: string;
+}
+
+interface LoadingState {
+  type: 'loading';
 }
 
 interface LobbyCreationState {
@@ -35,30 +47,41 @@ interface InGameState {
 }
 
 @Component({
-  selector: 'home',
+  selector: 'play',
   standalone: true,
-  imports: [LobbiesBrowser, InLobby, CreateLobby, JoinLobbyPassword, AsyncPipe],
-  templateUrl: './home.html',
-  styleUrl: './home.css',
+  imports: [Loading, LobbiesBrowser, InLobby, CreateLobby, JoinLobbyPassword, InGame],
+  templateUrl: './play.html',
+  styleUrl: './play.css',
 })
-export class Home {
+export class Play {
   savedLobbyName: string = '';
   savedHasPassword: boolean = false;
   private uiState = signal<GameState>({ type: 'browser' });
   readonly state = computed<GameState>(() => {
-    const lobby = this.currLobby.lobby();
+    const group = this.group.group();
+    if (group) {
+      console.log('Has group!');
+      return { type: group.type == 'game' ? 'inGame' : 'inLobby' };
+    }
+    const lobbies = this.lobbiesService.lobbies();
+    if (lobbies) {
+      console.log('Has lobbies!');
+      return this.uiState();
+    }
 
-    if (lobby) return { type: 'inLobby' };
-    return this.uiState();
+    console.log('loading');
+    return { type: 'loading' };
   });
 
   socketService = inject(SocketService);
-  currLobby = inject(LobbyService);
+  lobbiesService = inject(LobbiesService);
+  group = inject(GroupService);
   auth = inject(AuthService);
   error = inject(ErrorService);
 
   constructor() {
     this.socketService.init();
+    this.lobbiesService.init();
   }
 
 
@@ -75,7 +98,7 @@ export class Home {
   createLobby(config: { name: string, password: string | null }) {
     this.savedLobbyName = config.name;
     this.savedHasPassword = config.password != null;
-    this.currLobby.create(
+    this.group.create(
       config.name,
       config.password
     ).subscribe({
@@ -84,13 +107,13 @@ export class Home {
     });
   }
 
-  joinLobby(lobbyId: string, lobby: LobbyInfo) {
+  joinLobby(lobbyId: string, lobby: LobbiesEntry) {
     if (lobby.hasPassword) {
       this.uiState.set({ type: 'pass', id: lobbyId, name: lobby.name });
       //this.joiningLobbyId = lobbyId;
       //this.joiningLobbyName = lobby.name;
     } else {
-      this.currLobby.join(lobbyId).subscribe({
+      this.group.join(lobbyId).subscribe({
         next: () => this.uiState.set({ type: 'browser' }),
         error: (err) => this.error.show(err.message),
       });
@@ -100,7 +123,7 @@ export class Home {
   confirmJoin(password: string) {
     const local = this.uiState();
     if (local.type === 'pass') {
-      this.currLobby.join(local.id, password).subscribe({
+      this.group.join(local.id, password).subscribe({
         error: (err) => this.error.show(err.message),
       });
       this.uiState.set({ type: 'browser' });
@@ -112,13 +135,13 @@ export class Home {
   }
 
   leaveLobby() {
-    this.currLobby.leave();
+    this.group.leave();
   }
 
   toggleReady() {
     let userId = this.auth.auth()!.user.id;
-    let isReady = this.currLobby.lobby()!.joiners.get(userId)!.isReady;
-    this.currLobby.setReady(!isReady).subscribe({
+    let isReady = this.group.asLobby().joiners.get(userId)!.isReady;
+    this.group.setReady(!isReady).subscribe({
       error: (err) => this.error.show(err.message),
     });
   }

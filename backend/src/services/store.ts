@@ -1,7 +1,7 @@
 import { v4 } from "uuid";
-import type { Lobby } from "./lobby.js";
-import type { Game } from "./game.js";
-import type { GroupId, Id, PlayerId } from "shared_types";
+import { toViewResponse, type Lobby } from "./lobby.js";
+import { gameToResponse as toGameResponse, type Game } from "./game.js";
+import type { GameResponse, GroupId, GroupResponse, Id, PlayerId } from "shared_types";
 
 export type Group = Lobby | Game;
 
@@ -74,11 +74,21 @@ export const players = {
     delete: (id: PlayerId) => _players.delete(id),
 };
 
+export function welcome(id: Id): GroupResponse {
 
-function asGame(group: Group): group is Game {
-    return !('name' in group);
+    return {
+        game: getGame(id) ?? null,
+        lobbies: Array.from(lobbies.all(), ([id, lobby]) => toViewResponse(id, lobby)),
+    };
 }
 
-function asLobby(group: Group): group is Lobby {
-    return 'name' in group;
+function getGame(id: Id): GameResponse | undefined {
+    const groupId = groups.id(id);
+    if (!groupId) return;
+
+    const game = games.get(groupId);
+    if (game) return {
+        id: groupId,
+        board: toGameResponse(game),
+    };
 }

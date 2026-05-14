@@ -1,7 +1,7 @@
 import { Component, HostListener } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
-import { POKEMONS, User } from 'shared_types';
+import { pokemonSpriteUrl, User } from 'shared_types';
 import { AvatarCircle } from '../avatar-circle/avatar-circle';
 
 @Component({
@@ -21,7 +21,7 @@ export class Topbar {
 
   getAvatarUrl(): string {
     let idx = this.user.avatarId!;
-    return POKEMONS[idx]!.sprite;
+    return pokemonSpriteUrl(idx);
   }
 
   getAvatarInitial(): string {

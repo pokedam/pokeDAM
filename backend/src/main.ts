@@ -2,12 +2,11 @@ import express from 'express';
 import http from 'http';
 import cors from 'cors';
 import { Server } from 'socket.io';
-
 import { sanitizer } from './sanitizer.js';
 import { jwt } from './jwt.js';
-import { lobbyController } from './controllers/lobby.js';
+import { socketsController } from './sockets.js';
 import * as endpoints from './endpoints/index.js';
-import { gameService } from './services/game.js';
+import * as gameService from './services/game.js';
 
 // =============
 // EXPRESS
@@ -44,7 +43,7 @@ io.use(jwt.socketMiddleware);
 
 io.on('connection', (socket) => {
     const userId = (socket as any).userId;
-    lobbyController(io, userId, socket);
+    socketsController(io, userId, socket);
 });
 
 // =============
@@ -53,5 +52,5 @@ io.on('connection', (socket) => {
 const PORT = process.env.PORT || 8080;
 server.listen(PORT, () => {
     console.log(`Servidor REST y WebSocket corriendo en http://localhost:${PORT}`);
-    gameService.init();
+    gameService.init()
 });

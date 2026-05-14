@@ -1,21 +1,21 @@
 <div class="pokemon-entry">
   <div class="pokemon-content">
     <div class="pokemon-avatar">
-      <img [src]="pokemon.avatarUrl" [alt]="pokemon.name" />
+      <img [src]="sprite" [alt]="name" />
     </div>
     <div class="pokemon-details">
       <div class="pokemon-name-row">
-        <span class="pokemon-name">{{ pokemon.name }}</span>
-        <span class="pokemon-lvl">Lv{{ pokemon.level }}</span>
+        <span class="pokemon-name">{{ name }}</span>
+        <!-- <span class="pokemon-lvl">Lv{{ pokemon.level }}</span> -->
       </div>
-      <app-life-bar [hp]="pokemon.hp" [maxHp]="pokemon.maxHp"></app-life-bar>
-      @if (pokemon.statusConditions.length > 0) {
+      <app-life-bar [hp]="pokemon.hp" [maxHp]="pokemon.stats.hp"></app-life-bar>
+      <!-- @if (pokemon.statusConditions.length > 0) {
       <div class="pokemon-status-row">
         @for (status of pokemon.statusConditions; track status) {
         <span class="status-chip" [ngClass]="status.toLowerCase()">{{ status }}</span>
         }
       </div>
-      }
+      } -->
     </div>
   </div>
 </div>

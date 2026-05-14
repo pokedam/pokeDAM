@@ -1,13 +1,17 @@
 package org.cifpaviles.pokedam.rest_server.controller;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.cifpaviles.pokedam.rest_server.entity.Pokemon;
 import org.cifpaviles.pokedam.rest_server.entity.User;
 import org.cifpaviles.pokedam.rest_server.exception.ApiException;
 import org.cifpaviles.pokedam.rest_server.models.AuthResponse;
 import org.cifpaviles.pokedam.rest_server.models.LoginRequest;
+import org.cifpaviles.pokedam.rest_server.repository.PokemonRepository;
 import org.cifpaviles.pokedam.rest_server.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -24,33 +28,28 @@ public class AuthController {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private PokemonRepository pkmnRepository;
+
     @PostMapping("/anonymous")
     public ResponseEntity<AuthResponse> loginAnonymous() {
         User user = new User();
         user.refreshToken = UUID.randomUUID().toString();
         userRepository.save(user);
 
+        List<Pokemon> starters = new ArrayList<>();
+        for (int i = 0; i < 6; i++) {
+            Pokemon pokemon = Pokemon.random();
+            pokemon.owner = user;
+            pokemon.isActive = true;
+            starters.add(pokemon);
+        }
+        pkmnRepository.saveAll(starters);
+
         return ResponseEntity
                 .ok(new AuthResponse(user));
     }
 
-    // @PostMapping("/refresh")
-    // public ResponseEntity<Result<AuthResponse>> refreshUserToken(@RequestBody
-    // String token) {
-    // Optional<User> res = userRepository.findByRefreshToken(token);
-
-    // if (res.isPresent()) {
-    // User user = res.get();
-
-    // String newToken = UUID.randomUUID().toString();
-    // user.refreshToken = newToken;
-    // userRepository.save(user);
-
-    // return Result.ok(new AuthResponse(user));
-    // }
-
-    // return Result.err(HttpStatus.FORBIDDEN, "Invalid refresh token");
-    // }
     @PostMapping("/refresh")
     public ResponseEntity<AuthResponse> refreshUserToken(@RequestBody String token) {
 

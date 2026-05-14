@@ -2,6 +2,7 @@ package org.cifpaviles.pokedam.rest_server.entity;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -39,7 +40,6 @@ public class Pokemon {
 
     @ElementCollection
     @CollectionTable(name = "pokemon_movs", joinColumns = @JoinColumn(name = "pokemon_id"))
-    @Column(name = "mov")
     public List<String> movs = new ArrayList<>();
 
     @Embedded
@@ -47,6 +47,21 @@ public class Pokemon {
 
     @Column(nullable = false)
     public boolean isActive;
+
+    public static Pokemon random() {
+        Pokemon pokemon = new Pokemon();
+        pokemon.pokedexIdx = ThreadLocalRandom.current().nextInt(1, 1026);
+        pokemon.iv = new Stats();
+        pokemon.iv.level = 0;
+        pokemon.iv.exp = 0;
+        pokemon.iv.hp = 0;
+        pokemon.iv.attack = 0;
+        pokemon.iv.defense = 0;
+        pokemon.iv.spAttack = 0;
+        pokemon.iv.spDefense = 0;
+        pokemon.iv.speed = 0;
+        return pokemon;
+    }
 
     // @Enumerated(jakarta.persistence.EnumType.STRING)
     // @Column(nullable = false)

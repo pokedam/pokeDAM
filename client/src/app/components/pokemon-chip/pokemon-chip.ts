@@ -1,8 +1,8 @@
 import { Component, Input } from '@angular/core';
-import { Pokemon } from '../../models/game';
 import { CommonModule } from '@angular/common';
 import { LifeBar } from '../life-bar/life-bar';
-
+import { InGamePokemon, POKEMONS, pokemonSpriteUrl } from 'shared_types';
+import { pokemon as getPokemon } from 'shared_types';
 @Component({
   selector: 'app-pokemon-chip',
   standalone: true,
@@ -11,5 +11,14 @@ import { LifeBar } from '../life-bar/life-bar';
   styleUrl: './pokemon-chip.css'
 })
 export class PokemonChip {
-  @Input({ required: true }) pokemon!: Pokemon;
+  @Input({ required: true }) pokemon!: InGamePokemon;
+
+  get name(): string {
+    const id = this.pokemon.pokedexIdx;
+    return getPokemon(id).name;
+  }
+
+  get sprite(): string {
+    return pokemonSpriteUrl(this.pokemon.pokedexIdx);
+  }
 }

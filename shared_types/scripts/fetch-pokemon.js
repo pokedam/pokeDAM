@@ -3,9 +3,9 @@ const path = require('path');
 
 const generatedDir = path.join(__dirname, '..', 'src', 'generated');
 const outputPath = path.join(generatedDir, 'pokemon.json');
+const CONCURRENCY = 20;
 
 async function fetchPokemonForce() {
-    const pokemonList = [];
 
     try {
         console.log("Fetching total number of available Pokémon...");
@@ -16,27 +16,41 @@ async function fetchPokemonForce() {
 
         console.log(`Starting download of ${limit} Pokémon...`);
 
-        for (let i = 1; i <= limit; i++) {
-            try {
-                const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${i}`);
+        const ids = Array.from({ length: limit }, (_, i) => i + 1);
+        const pokemons = [];
 
-                // If the Pokémon does not exist or returns an error (API sometimes skips IDs)
-                if (!response.ok) continue;
-
+        for (let i = 0; i < ids.length; i += CONCURRENCY) {
+            const batch = ids.slice(i, i + CONCURRENCY);
+            const batchResults = await Promise.all(batch.map(async (id) => {
+                const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
                 const data = await response.json();
-
-                pokemonList.push({
+                const types = data.types;
+                const stats = Array.isArray(data.stats) ? data.stats : [];
+                const statLookup = stats.reduce((acc, statEntry) => {
+                    if (statEntry?.stat?.name && typeof statEntry.base_stat === 'number') {
+                        acc[statEntry.stat.name] = statEntry.base_stat;
+                    }
+                    return acc;
+                }, {});
+                return {
+                    types: {
+                        main: types[0].type.name,
+                        secondary: types[1]?.type.name
+                    },
                     id: data.id,
                     name: data.name,
-                    sprite: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${i}.png`
-                });
+                    statsBase: {
+                        hp: statLookup['hp'] ?? 0,
+                        attack: statLookup['attack'] ?? 0,
+                        defense: statLookup['defense'] ?? 0,
+                        specialAttack: statLookup['special-attack'] ?? 0,
+                        specialDefense: statLookup['special-defense'] ?? 0,
+                        speed: statLookup['speed'] ?? 0,
+                    }
+                };
+            }));
 
-                if (i % 100 === 0) {
-                    console.log(`Progress: ${i} of ${limit} downloaded...`);
-                }
-            } catch (error) {
-                console.error(`Skipping ID ${i}: Pokémon may not exist.`);
-            }
+            pokemons.push(...batchResults);
         }
 
         // Save JSON file to shared_types/src/generated
@@ -44,9 +58,9 @@ async function fetchPokemonForce() {
             fs.mkdirSync(generatedDir, { recursive: true });
         }
 
-        fs.writeFileSync(outputPath, JSON.stringify(pokemonList, null, 2));
+        fs.writeFileSync(outputPath, JSON.stringify(pokemons, null, 2));
 
-        console.log(`\nSuccess! Saved ${pokemonList.length} Pokémon to '${outputPath}'.`);
+        console.log(`\nSuccess! Saved ${pokemons.length} Pokémon to '${outputPath}'.`);
 
     } catch (error) {
         console.error("Critical error while connecting to the API:", error);

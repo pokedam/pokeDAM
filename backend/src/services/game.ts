@@ -1,18 +1,18 @@
 import {
-    getPP,
+    mov,
     type BoardResponse,
     type GameHistory,
     type GameRequest,
     type GroupId,
     type Id,
     type InGamePokemon,
-    type Mov,
+    type MovKey,
     type Payload,
     type Player,
     type PlayerId,
     type TurnHistory,
     type ValidatedRequest
-} from "shared_types"; 
+} from "shared_types";
 
 import * as store from "./store.js";
 import FastPriorityQueue from "fastpriorityqueue";
@@ -45,18 +45,18 @@ export function gameToResponse(game: Game): BoardResponse {
     }));
 }
 
-interface ValidationContext<T extends Mov> {
+interface ValidationContext<T extends MovKey> {
     board: Map<PlayerId, Player>;
     playerId: number;
     payload: Payload<T>;
 }
 
-interface ExecutionContext<T extends Mov> extends ValidationContext<T> {
+interface ExecutionContext<T extends MovKey> extends ValidationContext<T> {
     history: TurnHistory;
 }
 
 type MovLogic = {
-    [K in Mov]: {
+    [K in MovKey]: {
         validate: (ctx: ValidationContext<K>) => number | null;
         execute: (ctx: ExecutionContext<K>) => void;
     };
@@ -75,60 +75,37 @@ export const movs: MovLogic = {
 
 
 
-function play(id: PlayerId, request: GameRequest): TurnHistory | undefined{
-    const gameId = store.games.id(id);
-    if (!gameId) throw new Error(`Game not found`);
 
-    const game = store.games.get(gameId);
-    if (!game) throw new Error(`Game not found`);
-
-
-    const player = game.board.get(id);
-    if (!player) throw new Error(`Player not found on the board`);
-
-    const pokemon = player.pokemons[request.pokemonIdx];
-    if (!pokemon) throw new Error(`Pokemon not found`);
-
-    const mov = pokemon.movs[request.movIdx];
-    if (mov == null) throw new Error(`Move not found`);
-
-    // const movPp = pokemon.pps[request.movIdx];
-    // if (movPp == undefined) throw new Error(`Move PP not found`);
-    if (mov.pp <= 0) throw new Error(`No PP left`);
-    const ctx: ValidationContext<typeof mov.mov> = {
-        board: game.board,
-        playerId: id,
-        payload: request.payload
-    };
-
-    const priority = validateRequest(mov.mov, ctx);
-    if (priority === null) throw new Error(`Move validation failed`);
-
-    player.request = { ...request, priority };
-
-    for (const player of game.board.values()) {
-        if (!player.request) return; // Wait for all players to submit their requests
-    }
-
-    return processTurn(game, gameId);
-}
-
-function validateRequest<K extends Mov>(movKey: K, ctx: ValidationContext<K>): number | null {
-    return movs[movKey].validate(ctx);
-}
-
-function executeRequest<K extends Mov>(movKey: K, ctx: ExecutionContext<K>) {
-    movs[movKey].execute(ctx);
-}
-
-
-function init() {
+export function init() {
     if (schedulerTimer) clearTimeout(schedulerTimer);
     const next = heap.peek();
     schedulerTimer = next ? setTimeout(processTimeouts, Math.max(0, next.time - Date.now())) : null;
 }
 
-async function create(playerId: Id): Promise<[GroupId, BoardResponse]> {
+function processTimeouts(): void {
+    schedulerTimer = null;
+    let trigger: Timeout | undefined;
+    while ((trigger = heap.peek()) && trigger.time <= Date.now()) {
+        heap.poll();
+
+        const game = store.games.get(trigger.id);
+
+        if (!game || game.turn !== trigger.turn) {
+            // Skip, this turn trigger was completed before timeout 
+            // and another trigger is already queued
+            continue;
+        }
+
+        processTurn(game, trigger.id);
+    }
+
+    init();
+}
+
+
+
+
+export async function create(playerId: Id): Promise<[GroupId, BoardResponse]> {
     const groupId = store.lobbies.id(playerId);
     if (!groupId) throw new Error(`lobby not found`);
 
@@ -137,9 +114,10 @@ async function create(playerId: Id): Promise<[GroupId, BoardResponse]> {
 
     const buildBoardEntry = async (playerId: PlayerId) => {
         const result = await db.user.getActivePokemons(playerId);
+        console.log("Received pokemons from DB for player", playerId, result);
         const pokemons: InGamePokemon[] = result.map(pokemon => ({
             ...pokemon,
-            movs: pokemon.movs.map(mov => ({ mov: mov, pp: getPP(mov) })),
+            movs: pokemon.movs.map(key => mov(key)),//pokemon.movs.map(mov => ({ mov: mov, pp: getPP(mov) })),
             hp: pokemon.stats.hp,
         }));
 
@@ -162,6 +140,47 @@ async function create(playerId: Id): Promise<[GroupId, BoardResponse]> {
     return [groupId, gameToResponse(game)];
 }
 
+
+
+
+export function play(id: PlayerId, request: GameRequest): TurnHistory | undefined {
+    const gameId = store.games.id(id);
+    if (!gameId) throw new Error(`Game not found`);
+
+    const game = store.games.get(gameId);
+    if (!game) throw new Error(`Game not found`);
+
+
+    const player = game.board.get(id);
+    if (!player) throw new Error(`Player not found on the board`);
+
+    const pokemon = player.pokemons[request.pokemonIdx];
+    if (!pokemon) throw new Error(`Pokemon not found`);
+
+    const mov = pokemon.movs[request.movIdx];
+    if (mov == null) throw new Error(`Move not found`);
+
+    // const movPp = pokemon.pps[request.movIdx];
+    // if (movPp == undefined) throw new Error(`Move PP not found`);
+    if (mov.pp <= 0) throw new Error(`No PP left`);
+    const ctx: ValidationContext<typeof mov.key> = {
+        board: game.board,
+        playerId: id,
+        payload: request.payload
+    };
+
+    const priority = validateRequest(mov.key, ctx);
+    if (priority === null) throw new Error(`Move validation failed`);
+
+    player.request = { ...request, priority };
+
+    for (const player of game.board.values()) {
+        if (!player.request) return; // Wait for all players to submit their requests
+    }
+
+    return processTurn(game, gameId);
+}
+
 function processTurn(game: Game, id: GroupId): TurnHistory {
     game.turn += 1;
 
@@ -178,7 +197,7 @@ function processTurn(game: Game, id: GroupId): TurnHistory {
     let state: { request: ValidatedRequest; id: number } | undefined;
     let history: TurnHistory = [];
     while (state = priorityQueue.poll()) {
-        let mov = (game.board.get(state.id)?.pokemons[state.request.pokemonIdx]?.movs[state.request.movIdx])!.mov;
+        let mov = (game.board.get(state.id)?.pokemons[state.request.pokemonIdx]?.movs[state.request.movIdx])!.key;
         let payload = state.request.payload;
         let ctx: ExecutionContext<typeof mov> = {
             history,
@@ -202,32 +221,14 @@ function processTurn(game: Game, id: GroupId): TurnHistory {
         time: Date.now() + TURN_INTERVAL_MS,
         turn: game.turn,
     });
-    
+
     return history;
 }
 
-function processTimeouts(): void {
-    schedulerTimer = null;
-    let trigger: Timeout | undefined;
-    while ((trigger = heap.peek()) && trigger.time <= Date.now()) {
-        heap.poll();
-
-        const game = store.games.get(trigger.id);
-
-        if (!game || game.turn !== trigger.turn) {
-            // Skip, this turn trigger was completed before timeout 
-            // and another trigger is already queued
-            continue;
-        }
-
-        processTurn(game, trigger.id);
-    }
-
-    init();
+function validateRequest<K extends MovKey>(movKey: K, ctx: ValidationContext<K>): number | null {
+    return movs[movKey].validate(ctx);
 }
 
-export const gameService = {
-    init,
-    create,
-    play,
-};
+function executeRequest<K extends MovKey>(movKey: K, ctx: ExecutionContext<K>) {
+    movs[movKey].execute(ctx);
+}

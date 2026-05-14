@@ -1,5 +1,5 @@
 import { Component, inject, } from '@angular/core';
-import { Lobby, Joiner as Joiner, LobbyService } from '../../../services/lobby.service';
+import { Lobby, Joiner as Joiner, GroupService } from '../../../services/group.service';
 import { AuthService } from '../../../services/auth.service';
 import { ContentHeader } from '../../content-header/content-header';
 import { ErrorService } from '../../../services/error.service';
@@ -14,12 +14,12 @@ import { ErrorService } from '../../../services/error.service';
 })
 
 export class InLobby {
-  lobbyService = inject(LobbyService);
+  lobbyService = inject(GroupService);
   authService = inject(AuthService);
   error = inject(ErrorService);
 
   get currentLobby(): Lobby {
-    return this.lobbyService.lobby()!;
+    return this.lobbyService.asLobby();
   }
 
   get userIndex(): number {
@@ -64,7 +64,7 @@ export class InLobby {
 
   toggleReady() {
     let userId = this.authService.auth()!.user.id;
-    let isReady = this.lobbyService.lobby()!.joiners.get(userId)!.isReady;
+    let isReady = this.lobbyService.asLobby().joiners.get(userId)!.isReady;
     this.lobbyService.setReady(!isReady).subscribe({
       error: (err) => this.error.show(err.message),
     });

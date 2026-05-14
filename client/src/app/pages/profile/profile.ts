@@ -1,7 +1,7 @@
 import { Component, DoCheck, Input, OnInit, ViewChild, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angular/forms';
-import { POKEMONS, User } from 'shared_types';
+import { Pokemon, POKEMONS, pokemonSpriteUrl, User } from 'shared_types';
 import { AvatarCircle } from '../../components/avatar-circle/avatar-circle';
 import { AuthService } from '../../services/auth.service';
 import { ErrorService } from '../../services/error.service';
@@ -58,7 +58,7 @@ export class Profile implements OnInit, DoCheck {
   // }
 
   ngOnInit() {
-    this.loadPokemonAvatars();
+    this.available = POKEMONS;
     this.initialize(this.authService.auth()!.user);
   }
 
@@ -73,9 +73,13 @@ export class Profile implements OnInit, DoCheck {
   initialAvatarId: number | null = null
 
   selectedAvatarUrl(): string {
-    let idx = this.avatarId!;
+    const idx = this.avatarId!;
+    const pokemon = POKEMONS.find(P => P.id === idx);
+    return pokemon ? pokemonSpriteUrl(pokemon.id) : '';
+  }
 
-    return this.allAvatars.find(a => a.id === idx)?.url || '';
+  sprite(pokemon: Pokemon): string {
+    return pokemonSpriteUrl(pokemon.id);
   }
 
   hasChanged(): boolean {
@@ -88,8 +92,8 @@ export class Profile implements OnInit, DoCheck {
       : (vals.email || '').trim() !== '';
   }
   // Lista de avatares (IDs de Pokémon) desde JSON
-  allAvatars: { id: number, name: string, url: string }[] = [];
-  availableAvatars: { id: number, name: string, url: string }[] = [];
+  //allAvatars: { id: number, name: string, url: string }[] = [];
+  available: Pokemon[] = [];
 
   searchTerm = '';
 
@@ -118,26 +122,19 @@ export class Profile implements OnInit, DoCheck {
     });
   }
 
-  loadPokemonAvatars() {
-    this.allAvatars = POKEMONS.map((p) => ({
-      id: p.id,
-      name: p.name.charAt(0).toUpperCase() + p.name.slice(1),
-      url: p.sprite
-    }));
-    this.availableAvatars = this.allAvatars;
-  }
+
 
   filterAvatars() {
     const term = this.searchTerm.toLowerCase().trim();
     if (!term) {
-      this.availableAvatars = this.allAvatars;
+      this.available = POKEMONS;
       return;
     }
 
     const idFilter = parseInt(term, 10);
     const isNumber = !isNaN(idFilter) && idFilter.toString() === term;
 
-    this.availableAvatars = this.allAvatars.filter(p => {
+    this.available = POKEMONS.filter(p => {
       if (isNumber && p.id === idFilter) {
         return true;
       }

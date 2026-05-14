@@ -11,6 +11,7 @@
         <th>Action</th>
       </tr>
     </thead>
+    @if(lobbies){
     <tbody>
       @for (item of lobbies | keyvalue; track item.key) {
       <tr>
@@ -34,5 +35,6 @@
       </tr>
       }
     </tbody>
+    }
   </table>
 </div>

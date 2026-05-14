@@ -34,7 +34,7 @@ export type TurnHistory = GameEvent[];
 export type GameHistory = TurnHistory[];
 
 export interface GameRequest {
-    payload: { [Key in Mov]: Payload<Key> }[Mov];
+    payload: { [Key in MovKey]: Payload<Key> }[MovKey];
     pokemonIdx: number;
     movIdx: number;
 }
@@ -47,10 +47,14 @@ type MovMap = {
 const pps = {
     "destructor": 32,
     "other": 16,
-} satisfies { [M in Mov]: number };
+} satisfies { [M in MovKey]: number };
 
-export function getPP<M extends Mov>(mov: M): number {
-    return pps[mov];
+// export function getPP<M extends MovKey>(mov: M): number {
+//     return pps[mov];
+// }
+
+export function mov(key: MovKey): Mov {
+    return { key, pp: pps[key] };
 }
 
 export interface SingleTarget {
@@ -58,12 +62,14 @@ export interface SingleTarget {
     pokemonIdx: number;
 }
 
-export interface MultiTarget{
+export interface MultiTarget {
     targets: SingleTarget[];
 }
 
-export type Mov = keyof MovMap;
-export type Payload<T extends Mov> = MovMap[T];
+export type MovKey = keyof MovMap;
+export type Payload<T extends MovKey> = MovMap[T];
+
+export interface Mov { key: MovKey, pp: number }
 
 export interface Player {
     pokemons: InGamePokemon[];
@@ -78,7 +84,7 @@ export interface ValidatedRequest extends GameRequest {
 export interface InGamePokemon {
     id: number;
     pokedexIdx: number;
-    movs: { mov: Mov, pp: number }[];
+    movs: Mov[];
     stats: Stats;
     hp: number;
 }

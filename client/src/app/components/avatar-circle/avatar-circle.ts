@@ -1,5 +1,5 @@
 import { Component, Input } from '@angular/core';
-import { POKEMONS } from 'shared_types';
+import { pokemonSpriteUrl } from 'shared_types';
 
 @Component({
     selector: 'app-avatar-circle',
@@ -11,7 +11,7 @@ export class AvatarCircle {
 
 
     get avatarUrl(): string | null {
-        return typeof this.avatar === 'number' ? POKEMONS[this.avatar - 1].sprite : null;
+        return typeof this.avatar === 'number' ? pokemonSpriteUrl(this.avatar) : null;
     }
 
     get initial(): string | null {

@@ -1,4 +1,4 @@
-import { BoardResponse, PlayerResponse } from "./game";
+import { BoardResponse, GroupId, PlayerId, PlayerResponse } from "./game";
 
 export interface LobbyResponse {
     name: string;
@@ -13,12 +13,17 @@ export interface LobbyResponse {
 }
 
 export interface GroupResponse {
-    lobbies: LobbySummaryResponse[];
-    board: BoardResponse | null;
+    lobbies: LobbyViewResponse[];
+    game: GameResponse | null;
 }
 
-export interface LobbySummaryResponse {
-    id: string;
+export interface GameResponse {
+    id: GroupId;
+    board: BoardResponse;
+}
+
+export interface LobbyViewResponse {
+    id: GroupId;
     name: string;
     hasPassword: boolean;
     playerCount: number;
@@ -26,31 +31,31 @@ export interface LobbySummaryResponse {
 }
 
 export interface LobbyCreationRequest {
-    name: string | null;
+    name: string;
     password: string | null;
 }
 
 export interface LobbyCreatedResponse {
-    id: string;
+    id: GroupId;
 }
 
 export interface LobbyJoinRequest {
-    id: string;
+    id: GroupId;
     password?: string | null;
 }
 
 export interface LobbyCreatedEvent {
     type: "created",
-    res: LobbySummaryResponse,
+    res: LobbyViewResponse,
 }
 
 export interface LobbyChangedEvent {
     type: "changed",
-    id: string,
+    id: GroupId,
     count: number,
 }
 
-export type LobbyBrowserEvent = LobbyCreatedEvent | LobbyChangedEvent;
+export type LobbiesEvent = LobbyCreatedEvent | LobbyChangedEvent;
 
 export type InLobbyEvent =
     | PlayerReadyEvent
@@ -62,24 +67,24 @@ export type InLobbyEvent =
 
 export interface PlayerReadyEvent {
     type: 'ready';
-    id: number;
+    id: PlayerId;
     isReady: boolean;
 }
 
 export interface PlayerJoinedEvent {
     type: 'joined';
-    id: number;
+    id: PlayerId;
     nickname: string;
 }
 
 export interface PlayerLeftEvent {
     type: 'left';
-    id: number;
+    id: PlayerId;
 }
 
 export interface HostLeftEvent {
     type: 'host left';
-    newHostId: number | null;
+    newHostId: PlayerId | null;
 }
 
 export interface StartGameEvent {
@@ -92,18 +97,18 @@ export interface TurnCompletedEvent {
 }
 
 export const lobbyFactory = {
-    create(name: string | null = null, password: string | null = null): LobbyCreationRequest {
+    create(name: string, password: string | null = null): LobbyCreationRequest {
         return { name, password };
     },
 
-    createdEvent(res: LobbySummaryResponse): LobbyCreatedEvent {
+    createdEvent(res: LobbyViewResponse): LobbyCreatedEvent {
         return {
             type: "created",
             res,
         };
     },
 
-    changedEvent(id: string, count: number): LobbyChangedEvent {
+    changedEvent(id: GroupId, count: number): LobbyChangedEvent {
         return {
             type: "changed",
             id,
@@ -111,11 +116,11 @@ export const lobbyFactory = {
         };
     },
 
-    join(id: string, password: string | null = null): LobbyJoinRequest {
+    join(id: GroupId, password: string | null = null): LobbyJoinRequest {
         return { id, password };
     },
 
-    readyEvent(id: number, isReady: boolean): PlayerReadyEvent {
+    readyEvent(id: PlayerId, isReady: boolean): PlayerReadyEvent {
         return {
             type: 'ready',
             id,
@@ -123,7 +128,7 @@ export const lobbyFactory = {
         };
     },
 
-    joinedEvent(id: number, nickname: string): PlayerJoinedEvent {
+    joinedEvent(id: PlayerId, nickname: string): PlayerJoinedEvent {
         return {
             type: 'joined',
             id,
@@ -131,14 +136,14 @@ export const lobbyFactory = {
         };
     },
 
-    leftEvent(id: number): PlayerLeftEvent {
+    leftEvent(id: PlayerId): PlayerLeftEvent {
         return {
             type: 'left',
             id,
         };
     },
 
-    hostLeftEvent(newHostId: number | null): HostLeftEvent {
+    hostLeftEvent(newHostId: PlayerId | null): HostLeftEvent {
         return {
             type: 'host left',
             newHostId,

@@ -1,44 +1,29 @@
-import { Mov } from "./game";
-
-
-export type PokemonType = 'normal' | 'fire' | 'water' | 'grass' | 'electric' | 'ice' | 'fighting' | 'poison' | 'ground' | 'flying' | 'psychic' | 'bug' | 'rock' | 'ghost' | 'dragon' | 'steel' | 'fairy';
-export type Gender = 'male' | 'female' | 'genderless';
-export const POKEMONS: Pokemon[] = [];
+import { MovKey } from "./game";
 
 export interface Pokemon {
-    type: PokemonType,
+    types: PokemonTypes,
     id: number;
     name: string;
     statsBase: Stats;
+}
+
+export type PokemonType = 'normal' | 'fire' | 'water' | 'grass' | 'electric' | 'ice' | 'fighting' | 'poison' | 'ground' | 'flying' | 'psychic' | 'bug' | 'rock' | 'ghost' | 'dragon' | 'steel' | 'fairy';
+
+export type Gender = 'male' | 'female' | 'genderless';
+
+export interface PokemonTypes {
+    main: PokemonType
+    secondary?: PokemonType
 }
 
 export interface Stats {
     hp: number;
     attack: number;
     defense: number;
-    speed: number;
     specialAttack: number;
     specialDefense: number;
+    speed: number;
 }
-
-// export interface PcPlayerPokemon {
-//     isSelected: boolean;
-//     pokemon: PlayerPokemon;
-// }
-
-// export interface PlayerPokemon {
-//     id: number;
-//     alias: string | null;
-//     pokemon: number;
-//     lvl: number;
-//     exp: number;
-//     iv: Stats;
-//     movs: Mov[];
-//     gender: Gender;
-//     shiny: boolean;
-// }
-
-
 
 export interface PokemonResponse {
     id: number;
@@ -49,11 +34,24 @@ export interface PokemonResponse {
 export interface PokemonResponseFull {
     id: number;
     pokedexIdx: number;
-    movs: Mov[];
+    movs: MovKey[];
     stats: Stats;
 }
-// recibes: PcPlayerPokemon[], mostrarlos todos por pantalla
 
-// Botón de guardar para seleccionar tu equipo de 6 pokemons
+// @ts-ignore: Auto-generated import.
+import __pokemons from './generated/pokemon.json';
+export const POKEMONS: Pokemon[] = __pokemons.map(p => ({
+    ...p,
+    types: {
+        main: p.types.main as PokemonType,
+        secondary: p.types.secondary as PokemonType | undefined,
+    },
+}));
 
-// envias number[] donde el numero es el indice del PcPlayerPokemon seleccionado en el array recibido
+export function pokemon(pokedexIdx: number): Pokemon {
+    return POKEMONS[pokedexIdx - 1];
+}
+
+export function pokemonSpriteUrl(id: number): string {
+    return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
+}

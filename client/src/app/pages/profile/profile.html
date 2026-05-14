@@ -70,10 +70,10 @@
       </div>
 
       <div class="avatar-grid">
-        @for (avatar of availableAvatars; track avatar.id) {
-        <button type="button" class="avatar-option" [class.selected]="avatarId === avatar.id"
-          (click)="selectAvatar(avatar.id)" [title]="avatar.name">
-          <img [src]="avatar.url" [alt]="avatar.name" />
+        @for (pokemon of available; track pokemon.id) {
+        <button type="button" class="avatar-option" [class.selected]="avatarId === pokemon.id"
+          (click)="selectAvatar(pokemon.id)" [title]="pokemon.name">
+          <img [src]="sprite(pokemon)" [alt]="pokemon.name" />
           <span class="avatar-id">#{{ avatar.id }}</span>
         </button>
         }

@@ -1,22 +1,20 @@
 import type {
+    GroupId,
     GroupResponse,
     Id,
     LobbyCreationRequest,
     LobbyJoinRequest,
     LobbyResponse,
-    LobbySummaryResponse,
+    LobbyViewResponse as LobbyViewResponse,
     PlayerId,
     Result
 } from 'shared_types';
 import { result } from 'shared_types';
-import { db } from "../db/client.js";
 import * as store from "./store.js";
-import { gameToResponse } from './game.js';
-
 export interface Lobby {
     name: string;
     password?: string | null;
-    hostId: PlayerId; 
+    hostId: PlayerId;
     hostNickname: string;
     joiners: Map<PlayerId, Joiner>;
     maxPlayers: number;
@@ -48,60 +46,31 @@ interface JoinerLeftResponse {
     playerCount: number;
 }
 
-function response(lobby: Lobby): LobbyResponse {
-    return {
-        name: lobby.name,
-        hostId: lobby.hostId,
-        hostNickname: lobby.hostNickname,
-        joiners: Array.from(lobby.joiners.entries()).map(([id, player]) => ({
-            id,
-            ...player,
-        })),
-        maxPlayers: lobby.maxPlayers,
-    };
-}
-
-function summaryResponse(id: string, lobby: Lobby): LobbySummaryResponse {
-    return {
-        id,
-        name: lobby.name,
-        hasPassword: lobby.password != null,
-        playerCount: lobby.joiners.size + 1,
-        maxPlayers: lobby.maxPlayers,
-    };
-}
-
-function get(id: Id): Result<LobbyResponse> {
+export function get(id: Id): Result<LobbyResponse> {
     const lobby = store.lobbies.get(id);
-    return lobby ? result.ok(response(lobby)) : result.notFound(`No lobby with was found`);
+    return lobby ? result.ok(toResponse(lobby)) : result.notFound(`No lobby with was found`);
 }
 
-function initialResponse(id: Id): GroupResponse {
-    const game = store.games.get(id);
-    return {
-        board: game ? gameToResponse(game) : null,
-        lobbies:Array.from(store.lobbies.all(), ([id, lobby]) => summaryResponse(id, lobby)),
-    };
-}
 
-async function create(hostId: number, request: LobbyCreationRequest, maxPlayers: number = 8): Promise<LobbySummaryResponse> {
+
+export function create(hostId: PlayerId, nickname: string, request: LobbyCreationRequest, maxPlayers: number = 8): LobbyViewResponse {
     if (store.groups.get(hostId)) throw result.conflict(`Player is already in a lobby`);
-    let res = (await db.user.get(hostId));
+
     const lobby = {
-        name: request.name ?? res.nickname,
+        name: request.name,
         password: request.password,
         hostId,
-        hostNickname: res.nickname,
+        hostNickname: nickname,
         joiners: new Map(),
         maxPlayers
     };
 
     const lobbyId = store.lobbies.set(lobby);
     store.players.set(hostId, lobbyId);
-    return summaryResponse(lobbyId, lobby);
+    return toViewResponse(lobbyId, lobby);
 }
 
-async function join(playerId: number, req: LobbyJoinRequest): Promise<LobbyJoinResponse> {
+export function join(playerId: PlayerId, nickname: string, req: LobbyJoinRequest): LobbyResponse {
     if (store.lobbies.id(playerId)) throw result.conflict(`Player is already in a lobby`);
 
     const lobby = store.lobbies.get(req.id);
@@ -109,21 +78,18 @@ async function join(playerId: number, req: LobbyJoinRequest): Promise<LobbyJoinR
 
     if (lobby.password && lobby.password !== req.password)
         throw result.forbidden("Invalid lobby password");
-    let res = (await db.user.get(playerId));
+
 
     lobby.joiners.set(playerId, {
         isReady: false,
-        nickname: res.nickname
+        nickname,
     });
 
     store.players.set(playerId, req.id);
-    return {
-        nickname: res.nickname,
-        playerCount: lobby.joiners.size + 1,
-    };
+    return toResponse(lobby);
 }
 
-function leave(playerId: number): LeftResponse {
+export function leave(playerId: PlayerId): LeftResponse {
     const lobbyId = store.lobbies.id(playerId);
     if (!lobbyId) throw result.conflict(`Leave failed: Player is not in a lobby`);
 
@@ -133,7 +99,7 @@ function leave(playerId: number): LeftResponse {
     return leaveInternal(playerId, lobbyId, lobby);
 }
 
-function kick(targetId: number, playerId: number): LeftResponse {
+export function kick(targetId: PlayerId, playerId: PlayerId): LeftResponse {
     let lobbyId = store.lobbies.id(targetId);
     if (!lobbyId) throw result.conflict(`Cannot kick player: Player is not in a lobby`);
 
@@ -145,7 +111,7 @@ function kick(targetId: number, playerId: number): LeftResponse {
     return leaveInternal(targetId, lobbyId, lobby);
 }
 
-function leaveInternal(playerId: number, lobbyId: string, lobby: Lobby): LeftResponse {
+export function leaveInternal(playerId: PlayerId, lobbyId: GroupId, lobby: Lobby): LeftResponse {
 
     store.players.delete(playerId);
 
@@ -171,7 +137,7 @@ function leaveInternal(playerId: number, lobbyId: string, lobby: Lobby): LeftRes
     return { type: 'joiner', joinerId: playerId, lobbyId, playerCount: lobby.joiners.size + 1 };
 }
 
-function isReady(playerId: number, isReady: boolean): string {
+export function isReady(playerId: PlayerId, isReady: boolean): string {
     const lobbyId = store.lobbies.id(playerId);
     if (!lobbyId) throw result.conflict("Change ready status failed: Player is not in a lobby");
 
@@ -185,17 +151,26 @@ function isReady(playerId: number, isReady: boolean): string {
     return lobbyId;
 }
 
-////////////
-// Export //
-////////////
-export const lobbyService = {
-    response,
-    summaryResponse,
-    get,
-    getAll: initialResponse,
-    create,
-    join,
-    leave,
-    kick,
-    isReady,
-};
+
+export function toResponse(lobby: Lobby): LobbyResponse {
+    return {
+        name: lobby.name,
+        hostId: lobby.hostId,
+        hostNickname: lobby.hostNickname,
+        joiners: Array.from(lobby.joiners.entries()).map(([id, player]) => ({
+            id,
+            ...player,
+        })),
+        maxPlayers: lobby.maxPlayers,
+    };
+}
+
+export function toViewResponse(id: string, lobby: Lobby): LobbyViewResponse {
+    return {
+        id,
+        name: lobby.name,
+        hasPassword: lobby.password != null,
+        playerCount: lobby.joiners.size + 1,
+        maxPlayers: lobby.maxPlayers,
+    };
+}
