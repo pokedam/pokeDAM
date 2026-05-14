@@ -156,11 +156,11 @@
   }
 }
 
-/* Selección de Pokémon: Resaltado visual */
+/* 
 ::ng-deep app-pokemon-chip {
   cursor: pointer;
   transition: transform 0.1s ease;
-  border: 4px solid transparent;
+  border: 1px solid transparent; 
   border-radius: 6px;
   display: block;
 }
@@ -178,12 +178,12 @@
   z-index: 10;
 }
 
-/* Si es nuestro Pokémon seleccionado, usamos un color diferente (verde) */
 ::ng-deep app-player-tile:first-child app-pokemon-chip.selected {
   border-color: var(--pkmn-gb-mid2);
   background-color: #f0fff0;
   box-shadow: 0 0 10px rgba(52, 104, 86, 0.2);
 }
+*/
 
 /* Feedback visual para selección de objetivos */
 .targetable-player {

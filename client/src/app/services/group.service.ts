@@ -17,6 +17,7 @@ export interface Lobby {
 }
 
 export interface Player {
+    id: PlayerId;
     pokemons: InGamePokemon[];
     actives: (InGamePokemon | null)[];
     request: boolean;

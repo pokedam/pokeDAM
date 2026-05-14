@@ -5,6 +5,10 @@ import { GroupService, Player } from '../../../services/group.service';
 import { AuthService } from '../../../services/auth.service';
 import { Dialogue } from '../../dialogue/dialogue';
 
+export type Selector = (player: Player, pokemon: InGamePokemon) => boolean;
+
+type onSelection = (player: Player, pokemon: InGamePokemon) => InGameState;
+
 type InGameState =
   | PlayState
   | SelectMovState
@@ -29,8 +33,8 @@ interface SelectionDoneState {
 
 interface SelectTargetState {
   type: 'target-selection';
-  selectableFn: (pokemon: InGamePokemon) => boolean;
-  onSelected: (pokemon: InGamePokemon) => InGameState;
+  selectableFn: Selector;
+  onSelected: onSelection;
 }
 
 interface TurnAnimationState {
@@ -45,37 +49,49 @@ interface TurnAnimationState {
   templateUrl: './in-game.html',
   styleUrl: './in-game.css',
 })
-export class InGame implements OnInit {
+export class InGame {
   constructor(private cdr: ChangeDetectorRef) { }
   state: InGameState = { type: 'play' };
-  player!: Player;
+  //player!: Player;
   currentMenu: 'main' | 'attacks' | 'target-selection' = 'main';
-  // selectedOurPokemon: InGamePokemon | null = null;
-  // selectedMov: MovKey | null = null;
-  // selectedTargets: InGamePokemon[] = [];
-  // actionExecuted: boolean = false;
   group = inject(GroupService);
   auth = inject(AuthService);
-
-  ngOnInit(): void {
-    // Player must be in the game at this point.
-    // If this throws, app logic is wrong
-    this.player = this.group.asGame().board.get(this.auth.auth()!.user.id)!;
+  
+  players(): Iterable<Player> {
+    return this.group.asGame().board.values();
   }
 
-  players() {
-    return Array.from(this.group.asGame().board.entries()).map(([id, player]) => ({ id, ...player }));
+  player(): Player {
+    return this.group.asGame().board.get(this.auth.auth()!.user.id)!;
+  }
+
+  oops(): Player[] {
+    return Array.from(this.group.asGame().board.values()).filter(p => p.id !== this.auth.auth()!.user.id);
+  }  
+
+  getSelector(): Selector{
+    switch (this.state.type) {
+      case 'play': 
+        return (player) => player.id === this.auth.auth()!.user.id;
+      case 'target-selection':
+        return this.state.selectableFn;
+        default:
+          return () => false;
+    }
   }
 
   onPokemonSelect(event: { player: Player, pokemon: InGamePokemon | null }) {
-
+    console.log('pokemon select event', event);
     if (!event.pokemon) return;
 
     switch (this.state.type) {
       case 'play':
-        if (event.player === this.player) {
+        const player = this.player();
+        console.log('during play', event.player, this.player);
+        if (event.player.id === player.id) {
+          console.log('isHimself', event);
           this.state = { type: 'mov-selection', selectedPokemon: event.pokemon };
-          console.log('picked drowsy!');
+
         }
         break;
       default:

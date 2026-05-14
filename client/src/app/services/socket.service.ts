@@ -52,10 +52,9 @@ export class SocketService {
           oldSocket.disconnect();
         }
 
-        const socket =
-          io('http://localhost:8080', {
-            auth: { token },
-          });
+        const socket = io({
+          auth: { token },
+        });
 
         socket.on('connect', () => {
           this._socket.set(socket);

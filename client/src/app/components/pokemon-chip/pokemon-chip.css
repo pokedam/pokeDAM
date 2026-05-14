@@ -86,3 +86,19 @@
     font-size: 6px;
   }
 }
+ ::ng-deep app-pokemon-chip {
+  cursor: pointer;
+  transition: transform 0.1s ease;
+  border-radius: 6px;
+  display: block;
+}
+
+:hover {
+  transform: scale(1.02);
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.selected {
+  background-color: #eef4ff;
+  z-index: 10;
+}

@@ -3,6 +3,7 @@ package org.cifpaviles.pokedam.rest_server.security;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -17,15 +18,21 @@ import jakarta.servlet.http.HttpServletResponse;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
+    private final String mainServerKey;
+
+    public JwtAuthenticationFilter(@Value("${main.server.key:dev-private-key}") String mainServerKey) {
+        this.mainServerKey = mainServerKey;
+    }
+
     @Override
     protected void doFilterInternal(HttpServletRequest request,
             HttpServletResponse response,
             FilterChain filterChain) throws ServletException, IOException {
         try {
             String key = request.getHeader("Authorization");
-            if (key != null
+                if (key != null
                     && key.startsWith("Bearer ")
-                    && key.substring(7).equals("dev-private-key")) {
+                    && key.substring(7).equals(mainServerKey)) {
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                         key, null, new ArrayList<>());
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));

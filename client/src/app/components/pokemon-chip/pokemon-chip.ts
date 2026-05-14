@@ -12,6 +12,7 @@ import { pokemon as getPokemon } from 'shared_types';
 })
 export class PokemonChip {
   @Input({ required: true }) pokemon!: InGamePokemon;
+    @Input() selectable: boolean = false;
 
   get name(): string {
     const id = this.pokemon.pokedexIdx;

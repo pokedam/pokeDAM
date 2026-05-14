@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { PokemonChip } from '../pokemon-chip/pokemon-chip';
 import { InGamePokemon, PlayerId, pokemonSpriteUrl } from 'shared_types';
 import { Player } from '../../services/group.service';
+import { Selector } from '../group-screens/in-game/in-game';
 
 @Component({
   selector: 'app-player-tile',
@@ -14,7 +15,8 @@ import { Player } from '../../services/group.service';
 export class PlayerTile {
   @Input() isUser = false;
   @Input({ required: true }) player!: Player;
-  //@Input() selectedPokemons: InGamePokemon[] = [];
+  @Input() selectableFn: Selector = () => false;
+
   @Output() pokemonSelect = new EventEmitter<{ player: Player, pokemon: InGamePokemon | null }>();
 
 

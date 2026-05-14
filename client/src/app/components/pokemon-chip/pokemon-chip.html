@@ -1,4 +1,4 @@
-<div class="pokemon-entry">
+<div class="pokemon-entry" [class.selected]="selectable">
   <div class="pokemon-content">
     <div class="pokemon-avatar">
       <img [src]="sprite" [alt]="name" />
@@ -15,7 +15,7 @@
         <span class="status-chip" [ngClass]="status.toLowerCase()">{{ status }}</span>
         }
       </div>
-      } -->
+      } --> 
     </div>
   </div>
-</div>
+</div> 

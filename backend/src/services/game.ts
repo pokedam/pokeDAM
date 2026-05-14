@@ -117,7 +117,10 @@ export async function create(playerId: Id): Promise<[GroupId, BoardResponse]> {
         console.log("Received pokemons from DB for player", playerId, result);
         const pokemons: InGamePokemon[] = result.map(pokemon => ({
             ...pokemon,
-            movs: pokemon.movs.map(key => mov(key)),//pokemon.movs.map(mov => ({ mov: mov, pp: getPP(mov) })),
+            movs: [{
+                key: 'destructor',
+                pp: 10,
+            }],   //pokemon.movs.map(key => mov(key))
             hp: pokemon.stats.hp,
         }));
 
