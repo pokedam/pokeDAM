@@ -397,3 +397,19 @@
   font-size: 14px;
   margin-right: 5px;
 }
+
+.message-container{
+  display: flex;
+  padding-bottom: 12px;
+  width: 100%;
+  align-items: center;
+}
+
+.message-label{
+  width: 340px;
+}
+
+.message-input{
+  width: 100%;
+}
+

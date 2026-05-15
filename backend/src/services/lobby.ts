@@ -16,6 +16,7 @@ export interface Lobby {
     password?: string | null;
     hostId: PlayerId;
     hostNickname: string;
+    hostMessage: string;
     joiners: Map<PlayerId, Joiner>;
     maxPlayers: number;
 }
@@ -23,6 +24,7 @@ export interface Lobby {
 export interface Joiner {
     isReady: boolean;
     nickname: string;
+    message: string;
 }
 
 export interface LobbyJoinResponse {
@@ -61,6 +63,7 @@ export function create(hostId: PlayerId, nickname: string, request: LobbyCreatio
         password: request.password,
         hostId,
         hostNickname: nickname,
+        hostMessage: request.message,
         joiners: new Map(),
         maxPlayers
     };
@@ -70,7 +73,7 @@ export function create(hostId: PlayerId, nickname: string, request: LobbyCreatio
     return toViewResponse(lobbyId, lobby);
 }
 
-export function join(playerId: PlayerId, nickname: string, req: LobbyJoinRequest): LobbyResponse {
+export function join(playerId: PlayerId, nickname: string, req: LobbyJoinRequest,): LobbyResponse {
     if (store.lobbies.id(playerId)) throw result.conflict(`Player is already in a lobby`);
 
     const lobby = store.lobbies.get(req.id);
@@ -83,6 +86,7 @@ export function join(playerId: PlayerId, nickname: string, req: LobbyJoinRequest
     lobby.joiners.set(playerId, {
         isReady: false,
         nickname,
+        message: req.message,
     });
 
     store.players.set(playerId, req.id);

@@ -1,6 +1,6 @@
 @switch (state().type){
 @case('browser'){
-<app-lobbies-browser (onCreateLobby)="openCreateMenu()" (onJoinLobby)="joinLobby($event.lobbyId, $event.lobby)">
+<app-lobbies-browser (onCreateLobby)="openCreateMenu($event)" (onJoinLobby)="joinLobby($event.lobbyId, $event.lobby, $event.message)">
 </app-lobbies-browser>
 }
 @case ('pass') {

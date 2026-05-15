@@ -95,6 +95,8 @@ export class InGame implements OnInit {
   auth = inject(AuthService);
   error = inject(ErrorService);
   game!: Game;
+  private _randomMessage = signal<string>('');
+  randomMessage = this._randomMessage.asReadonly();
 
   contextButtonDescriptor = computed<ContextButtonDescriptor | null>(() => {
     const state = this.state();
@@ -143,6 +145,17 @@ export class InGame implements OnInit {
 
   ngOnInit(): void {
     this.game = this.group.asGame();
+    this.setRandomMessage();
+  }
+
+  setRandomMessage(){
+     console.log("set random");
+    const players = Array.from(this.game.board.values());
+    for(const p of players){
+    }
+    const idx = Math.floor(Math.random() * players.length);    
+    this._randomMessage.set(players[idx].message)
+    setTimeout(() => this.setRandomMessage(), Math.random() * 2000 ); //0s-10s
   }
 
   players(): Iterable<Player> {

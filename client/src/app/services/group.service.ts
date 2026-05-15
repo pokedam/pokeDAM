@@ -19,6 +19,7 @@ export interface Lobby {
 export interface Player {
     id: PlayerId;
     nickname: string;
+    message: string;
     pokemons: InGamePokemon[];
     actives: (InGamePokemon | null)[];
     request: boolean;
@@ -67,13 +68,13 @@ export class GroupService {
     }
 
     //Creates a new lobby and returns the lobby id
-    create(name: string, password: string | null): Observable<Lobby> {
+    create(name: string, password: string | null, message: string): Observable<Lobby> {
 
         // Since we need to subscribe ourself to the lobby room and we need to have an id to active the subscription
         // 1.- We create the lobby, which returns only the lobby id
         // 2.- We subscribe to the lobby changes using the id
         // 3.- We retrieve the lobby info to populate after being subscribed, avoiding data races
-        return this.socket.emit<LobbyCreationRequest, Lobby>('lobby.create', { name, password }).pipe(
+        return this.socket.emit<LobbyCreationRequest, Lobby>('lobby.create', { name, password, message }).pipe(
             switchMap(res => {
                 this.subscribeToLobby(res.id);
                 return this.getLobby(res.id).pipe(tap(lobby => this._group.set(lobby)));
@@ -81,9 +82,9 @@ export class GroupService {
         );
     }
 
-    join(lobbyId: string, password?: string): Observable<Lobby> {
+    join(lobbyId: string, message: string, password?: string,): Observable<Lobby> {
         this.subscribeToLobby(lobbyId);
-        return this.socket.emit<LobbyJoinRequest, LobbyResponse>('lobby.join', { id: lobbyId, password, }).pipe(
+        return this.socket.emit<LobbyJoinRequest, LobbyResponse>('lobby.join', { id: lobbyId, password, message}).pipe(
             map(data => {
                 const lobby: Lobby = {
                     type: 'lobby',
@@ -162,6 +163,9 @@ export class GroupService {
                     });
                     break;
                 case 'start':
+                    for(const player of event.board.values()){
+                        console.log("Player with message", player.message);
+                    }
                     this._group.set({
                         type: 'game',
                         id: lobbyId,

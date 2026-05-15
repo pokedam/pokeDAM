@@ -56,6 +56,8 @@ interface InGameState {
 export class Play {
   savedLobbyName: string = '';
   savedHasPassword: boolean = false;
+  message: string | null = null;
+
   private uiState = signal<GameState>({ type: 'browser' });
   readonly state = computed<GameState>(() => {
     const group = this.group.group();
@@ -85,7 +87,8 @@ export class Play {
   }
 
 
-  openCreateMenu() {
+  openCreateMenu(message: string) {
+    this.message = message;
     this.uiState.set({ type: 'creation' });
   }
 
@@ -95,25 +98,46 @@ export class Play {
     this.uiState.set({ type: 'browser' });
   }
 
+  validate(): string | undefined {
+    console.log("validating message", this.message);
+    if (!this.message || this.message.trim().length == 0) {
+      this.error.show("Message is empty!");
+      return;
+    }
+
+    if (this.message.length > 50) {
+      this.error.show("Message has more than 50 characters");
+      return;
+    }
+    return this.message;
+  }
+
   createLobby(config: { name: string, password: string | null }) {
+    const message = this.validate();
+    if(!message) return;
+
     this.savedLobbyName = config.name;
     this.savedHasPassword = config.password != null;
     this.group.create(
       config.name,
-      config.password
+      config.password,
+      message
     ).subscribe({
       next: () => this.uiState.set({ type: 'browser' }),
       error: (err) => this.error.show(err.message),
     });
   }
 
-  joinLobby(lobbyId: string, lobby: LobbiesEntry) {
+  joinLobby(lobbyId: string, lobby: LobbiesEntry, message: string) {
+    this.message = message;
+    if(!this.validate()) return;
+
     if (lobby.hasPassword) {
       this.uiState.set({ type: 'pass', id: lobbyId, name: lobby.name });
       //this.joiningLobbyId = lobbyId;
       //this.joiningLobbyName = lobby.name;
     } else {
-      this.group.join(lobbyId).subscribe({
+      this.group.join(lobbyId, message).subscribe({
         next: () => this.uiState.set({ type: 'browser' }),
         error: (err) => this.error.show(err.message),
       });
@@ -121,9 +145,12 @@ export class Play {
   }
 
   confirmJoin(password: string) {
+    const message = this.validate();
+    if(!message) return;
+
     const local = this.uiState();
     if (local.type === 'pass') {
-      this.group.join(local.id, password).subscribe({
+      this.group.join(local.id, message, password).subscribe({
         error: (err) => this.error.show(err.message),
       });
       this.uiState.set({ type: 'browser' });

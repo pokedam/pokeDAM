@@ -33,6 +33,7 @@ export interface LobbyViewResponse {
 export interface LobbyCreationRequest {
     name: string;
     password: string | null;
+    message: string;
 }
 
 export interface LobbyCreatedResponse {
@@ -42,6 +43,7 @@ export interface LobbyCreatedResponse {
 export interface LobbyJoinRequest {
     id: GroupId;
     password?: string | null;
+    message: string;
 }
 
 export interface LobbyCreatedEvent {
@@ -98,8 +100,8 @@ export interface TurnCompletedEvent {
 }
 
 export const lobbyFactory = {
-    create(name: string, password: string | null = null): LobbyCreationRequest {
-        return { name, password };
+    create(name: string, password: string | null = null, message: string): LobbyCreationRequest {
+        return { name, password, message };
     },
 
     createdEvent(res: LobbyViewResponse): LobbyCreatedEvent {
@@ -117,8 +119,8 @@ export const lobbyFactory = {
         };
     },
 
-    join(id: GroupId, password: string | null = null): LobbyJoinRequest {
-        return { id, password };
+    join(id: GroupId, password: string | null = null, message: string): LobbyJoinRequest {
+        return { id, password, message };
     },
 
     readyEvent(id: PlayerId, isReady: boolean): PlayerReadyEvent {

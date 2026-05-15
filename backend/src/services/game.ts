@@ -32,6 +32,7 @@ export function gameToResponse(game: Game): BoardResponse {
     return Array.from(game.board).map(([id, player]) => ({
         id,
         nickname: player.nickname,
+        message: player.message,
         pokemons: player.pokemons,
         actives: player.actives,
         request: player.request != null,
@@ -109,8 +110,8 @@ export async function create(playerId: Id): Promise<[GroupId, BoardResponse]> {
     const lobby = store.lobbies.get(groupId);
     if (!lobby) throw new Error(`Lobby not found`);
 
-    const buildBoardEntry = async (playerId: PlayerId): Promise<Player> => {
-        const res = await db.user.getGamePlayer(playerId);
+    const buildBoardEntry = async (entry: { id: PlayerId, message: string }): Promise<Player> => {
+        const res = await db.user.getGamePlayer(entry.id);
         console.log("Received pokemons from DB for player", playerId, res);
         const pokemons: InGamePokemon[] = res.pokemons.map(pokemon => {
             const stats = addStats(pokemon.iv, getPokemon(pokemon.pokedexIdx).statsBase);
@@ -124,16 +125,17 @@ export async function create(playerId: Id): Promise<[GroupId, BoardResponse]> {
 
         return {
             nickname: res.nickname,
+            message: entry.message,
             pokemons,
             actives: [pokemons[0] ?? null, pokemons[1] ?? null, pokemons[2] ?? null],
             request: null,
         };
     };
 
-    const playerIds = [lobby.hostId, ...lobby.joiners.keys()];
+    const playerIds = [{ id: lobby.hostId, message: lobby.hostMessage }, ...Array.from(lobby.joiners.entries()).map(([key, value]) => ({ id: key, message: value.message }))];
     const boardArray: Player[] = await Promise.all(playerIds.map(playerId => buildBoardEntry(playerId)));
     const game: Game = {
-        board: new Map(boardArray.map((data, idx) => [playerIds[idx]!, data])),
+        board: new Map(boardArray.map((data, idx) => [playerIds[idx]!.id, data])),
         history: [],
         turn: 0
     };

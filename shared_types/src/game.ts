@@ -80,6 +80,7 @@ export interface Mov { key: MovKey, pp: number }
 
 export interface Player {
     nickname: string;
+    message: string;
     pokemons: InGamePokemon[];
     actives: (InGamePokemon | null)[];
     request: ValidatedRequest | null;
@@ -101,6 +102,7 @@ export interface InGamePokemon {
 export interface PlayerResponse {
     id: PlayerId;
     nickname: string;
+    message: string;
     pokemons: InGamePokemon[];
     actives: (InGamePokemon | null)[];
     request: boolean;

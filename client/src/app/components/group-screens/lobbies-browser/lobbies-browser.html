@@ -1,6 +1,11 @@
 <app-content-header [title]="'Custom Matches'">
   <button class="retro-btn create-lobby-btn" (click)="createLobby()">Create Match</button>
-</app-content-header>
+</app-content-header> 
+
+<div class="message-container">
+  <div class="message-label">Custom Message</div>
+  <input type="text" class="retro-input message-input" placeholder="Write a message" [(ngModel)]="message"/>
+</div>
 
 <div class="table-container">
   <table class="lobby-table">
@@ -24,7 +29,7 @@
         <td class="players-count">{{ item.value.playerCount }}/{{ item.value.maxPlayers }}</td>
         <td>
           <button class="retro-btn action-btn join-btn" [disabled]="item.value.playerCount >= item.value.maxPlayers"
-            (click)="joinLobby(item.key, item.value)">
+            (click)="joinLobby(item.key, item.value, message)">
             Join
           </button>
         </td>
