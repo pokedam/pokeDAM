@@ -27,7 +27,7 @@ interface Timeout {
     time: number;
 }
 
-const TURN_INTERVAL_MS = 15000;
+const TURN_INTERVAL_MS = 60000;
 
 const heap = new FastPriorityQueue<Timeout>((a, b) => a.time < b.time);
 let schedulerTimer: NodeJS.Timeout | null = null;
