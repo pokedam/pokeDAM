@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { SocketService } from './socket.service';
 import { AuthService } from './auth.service';
-import { GameResponse, GroupId, InGamePokemon, InLobbyEvent, LobbyCreatedResponse, LobbyCreationRequest, LobbyJoinRequest, LobbyResponse, PlayerId, PlayerResponse } from 'shared_types';
+import { GameRequest, GameResponse, GroupId, InGamePokemon, InLobbyEvent, LobbyCreatedResponse, LobbyCreationRequest, LobbyJoinRequest, LobbyResponse, PlayerId, PlayerResponse, TurnHistory } from 'shared_types';
 import { map, Observable, switchMap, tap } from 'rxjs';
 
 export type Group = Lobby | Game;
@@ -18,6 +18,7 @@ export interface Lobby {
 
 export interface Player {
     id: PlayerId;
+    nickname: string;
     pokemons: InGamePokemon[];
     actives: (InGamePokemon | null)[];
     request: boolean;
@@ -40,8 +41,10 @@ export class GroupService {
     private socket = inject(SocketService);
 
     private _group = signal<Group | null>(null, { equal: (_, __) => false });
+    private _turn = signal<TurnHistory | null>(null);
 
     group = this._group.asReadonly();
+    turn = this._turn.asReadonly();
 
     restoreGame(res: GameResponse) {
         this._group.set({
@@ -112,56 +115,63 @@ export class GroupService {
 
     private subscribeToLobby(lobbyId: GroupId): void {
         const lobby = this._group();
-        if (lobby?.id) {
+        if (lobby?.id)
             this.socket.off(`lobby.${lobby.id}.event`);
-        }
 
-        // We 1st retrieve the lobby info to populate the lobby state.
+
         this.socket.on(`lobby.${lobbyId}.event`, (event: InLobbyEvent) => {
+            switch (event.type) {
+                case 'joined':
+                    this._group.update(lobby => {
+                        if (!lobby || lobby.type === 'game') return lobby;
 
-            this._group.update(lobby => {
-                if (!lobby) return lobby;
-                switch (event.type) {
-
-                    case 'joined':
-                        if (lobby.type === 'game') return lobby;
                         lobby.joiners.set(event.id, {
                             nickname: event.nickname,
                             isReady: false
                         });
                         return lobby
+                    });
+                    break;
 
-                    case 'left':
-                        if (lobby.type === 'game') return lobby;
+                case 'left':
+                    this._group.update(lobby => {
+                        if (!lobby || lobby.type === 'game') return lobby;
+
                         lobby.joiners.delete(event.id);
                         return event.id == this.auth.auth()!.user.id ? null : lobby;
+                    });
+                    break;
+                case 'host left':
+                    this._group.update(lobby => {
+                        if (!lobby || lobby.type !== 'lobby') return lobby;
+                        if (!event.newHostId) return null;
 
-                    case 'host left':
-                        if (event.newHostId && lobby.type === 'lobby') {
-                            const leftId = lobby.hostId;
-                            lobby.hostId = event.newHostId;
-                            lobby.hostNickname = lobby.joiners.get(event.newHostId)!.nickname;
-                            lobby.joiners.delete(event.newHostId);
-                            return leftId == this.auth.auth()!.user.id ? null : lobby;
-                        }
-                        return null;
+                        const leftId = lobby.hostId;
+                        lobby.hostId = event.newHostId;
+                        lobby.hostNickname = lobby.joiners.get(event.newHostId)!.nickname;
+                        lobby.joiners.delete(event.newHostId);
+                        return leftId == this.auth.auth()!.user.id ? null : lobby;
+                    });
+                    break;
+                case 'ready':
+                    this._group.update(lobby => {
+                        if (!lobby || lobby.type === 'game') return lobby;
 
-                    case 'ready':
-                        if (lobby.type === 'lobby') lobby.joiners.get(event.id)!.isReady = event.isReady;
+                        lobby.joiners.get(event.id)!.isReady = event.isReady;
                         return lobby;
-                    case 'start':
-                        return {
-                            type: 'game',
-                            id: lobbyId,
-                            board: new Map(event.board.map(p => [p.id, p])),
-                        };
-                    case 'turn':
-                        console.log("Turn Completed");
-                        return lobby;
-                }
-
-            });
-
+                    });
+                    break;
+                case 'start':
+                    this._group.set({
+                        type: 'game',
+                        id: lobbyId,
+                        board: new Map(event.board.map(p => [p.id, p])),
+                    })
+                    break;
+                case 'turn':
+                    this._turn.set(event.turn);
+                    break;
+            }
         });
     }
 
@@ -177,6 +187,12 @@ export class GroupService {
 
     setReady(isReady: boolean): Observable<void> {
         return this.socket.emit('lobby.ready', isReady);
+        //this.socket.emit('lobby.ready', isReady, (res: Result<void>) => this.errorService.unwrap<void>(res));
+    }
+
+
+    play(request: GameRequest): Observable<void> {
+        return this.socket.emit('lobby.play', request);
         //this.socket.emit('lobby.ready', isReady, (res: Result<void>) => this.errorService.unwrap<void>(res));
     }
 

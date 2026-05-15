@@ -7,27 +7,19 @@ import {
     type Id,
     type InGamePokemon,
     type MovKey,
-    type Payload,
+    type MovMap,
+    type MovRef,
     type Player,
     type PlayerId,
     type TurnHistory,
-    type ValidatedRequest
+    pokemon as getPokemon,
+    addStats,
+    type ValidatedRequest,
 } from "shared_types";
 
 import * as store from "./store.js";
-import FastPriorityQueue from "fastpriorityqueue";
 import { db } from "../db/client.js";
-
-const TURN_INTERVAL_MS = 60_000;
-
-interface Timeout {
-    id: GroupId;
-    turn: number;
-    time: number;
-}
-
-const heap = new FastPriorityQueue<Timeout>((a, b) => a.time < b.time);
-let schedulerTimer: NodeJS.Timeout | null = null;
+import FastPriorityQueue from "fastpriorityqueue";
 
 
 export interface Game {
@@ -39,6 +31,7 @@ export interface Game {
 export function gameToResponse(game: Game): BoardResponse {
     return Array.from(game.board).map(([id, player]) => ({
         id,
+        nickname: player.nickname,
         pokemons: player.pokemons,
         actives: player.actives,
         request: player.request != null,
@@ -47,62 +40,66 @@ export function gameToResponse(game: Game): BoardResponse {
 
 interface ValidationContext<T extends MovKey> {
     board: Map<PlayerId, Player>;
-    playerId: number;
-    payload: Payload<T>;
+    movRef: MovRef,
+    payload: MovMap[T];
 }
 
 interface ExecutionContext<T extends MovKey> extends ValidationContext<T> {
     history: TurnHistory;
 }
 
-type MovLogic = {
+type MovLogicMap = {
     [K in MovKey]: {
-        validate: (ctx: ValidationContext<K>) => number | null;
+        validate: (ctx: ValidationContext<K>) => number;
         execute: (ctx: ExecutionContext<K>) => void;
     };
 };
 
-export const movs: MovLogic = {
+export const MOV_MAP: MovLogicMap = {
     destructor: {
-        validate: (ctx): number | null => null,
-        execute: (ctx): void => { }
+        validate: (ctx): number => {
+            if (ctx.payload.playerId === ctx.movRef.playerId) throw Error("Player can't attack himself");
+            const player = ctx.board.get(ctx.movRef.playerId)!;
+            const pkmn = player.actives[ctx.movRef.pokemonIdx]!;
+            return pkmn.stats.speed;
+        },
+        execute: (ctx): void => {
+            const player = ctx.board.get(ctx.movRef.playerId)!;
+            const pkmn = player.actives[ctx.movRef.pokemonIdx]!;
+
+            const opp = ctx.board.get(ctx.payload.playerId)!;
+            const oppPkmn = player.actives[ctx.payload.pokemonIdx]!;
+
+            //Pokemon will not attack if it has fainted during the turn
+            if (pkmn.hp <= 0) return;
+
+            oppPkmn.hp = Math.max(0, oppPkmn.hp - 20);
+            console.log(`Player ${ctx.movRef.playerId} used Destructor on player ${ctx.payload.playerId}, dealing 20 damage. Opponent HP is now ${oppPkmn.hp}`);
+            ctx.history.push({
+                key: 'damage',
+                dealer: ctx.movRef,
+                target: ctx.payload,
+                damage: {
+                    amount: 20,
+                    effectiveness: 1,
+                    isCrit: false
+                }
+            })
+
+            if (oppPkmn.hp <= 0) {
+                console.log(`Player ${ctx.payload.playerId}'s Pokemon fainted!`);
+                ctx.history.push({
+                    key: 'pokemon_fainted',
+                    pokemon: ctx.payload,
+                });
+            }
+        }
     },
     other: {
-        validate: (ctx): number | null => null,
-        execute: (ctx): void => { }
+        validate: (): number => { throw Error("unimplemented"); },
+        execute: (): void => { }
     }
 };
-
-
-
-
-export function init() {
-    if (schedulerTimer) clearTimeout(schedulerTimer);
-    const next = heap.peek();
-    schedulerTimer = next ? setTimeout(processTimeouts, Math.max(0, next.time - Date.now())) : null;
-}
-
-function processTimeouts(): void {
-    schedulerTimer = null;
-    let trigger: Timeout | undefined;
-    while ((trigger = heap.peek()) && trigger.time <= Date.now()) {
-        heap.poll();
-
-        const game = store.games.get(trigger.id);
-
-        if (!game || game.turn !== trigger.turn) {
-            // Skip, this turn trigger was completed before timeout 
-            // and another trigger is already queued
-            continue;
-        }
-
-        processTurn(game, trigger.id);
-    }
-
-    init();
-}
-
-
 
 
 export async function create(playerId: Id): Promise<[GroupId, BoardResponse]> {
@@ -112,19 +109,21 @@ export async function create(playerId: Id): Promise<[GroupId, BoardResponse]> {
     const lobby = store.lobbies.get(groupId);
     if (!lobby) throw new Error(`Lobby not found`);
 
-    const buildBoardEntry = async (playerId: PlayerId) => {
-        const result = await db.user.getActivePokemons(playerId);
-        console.log("Received pokemons from DB for player", playerId, result);
-        const pokemons: InGamePokemon[] = result.map(pokemon => ({
-            ...pokemon,
-            movs: [{
-                key: 'destructor',
-                pp: 10,
-            }],   //pokemon.movs.map(key => mov(key))
-            hp: pokemon.stats.hp,
-        }));
+    const buildBoardEntry = async (playerId: PlayerId): Promise<Player> => {
+        const res = await db.user.getGamePlayer(playerId);
+        console.log("Received pokemons from DB for player", playerId, res);
+        const pokemons: InGamePokemon[] = res.pokemons.map(pokemon => {
+            const stats = addStats(pokemon.iv, getPokemon(pokemon.pokedexIdx).statsBase);
+            return {
+                ...pokemon,
+                stats,
+                movs: pokemon.movs.map(key => mov(key)),
+                hp: stats.hp,
+            };
+        });
 
         return {
+            nickname: res.nickname,
             pokemons,
             actives: [pokemons[0] ?? null, pokemons[1] ?? null, pokemons[2] ?? null],
             request: null,
@@ -143,10 +142,7 @@ export async function create(playerId: Id): Promise<[GroupId, BoardResponse]> {
     return [groupId, gameToResponse(game)];
 }
 
-
-
-
-export function play(id: PlayerId, request: GameRequest): TurnHistory | undefined {
+export function play(id: PlayerId, request: GameRequest): { id: GroupId, turnIdx: number, turn: TurnHistory } | undefined {
     const gameId = store.games.id(id);
     if (!gameId) throw new Error(`Game not found`);
 
@@ -157,7 +153,7 @@ export function play(id: PlayerId, request: GameRequest): TurnHistory | undefine
     const player = game.board.get(id);
     if (!player) throw new Error(`Player not found on the board`);
 
-    const pokemon = player.pokemons[request.pokemonIdx];
+    const pokemon = player.actives[request.pokemonIdx];
     if (!pokemon) throw new Error(`Pokemon not found`);
 
     const mov = pokemon.movs[request.movIdx];
@@ -168,23 +164,31 @@ export function play(id: PlayerId, request: GameRequest): TurnHistory | undefine
     if (mov.pp <= 0) throw new Error(`No PP left`);
     const ctx: ValidationContext<typeof mov.key> = {
         board: game.board,
-        playerId: id,
+        movRef: {
+            playerId: id,
+            pokemonIdx: request.pokemonIdx,
+            movIdx: request.movIdx,
+        },
         payload: request.payload
     };
 
     const priority = validateRequest(mov.key, ctx);
-    if (priority === null) throw new Error(`Move validation failed`);
 
     player.request = { ...request, priority };
 
-    for (const player of game.board.values()) {
-        if (!player.request) return; // Wait for all players to submit their requests
-    }
+    for (const p of game.board.values())
+        if (!p.request) return;
 
-    return processTurn(game, gameId);
+    const turn = processTurn(game, gameId);
+    return {
+        id: gameId,
+        turnIdx: game.turn,
+        turn,
+    };
 }
 
-function processTurn(game: Game, id: GroupId): TurnHistory {
+export function processTurn(game: Game, id: GroupId): TurnHistory {
+
     game.turn += 1;
 
     const priorityQueue = new FastPriorityQueue<{
@@ -193,7 +197,11 @@ function processTurn(game: Game, id: GroupId): TurnHistory {
     }>((a, b) => a.request.priority > b.request.priority);
 
     for (const [id, player] of game.board) {
-        if (!player.request) continue;
+        if (!player.request) {
+            console.log("Waiting for players...")
+            continue;
+        }
+
         priorityQueue.add({ request: player.request, id });
     }
 
@@ -205,7 +213,11 @@ function processTurn(game: Game, id: GroupId): TurnHistory {
         let ctx: ExecutionContext<typeof mov> = {
             history,
             board: game.board,
-            playerId: state.id,
+            movRef: {
+                movIdx: state.request.movIdx,
+                playerId: state.id,
+                pokemonIdx: state.request.pokemonIdx,
+            },
             payload,
         };
 
@@ -217,21 +229,14 @@ function processTurn(game: Game, id: GroupId): TurnHistory {
     for (const state of game.board.values())
         state.request = null;
 
-    // Recalculating "Date.now()" is necessary to avoid infinite queueing 
-    // if the server has more games than it can process in a timely manner.
-    heap.add({
-        id,
-        time: Date.now() + TURN_INTERVAL_MS,
-        turn: game.turn,
-    });
-
     return history;
+
 }
 
-function validateRequest<K extends MovKey>(movKey: K, ctx: ValidationContext<K>): number | null {
-    return movs[movKey].validate(ctx);
+function validateRequest<K extends MovKey>(movKey: K, ctx: ValidationContext<K>): number {
+    return MOV_MAP[movKey].validate(ctx);
 }
 
 function executeRequest<K extends MovKey>(movKey: K, ctx: ExecutionContext<K>) {
-    movs[movKey].execute(ctx);
+    MOV_MAP[movKey].execute(ctx);
 }

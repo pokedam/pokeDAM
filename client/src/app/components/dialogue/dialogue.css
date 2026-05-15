@@ -1,17 +1,14 @@
 :host {
   display: block;
   width: 100%;
-  max-width: 600px;
+  flex: 1;
 }
 
 .dialogue-box {
+  position: relative;
   height: 100%;
   width: 100%;
-  position: relative;
-  /* Override retro-box default padding if needed to be responsive */
-
   background-color: white;
-  /* Make sure background is opaque so background elements don't bleed through */
 }
 
 .dialogue-text {

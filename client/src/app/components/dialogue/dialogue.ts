@@ -16,9 +16,10 @@ import {
 
 export type DialogueStep =
   | string
-  | { type: 'text';  value: string; speed?: number }
+  | { type: 'text'; value: string; speed?: number }
   | { type: 'pause'; duration: number }
-  | { type: 'jump' };
+  | { type: 'jump' }
+  | { type: 'action'; action: () => void };
 
 export type DialogueSequence = DialogueStep[];
 
@@ -32,6 +33,12 @@ interface PauseMarker {
   duration: number;
 }
 
+/** An action marker within a page's character stream. */
+interface ActionMarker {
+  charIndex: number;
+  action: () => void;
+}
+
 /** A speed-change marker within a page's character stream. */
 interface SpeedMarker {
   charIndex: number;
@@ -43,6 +50,7 @@ interface Page {
   content: string;
   pauses: PauseMarker[];
   speeds: SpeedMarker[];
+  actions: ActionMarker[];
 }
 
 const DEFAULT_SPEED = 40;
@@ -50,7 +58,8 @@ const DEFAULT_SPEED = 40;
 /** An atom produced while linearising the sequence. */
 type Atom =
   | { kind: 'word'; text: string; width: number; speed?: number }
-  | { kind: 'pause'; duration: number };
+  | { kind: 'pause'; duration: number }
+  | { kind: 'action'; action: () => void };
 
 /** A word placed on a line, remembering its atom index. */
 interface PlacedWord {
@@ -74,6 +83,7 @@ export class Dialogue implements OnChanges, OnDestroy {
 
   displayedText = signal<string>('');
   isPageComplete = signal<boolean>(false);
+  hasMorePages = signal<boolean>(false);
 
   private typingInterval: any;
   private pauseTimeout: any;
@@ -84,6 +94,7 @@ export class Dialogue implements OnChanges, OnDestroy {
   private currentCharIndex: number = 0;
   private currentPauseIdx: number = 0;
   private currentSpeedIdx: number = 0;
+  private currentActionIdx: number = 0;
   private currentSpeed: number = DEFAULT_SPEED;
 
   ngOnChanges(changes: SimpleChanges) {
@@ -171,6 +182,8 @@ export class Dialogue implements OnChanges, OnDestroy {
           }
         } else if (step.type === 'pause') {
           atoms.push({ kind: 'pause', duration: step.duration });
+        } else if (step.type === 'action') {
+          atoms.push({ kind: 'action', action: step.action });
         }
       }
 
@@ -207,8 +220,19 @@ export class Dialogue implements OnChanges, OnDestroy {
 
         const pauseMarkers: PauseMarker[] = [];
         const speedMarkers: SpeedMarker[] = [];
+        const actionMarkers: ActionMarker[] = [];
         let charPos = 0;
         let lastSpeed: number | undefined;
+
+        // Collect actions and pauses before the very first word of the section
+        if (l === 0) {
+          const firstWordIdx = pageLines.length > 0 && pageLines[0].length > 0 ? pageLines[0][0].atomIndex : atoms.length;
+          for (let a = 0; a < firstWordIdx; a++) {
+            const atom = atoms[a];
+            if (atom.kind === 'pause') pauseMarkers.push({ charIndex: 0, duration: atom.duration });
+            else if (atom.kind === 'action') actionMarkers.push({ charIndex: 0, action: atom.action });
+          }
+        }
 
         for (let li = 0; li < pageLines.length; li++) {
           const pl = pageLines[li];
@@ -229,19 +253,20 @@ export class Dialogue implements OnChanges, OnDestroy {
 
             // Find atom index of the next word (on this page or beyond)
             let nextWordAtomIdx = atoms.length;
-            outer: for (let nli = li; nli < pageLines.length; nli++) {
-              const startWi = nli === li ? wi + 1 : 0;
-              for (let nwi = startWi; nwi < pageLines[nli].length; nwi++) {
-                nextWordAtomIdx = pageLines[nli][nwi].atomIndex;
-                break outer;
+            for (let a = entry.atomIndex + 1; a < atoms.length; a++) {
+              if (atoms[a].kind === 'word') {
+                nextWordAtomIdx = a;
+                break;
               }
             }
 
-            // Collect pause atoms between this word and the next
+            // Collect pause and action atoms between this word and the next
             for (let a = entry.atomIndex + 1; a < nextWordAtomIdx; a++) {
               const atom = atoms[a];
               if (atom.kind === 'pause') {
                 pauseMarkers.push({ charIndex: charPos, duration: atom.duration });
+              } else if (atom.kind === 'action') {
+                actionMarkers.push({ charIndex: charPos, action: atom.action });
               }
             }
 
@@ -254,7 +279,19 @@ export class Dialogue implements OnChanges, OnDestroy {
 
         pauseMarkers.sort((a, b) => a.charIndex - b.charIndex);
         speedMarkers.sort((a, b) => a.charIndex - b.charIndex);
-        this.pages.push({ content, pauses: pauseMarkers, speeds: speedMarkers });
+        actionMarkers.sort((a, b) => a.charIndex - b.charIndex);
+        this.pages.push({ content, pauses: pauseMarkers, speeds: speedMarkers, actions: actionMarkers });
+      }
+
+      // Handle sections that have no words (only actions/pauses)
+      if (lines.length === 0 && atoms.length > 0) {
+        const pauseMarkers: PauseMarker[] = [];
+        const actionMarkers: ActionMarker[] = [];
+        for (const atom of atoms) {
+          if (atom.kind === 'pause') pauseMarkers.push({ charIndex: 0, duration: atom.duration });
+          else if (atom.kind === 'action') actionMarkers.push({ charIndex: 0, action: atom.action });
+        }
+        this.pages.push({ content: '', pauses: pauseMarkers, speeds: [], actions: actionMarkers });
       }
     }
 
@@ -273,6 +310,7 @@ export class Dialogue implements OnChanges, OnDestroy {
     this.currentCharIndex = 0;
     this.currentPauseIdx = 0;
     this.currentSpeedIdx = 0;
+    this.currentActionIdx = 0;
     this.currentSpeed = DEFAULT_SPEED;
     this.isPageComplete.set(false);
 
@@ -320,6 +358,15 @@ export class Dialogue implements OnChanges, OnDestroy {
         }
       }
 
+      // Check if we hit an action point
+      if (this.currentActionIdx < page.actions.length) {
+        const actionMarker = page.actions[this.currentActionIdx];
+        if (this.currentCharIndex >= actionMarker.charIndex) {
+          this.currentActionIdx++;
+          actionMarker.action();
+        }
+      }
+
       // Check if we hit a pause point
       if (this.currentPauseIdx < page.pauses.length) {
         const pause = page.pauses[this.currentPauseIdx];
@@ -343,7 +390,18 @@ export class Dialogue implements OnChanges, OnDestroy {
   private finishTypingPage() {
     this.stopAll();
     this.displayedText.set(this.pageString);
+
+    // Fire any remaining action callbacks that haven't been executed yet
+    if (this.currentPageIndex < this.pages.length) {
+      const page = this.pages[this.currentPageIndex];
+      for (let i = this.currentActionIdx; i < page.actions.length; i++) {
+        page.actions[i].action();
+      }
+      this.currentActionIdx = page.actions.length;
+    }
+
     this.isPageComplete.set(true);
+    this.hasMorePages.set(this.currentPageIndex < this.pages.length - 1);
   }
 
   private stopTyping() {

@@ -10,6 +10,20 @@
   gap: 15px;
 }
 
+@media (max-width: 768px) {
+  .players-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+    max-height: 50vh;
+  }
+
+  .players-grid > * {
+    flex-shrink: 0;
+  }
+}
+
 .players-grid.locked {
   pointer-events: none;
 }
@@ -18,16 +32,8 @@
   display: flex;
   gap: 10px;
   height: 180px;
+  width: 100%;
   padding-bottom: 10px;
-}
-
-/* Actions Menu Grid */
-.actions-menu {
-  flex: 0 0 280px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
-  gap: 12px;
 }
 
 .actions-menu.single-action {
@@ -36,27 +42,28 @@
 }
 
 .main-action {
+  flex: 0 0 120px;
+  gap: 12px;
   width: 100%;
   height: 100%;
-  background-color: var(--pkmn-gb-mid2);
   color: white;
 }
 
-.main-action:hover {
+.main-action:not(:disabled) {
+  background-color: var(--pkmn-gb-mid2);
+}
+
+.main-action:hover:not(:disabled) {
   background-color: var(--pkmn-gb-mid1);
 }
 
-.action-btn {
-  transition: all 0.2s ease;
-}
-
 .dialogue-section {
-  flex: 1;
   display: flex;
-  align-items: stretch;
   height: 100%;
+  width: 100%;
 }
 
+/* 
 ::ng-deep .dialogue-section app-dialogue {
   width: 100%;
   max-width: none !important;
@@ -74,12 +81,10 @@
   height: 100% !important;
   width: 100%;
   flex: 1;
-}
+} */
 
 /* Attack Menu Styles */
 .attacks-box {
-  width: 100%;
-  height: 100%;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -97,7 +102,7 @@
   height: 100%;
 }
 
-.attack-btn {
+.mov-btn {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -109,7 +114,7 @@
   width: 100%;
 }
 
-.attack-btn:hover {
+.mov-btn:hover {
   background-color: #f0f0f0;
   transform: translateY(-2px);
   box-shadow: 4px 6px 0px rgba(0, 0, 0, 0.2);
@@ -144,6 +149,7 @@
   color: var(--pkmn-dark-red);
 }
 
+/* 
 @media (max-width: 768px) {
   .bottom-panel {
     flex-direction: column;
@@ -154,61 +160,4 @@
     flex: none;
     width: 100%;
   }
-}
-
-/* 
-::ng-deep app-pokemon-chip {
-  cursor: pointer;
-  transition: transform 0.1s ease;
-  border: 1px solid transparent; 
-  border-radius: 6px;
-  display: block;
-}
-
-::ng-deep app-pokemon-chip:hover {
-  transform: scale(1.02);
-  background-color: rgba(0, 0, 0, 0.02);
-}
-
-::ng-deep app-pokemon-chip.selected {
-  border-color: var(--pkmn-blue);
-  background-color: #eef4ff;
-  box-shadow: 0 0 10px rgba(0, 0, 255, 0.2);
-  transform: scale(1.05);
-  z-index: 10;
-}
-
-::ng-deep app-player-tile:first-child app-pokemon-chip.selected {
-  border-color: var(--pkmn-gb-mid2);
-  background-color: #f0fff0;
-  box-shadow: 0 0 10px rgba(52, 104, 86, 0.2);
-}
-*/
-
-/* Feedback visual para selección de objetivos */
-.targetable-player {
-  transition: all 0.3s ease;
-}
-
-.targetable-player ::ng-deep app-pokemon-chip:not(.selected) {
-  border: 4px solid rgba(204, 0, 0, 0.15);
-  /* Rojo suave para indicar objetivo potencial */
-  box-shadow: 0 0 8px rgba(204, 0, 0, 0.1);
-}
-
-.targetable-player ::ng-deep app-pokemon-chip:not(.selected):hover {
-  border-color: var(--pkmn-red);
-  background-color: rgba(255, 0, 0, 0.05);
-  transform: scale(1.03);
-}
-
-.non-targetable-player {
-  opacity: 0.6;
-  filter: grayscale(0.3);
-  transition: opacity 0.3s ease;
-}
-
-.non-targetable-player:hover {
-  opacity: 0.8;
-  /* Se aclara un poco al pasar el ratón para indicar que aún es interactivo (para cambiar) */
-}
+} */

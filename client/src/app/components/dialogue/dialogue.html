@@ -3,7 +3,7 @@
   <p #measureContainer class="dialogue-text measure-container"></p>
 
   <p class="dialogue-text">{{ displayedText() }}</p>
-  @if (isPageComplete()) {
+  @if (isPageComplete() && hasMorePages()) {
   <div class="continue-indicator"></div>
   }
 </div>

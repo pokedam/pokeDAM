@@ -66,11 +66,11 @@ body {
   cursor: not-allowed;
 }
 
-.retro-btn:hover {
+.retro-btn:hover:not(:disabled) {
   background-color: #f0f0f0;
 }
 
-.retro-btn:active {
+.retro-btn:active:not(:disabled) {
   transform: translate(4px, 4px);
   box-shadow: 0px 0px 0px rgba(0, 0, 0, 0.2);
 }

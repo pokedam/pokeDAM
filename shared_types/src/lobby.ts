@@ -1,4 +1,4 @@
-import { BoardResponse, GroupId, PlayerId, PlayerResponse } from "./game";
+import { BoardResponse, GroupId, PlayerId, PlayerResponse, TurnHistory } from "./game";
 
 export interface LobbyResponse {
     name: string;
@@ -94,6 +94,7 @@ export interface StartGameEvent {
 
 export interface TurnCompletedEvent {
     type: "turn",
+    turn: TurnHistory
 }
 
 export const lobbyFactory = {

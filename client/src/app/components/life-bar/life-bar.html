@@ -1,10 +1,10 @@
-<div class="hp-bar-container">
-  <span class="hp-label">HP</span>
-  <div class="hp-bar-track retro-border">
-    <div 
-      class="hp-bar-fill" 
-      [ngClass]="getHpColorClass()"
-      [style.width.%]="getHpPercentage()">
+<div class="hp-bar-wrapper">
+  <div class="hp-bar-container">
+    <span class="hp-label">HP</span>
+    <div class="hp-bar-track retro-border">
+      <div class="hp-bar-fill" [ngClass]="getHpColorClass()" [style.width.%]="getHpPercentage()">
+      </div>
     </div>
   </div>
+  <span class="hp-numeric">{{ hp }}/{{ maxHp }}</span>
 </div>

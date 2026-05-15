@@ -27,15 +27,22 @@ export interface Stats {
 
 export interface PokemonResponse {
     id: number;
+    name: string | null;
     pokedexIdx: number;
     isActive: boolean;
 }
 
+export interface PlayerGameResponse {
+    nickname: string;
+    pokemons: PokemonResponseFull[];
+}
+
 export interface PokemonResponseFull {
     id: number;
+    name: string | null;
     pokedexIdx: number;
     movs: MovKey[];
-    stats: Stats;
+    iv: Stats;
 }
 
 // @ts-ignore: Auto-generated import.
@@ -54,4 +61,15 @@ export function pokemon(pokedexIdx: number): Pokemon {
 
 export function pokemonSpriteUrl(id: number): string {
     return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
+}
+
+export function addStats(rhs: Stats, lhs: Stats): Stats {
+    return {
+        hp: rhs.hp + lhs.hp,
+        attack: rhs.attack + lhs.attack,
+        defense: rhs.defense + lhs.defense,
+        specialAttack: rhs.specialAttack + lhs.specialAttack,
+        specialDefense: rhs.specialDefense + lhs.specialDefense,
+        speed: rhs.speed + lhs.speed,
+    };
 }

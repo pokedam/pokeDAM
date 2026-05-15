@@ -52,8 +52,10 @@ export class SocketService {
           oldSocket.disconnect();
         }
 
-        const socket = io({
+        const backendUrl = 'http://localhost:8080';
+        const socket = io(backendUrl, {
           auth: { token },
+          transports: ['websocket', 'polling'],
         });
 
         socket.on('connect', () => {

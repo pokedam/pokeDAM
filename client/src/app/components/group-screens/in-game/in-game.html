@@ -3,7 +3,8 @@
   <!-- <div class="retro-box battle-scene"> -->
   <div class="players-grid" [class.locked]="false">
     @for (player of players(); track player.id) {
-    <app-player-tile [player]="player" [selectableFn]="getSelector()" (pokemonSelect)="onPokemonSelect($event)">
+    <app-player-tile [player]="player" [isUser]="isUser(player.id)" [selectableFn]="getSelector()"
+      (pokemonSelect)="onPokemonSelect($event)">
     </app-player-tile>
     }
   </div>
@@ -13,41 +14,33 @@
   <div class="bottom-panel">
     <!-- Action Menu (Left) -->
 
-    <div class="retro-box actions-menu single-action">
-      <button class="retro-btn action-btn main-action" (click)="onPokemonButtonClick()">
-        CANCELAR
-      </button>
-    </div>
+
+    <button class="retro-btn action-btn main-action" (click)="executeContextAction()"
+      [disabled]="!(contextButtonDescriptor()?.action)">
+      {{ contextButtonDescriptor()?.label ?? 'Ready' }}
+    </button>
+
+
 
 
     <!-- Dialogue Box (Right) -->
     <div class="dialogue-section">
-      @if (state.type === 'play') {
-      <app-dialogue [text]="'Hola ke ase'"></app-dialogue>
-      } @else if (state.type === 'mov-selection') {
+      @let s = state();
+
+      @if(s.type == 'mov-selection'){
       <div class="retro-box attacks-box">
         <div class="attacks-grid">
-          @for (mov of state.selectedPokemon.movs; track mov){
-          <button class="retro-btn action-btn attack-btn" (click)="onAttackSelect(mov.key)">
-            <span class="attack-name">{{ mov.key }}</span>
-            
+          @for (mov of player().pokemons[s.selected].movs.entries(); track mov[1]){
+          <button class="retro-btn mov-btn" (click)="onMovSelect(mov[0])">
+            <span class="attack-name">{{ mov[1].key }}</span>
+
           </button>
           }
-          <!-- @for (mov of selectedOurPokemon?.movs; track mov) {
-          <button class="retro-btn action-btn attack-btn" (click)="onAttackSelect(mov.key)">
-            <span class="attack-name">{{ mov.key }}</span>
-             <span class="attack-type">{{ attack.type }}</span> 
-          </button>
-          } -->
         </div>
       </div>
-      } @else if (currentMenu === 'target-selection') {
-      <div class="retro-box attacks-box target-box">
-        <p class="target-text">
-          Selecciona XXX objetivo(s).<br>
-          <!--<small>(Elegidos: {{ selectedTargets.length }})</small> -->
-        </p>
-      </div>
+      }
+      @else{
+      <app-dialogue [sequence]="dialogueText()"></app-dialogue>
       }
     </div>
   </div>

@@ -1,7 +1,22 @@
+.hp-bar-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .hp-bar-container {
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+.hp-numeric {
+  align-self: flex-end;
+  font-size: 9px;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 1px 1px 0 #000;
+  letter-spacing: 1px;
 }
 
 .hp-label {

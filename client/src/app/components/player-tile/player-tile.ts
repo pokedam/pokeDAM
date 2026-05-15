@@ -1,9 +1,9 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PokemonChip } from '../pokemon-chip/pokemon-chip';
-import { InGamePokemon, PlayerId, pokemonSpriteUrl } from 'shared_types';
+import { InGamePokemon, PlayerId, PokemonRef, pokemonSpriteUrl } from 'shared_types';
 import { Player } from '../../services/group.service';
-import { Selector } from '../group-screens/in-game/in-game';
+import { SelectionMode, Selector } from '../group-screens/in-game/in-game';
 
 @Component({
   selector: 'app-player-tile',
@@ -12,14 +12,17 @@ import { Selector } from '../group-screens/in-game/in-game';
   templateUrl: './player-tile.html',
   styleUrl: './player-tile.css'
 })
-export class PlayerTile {
+export class PlayerTile implements OnInit {
   @Input() isUser = false;
   @Input({ required: true }) player!: Player;
-  @Input() selectableFn: Selector = () => false;
+  @Input() selectableFn: (ref: PokemonRef) => SelectionMode = () => 'none';
 
-  @Output() pokemonSelect = new EventEmitter<{ player: Player, pokemon: InGamePokemon | null }>();
+  @Output() pokemonSelect = new EventEmitter<PokemonRef>();
 
 
+  ngOnInit(): void {
+    console.log('player tile init', this.player);
+  }
   get selectedPokemons(): InGamePokemon[] {
     return this.player.actives.filter(p => p !== null);
   }

@@ -6,27 +6,38 @@ export type PlayerId = number;
 export type GroupId = string;
 export type Id = PlayerId | GroupId;
 
+export interface PokemonRef {
+    playerId: PlayerId;
+    pokemonIdx: number;
+}
+
+export interface MovRef extends PokemonRef {
+    movIdx: number;
+}
+
 export interface Damage {
     amount: number;
     effectiveness: Effectiveness;
     isCrit: boolean;
 }
 
-export type GameEvent = DamageEvent | PokemonFainted;
+export type GameEvent = DamageEvent | PokemonFainted | GameEnd;
 
 export interface DamageEvent {
     key: 'damage';
-    dealer_player: number;
-    dealer_pokemon: number;
-    target_player: number;
-    target_pokemon: number;
+    dealer: MovRef;
+    target: PokemonRef;
     damage: Damage;
 }
 
 export interface PokemonFainted {
     key: 'pokemon_fainted';
-    player_idx: number;
-    pokemon_idx: number;
+    pokemon: PokemonRef;
+}
+
+export interface GameEnd {
+    key: 'game_end';
+    winner: PlayerId;
 }
 
 export type TurnHistory = GameEvent[];
@@ -34,13 +45,13 @@ export type TurnHistory = GameEvent[];
 export type GameHistory = TurnHistory[];
 
 export interface GameRequest {
-    payload: { [Key in MovKey]: Payload<Key> }[MovKey];
+    payload: Payload;
     pokemonIdx: number;
     movIdx: number;
 }
 
-type MovMap = {
-    destructor: SingleTarget,
+export type MovMap = {
+    destructor: PokemonRef,
     other: number,
 };
 
@@ -57,21 +68,18 @@ export function mov(key: MovKey): Mov {
     return { key, pp: pps[key] };
 }
 
-export interface SingleTarget {
-    playerIdx: number;
-    pokemonIdx: number;
-}
-
 export interface MultiTarget {
-    targets: SingleTarget[];
+    targets: PokemonRef[];
 }
 
 export type MovKey = keyof MovMap;
-export type Payload<T extends MovKey> = MovMap[T];
+export type Payload = { [Key in MovKey]: MovMap[Key] }[MovKey]
+//export type Payload<T extends MovKey> = MovMap[T];
 
 export interface Mov { key: MovKey, pp: number }
 
 export interface Player {
+    nickname: string;
     pokemons: InGamePokemon[];
     actives: (InGamePokemon | null)[];
     request: ValidatedRequest | null;
@@ -83,6 +91,7 @@ export interface ValidatedRequest extends GameRequest {
 
 export interface InGamePokemon {
     id: number;
+    name: string | null;
     pokedexIdx: number;
     movs: Mov[];
     stats: Stats;
@@ -91,9 +100,10 @@ export interface InGamePokemon {
 
 export interface PlayerResponse {
     id: PlayerId;
+    nickname: string;
     pokemons: InGamePokemon[];
     actives: (InGamePokemon | null)[];
     request: boolean;
 }
 
-export type BoardResponse = PlayerResponse[];
+export type BoardResponse = PlayerResponse[]; 

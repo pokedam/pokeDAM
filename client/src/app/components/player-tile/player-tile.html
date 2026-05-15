@@ -21,12 +21,13 @@
   </div>
 
   <div class="pokemon-team">
-    @for (pokemon of player.actives; track pokemon) {
-    @if(pokemon){
-    <app-pokemon-chip [pokemon]="pokemon" [selectable]="selectableFn(player, pokemon)"
-      (click)="pokemonSelect.emit({player: player, pokemon: pokemon})">
+    @for (pokemon of player.actives.entries(); track pokemon[1]) {
+
+    <app-pokemon-chip [pokemon]="pokemon[1]"
+      [selectionMode]="selectableFn({playerId: player.id, pokemonIdx:  pokemon[0]})"
+      (click)="pokemonSelect.emit({playerId: player.id, pokemonIdx: pokemon[0]})">
     </app-pokemon-chip>
-    }
+
     }
   </div>
 </div>

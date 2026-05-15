@@ -3,6 +3,11 @@
   flex-direction: column;
   gap: 2px;
   font-size: 8px;
+  cursor: pointer;
+  transition: transform 0.1s ease;
+  border-radius: 6px;
+  display: block;
+  padding: 2px;
 }
 
 .pokemon-content {
@@ -36,7 +41,8 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  min-width: 0; /* allows text truncation to work */
+  min-width: 0;
+  /* allows text truncation to work */
   justify-content: center;
 }
 
@@ -73,12 +79,32 @@
   line-height: 1;
 }
 
-.status-chip.par { background-color: #f7d02c; color: #000; }
-.status-chip.dor { background-color: #8fa8dd; color: #000; }
-.status-chip.env { background-color: #a040a0; }
-.status-chip.que { background-color: #ee8130; }
-.status-chip.con { background-color: #f95587; }
-.status-chip.hel { background-color: #96d9d6; color: #000; }
+.status-chip.par {
+  background-color: #f7d02c;
+  color: #000;
+}
+
+.status-chip.dor {
+  background-color: #8fa8dd;
+  color: #000;
+}
+
+.status-chip.env {
+  background-color: #a040a0;
+}
+
+.status-chip.que {
+  background-color: #ee8130;
+}
+
+.status-chip.con {
+  background-color: #f95587;
+}
+
+.status-chip.hel {
+  background-color: #96d9d6;
+  color: #000;
+}
 
 /* Mobile responsiveness: In very narrow columns, stack vertically or make smaller */
 @media (max-width: 480px) {
@@ -86,19 +112,20 @@
     font-size: 6px;
   }
 }
- ::ng-deep app-pokemon-chip {
-  cursor: pointer;
-  transition: transform 0.1s ease;
-  border-radius: 6px;
-  display: block;
-}
 
-:hover {
-  transform: scale(1.02);
-  background-color: rgba(0, 0, 0, 0.02);
+.damageable:hover,
+.selected:hover {
+  transform: scale(1.05);
 }
 
 .selected {
-  background-color: #eef4ff;
+  background-color: green;
+  /*#eef4ff;*/
+  z-index: 10;
+}
+
+.damageable {
+  background-color: red;
+  /*#eef4ff;*/
   z-index: 10;
 }

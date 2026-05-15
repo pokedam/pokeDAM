@@ -1,13 +1,15 @@
-import { Component, OnInit, ChangeDetectorRef, inject } from '@angular/core';
-import { SingleTarget, MultiTarget, InGamePokemon, MovKey, PlayerId, TurnHistory, GameRequest } from 'shared_types';
+import { Component, computed, effect, inject, OnInit, signal } from '@angular/core';
+import { MovKey, PlayerId, TurnHistory, GameRequest, PokemonRef, MovRef, DamageEvent, InGamePokemon, Mov, pokemon as getPokemon, PokemonFainted, GameEnd } from 'shared_types';
 import { PlayerTile } from '../../player-tile/player-tile';
-import { GroupService, Player } from '../../../services/group.service';
+import { Game, GroupService, Player } from '../../../services/group.service';
 import { AuthService } from '../../../services/auth.service';
-import { Dialogue } from '../../dialogue/dialogue';
+import { Dialogue, DialogueSequence } from '../../dialogue/dialogue';
+import { ErrorService } from '../../../services/error.service';
 
-export type Selector = (player: Player, pokemon: InGamePokemon) => boolean;
+export type Selector = (ctx: SelectionContext) => SelectionMode;
+type OnSelection = (ctx: SelectionContext) => InGameState;
 
-type onSelection = (player: Player, pokemon: InGamePokemon) => InGameState;
+export type SelectionMode = 'none' | 'selectable' | 'damageable';
 
 type InGameState =
   | PlayState
@@ -16,13 +18,26 @@ type InGameState =
   | TurnAnimationState
   | SelectionDoneState;
 
+export interface SelectionContext {
+  game: Game;
+  selected: MovRef;
+  target: PokemonRef;
+}
+
 interface PlayState {
   type: 'play';
 }
 
 interface SelectMovState {
   type: 'mov-selection';
-  selectedPokemon: InGamePokemon;
+  selected: number;
+}
+
+interface SelectTargetState {
+  type: 'target-selection';
+  selectableFn: Selector;
+  onSelected: OnSelection;
+  selected: MovRef;
 }
 
 interface SelectionDoneState {
@@ -31,16 +46,40 @@ interface SelectionDoneState {
   isReady: boolean;
 }
 
-interface SelectTargetState {
-  type: 'target-selection';
-  selectableFn: Selector;
-  onSelected: onSelection;
-}
-
 interface TurnAnimationState {
   type: 'turn-result';
   turn: TurnHistory;
 }
+
+interface ContextButtonDescriptor {
+  label: string;
+  action: (() => void) | null;
+}
+
+const SINGLE_ENEMY: (mov: MovRef) => SelectTargetState = (mov) => ({
+  type: 'target-selection',
+  selected: mov,
+  onSelected: (ctx) => ({
+    type: 'selection-done',
+    request: {
+      payload: {
+        pokemonIdx: ctx.target.pokemonIdx,
+        playerId: ctx.target.playerId,
+      },
+      pokemonIdx: ctx.selected.pokemonIdx,
+      movIdx: ctx.selected.movIdx,
+    },
+    isReady: false,
+  }),
+  selectableFn: (ctx) => ctx.selected.playerId !== ctx.target.playerId ? 'damageable' : 'none',
+});
+
+type MovSelectionMap = { [K in MovKey]: (source: MovRef) => InGameState; };
+
+const MOV_MAP: MovSelectionMap = {
+  destructor: SINGLE_ENEMY,
+  other: SINGLE_ENEMY,
+};
 
 @Component({
   selector: 'app-in-game',
@@ -49,177 +88,224 @@ interface TurnAnimationState {
   templateUrl: './in-game.html',
   styleUrl: './in-game.css',
 })
-export class InGame {
-  constructor(private cdr: ChangeDetectorRef) { }
-  state: InGameState = { type: 'play' };
-  //player!: Player;
+export class InGame implements OnInit {
+  state = signal<InGameState>({ type: 'play' });
   currentMenu: 'main' | 'attacks' | 'target-selection' = 'main';
   group = inject(GroupService);
   auth = inject(AuthService);
-  
+  error = inject(ErrorService);
+  game!: Game;
+
+  contextButtonDescriptor = computed<ContextButtonDescriptor | null>(() => {
+    const state = this.state();
+    switch (state.type) {
+      case 'mov-selection':
+      case 'target-selection':
+        return {
+          label: 'Cancel',
+          action: () => this.state.set({ type: 'play' })
+        };
+
+      case 'selection-done':
+        return state.isReady ? {
+          label: 'Done!',
+          action: null,
+        } : {
+          label: 'Ready',
+          action: () => {
+            const current = this.state();
+            if (current.type !== 'selection-done') return;
+            this.group.play(current.request).subscribe({
+              next: () => {
+                const s = this.state();
+                if (s.type !== 'selection-done') return;
+                console.log("READY, play played!");
+                this.state.set({ ...s, isReady: true });
+              },
+              error: (err) => this.error.show(err.message),
+            })
+          }
+        };
+
+
+      default: return null;
+    }
+  });
+
+  constructor() {
+    effect(() => {
+      const turn = this.group.turn();
+      if (turn) {
+        this.state.set({ type: 'turn-result', turn });
+      }
+    });
+  }
+
+  ngOnInit(): void {
+    this.game = this.group.asGame();
+  }
+
   players(): Iterable<Player> {
-    return this.group.asGame().board.values();
+    return this.game.board.values();
   }
 
   player(): Player {
-    return this.group.asGame().board.get(this.auth.auth()!.user.id)!;
+    return this.game.board.get(this.auth.auth()!.user.id)!;
   }
 
-  oops(): Player[] {
-    return Array.from(this.group.asGame().board.values()).filter(p => p.id !== this.auth.auth()!.user.id);
-  }  
+  opponents(): Player[] {
+    return Array.from(this.game.board.values()).filter(p => p.id !== this.auth.auth()!.user.id);
+  }
 
-  getSelector(): Selector{
-    switch (this.state.type) {
-      case 'play': 
-        return (player) => player.id === this.auth.auth()!.user.id;
+  isUser(playerId: PlayerId) {
+    return playerId === this.auth.auth()!.user.id;
+  }
+
+  pokemon(ref: PokemonRef): InGamePokemon {
+    return this.game.board.get(ref.playerId)!.actives[ref.pokemonIdx]!;
+  }
+
+  mov(ref: MovRef): Mov {
+    return this.pokemon(ref).movs[ref.movIdx];
+  }
+
+
+  getSelector(): (ref: PokemonRef) => SelectionMode {
+    const state = this.state();
+    switch (state.type) {
+      case 'play':
+        return (player) => player.playerId === this.auth.auth()!.user.id ? 'selectable' : 'none';
+      case 'selection-done':
+        return state.isReady ? () => 'none' : (player) => player.playerId === this.auth.auth()!.user.id ? 'selectable' : 'none';
       case 'target-selection':
-        return this.state.selectableFn;
-        default:
-          return () => false;
+        const selectableFn = state.selectableFn;
+        const selected = state.selected;
+        return (ref) => selectableFn({
+          game: this.game,
+          selected,
+          target: {
+            playerId: ref.playerId,
+            pokemonIdx: ref.pokemonIdx
+          }
+        });
+      default:
+        return () => 'none';
     }
   }
 
-  onPokemonSelect(event: { player: Player, pokemon: InGamePokemon | null }) {
-    console.log('pokemon select event', event);
-    if (!event.pokemon) return;
+  onPokemonSelect(event: PokemonRef) {
 
-    switch (this.state.type) {
+    const state = this.state();
+    switch (state.type) {
+      case 'selection-done':
+        if (!state.isReady && event.playerId === this.player().id)
+          this.state.set({ type: 'mov-selection', selected: event.pokemonIdx });
+        break;
       case 'play':
-        const player = this.player();
-        console.log('during play', event.player, this.player);
-        if (event.player.id === player.id) {
-          console.log('isHimself', event);
-          this.state = { type: 'mov-selection', selectedPokemon: event.pokemon };
-
-        }
+        if (event.playerId === this.player().id)
+          this.state.set({ type: 'mov-selection', selected: event.pokemonIdx });
+        break;
+      case 'target-selection':
+        const ctx: SelectionContext = {
+          game: this.game,
+          selected: state.selected,
+          target: event
+        };
+        this.state.set(state.onSelected(ctx));
         break;
       default:
         break;
     }
-    // Si ya se ejecutó un ataque, bloqueamos cualquier otra interacción hasta pulsar CANCELAR
-    //if (this.actionExecuted) return;
-
-    // Lógica para cambiar de Pokémon propio (siempre disponible antes de confirmar ataque)
-    // if (event.id === 0) {
-    //   this.selectedOurPokemon = event.pokemon;
-    //   this.selectedMov = null;
-    //   this.selectedTargets = [];
-
-    //   // // Mostramos los ataques del nuevo Pokémon seleccionado
-    //   // if (this.selectedOurPokemon.attacks && this.selectedOurPokemon.attacks.length > 0) {
-    //   //   this.currentMenu = 'attacks';
-    //   // } else {
-    //   //   this.currentMenu = 'main';
-    //   // }
-    //   return;
-    // }
-
-    // Lógica para selección de objetivos enemigos
     if (this.currentMenu === 'target-selection') {
-      // const index = this.selectedTargets.findIndex(p => p === event.pokemon);
-      // if (index > -1) {
-      //   this.selectedTargets.splice(index, 1);
-      // } else {
-      //   if (this.selectedAttack && this.selectedTargets.length < this.selectedAttack.targetCount) {
-      //     this.selectedTargets.push(event.pokemon);
-      //   } 
-      // }
-
-      // if (this.selectedAttack && this.selectedTargets.length === this.selectedAttack.targetCount) {
-      //   // Ejecutamos el ataque con un pequeño delay para que se vea el último objetivo seleccionado
-      //   setTimeout(() => this.confirmAttack(), 200);
-      // }
     }
   }
 
-  // getSelectedPokemonsForTile(id: PlayerId, player: Player): InGamePokemon[] {
-  //   // Si la acción ya se ejecutó o estamos seleccionando objetivos, mostramos los objetivos marcados
-  //   if (this.actionExecuted || this.currentMenu === 'target-selection') {
-  //     if (id !== 0) {
-  //       return this.selectedTargets;
-  //     }
-  //   }
-  //   // Siempre mostramos nuestro Pokémon seleccionado si existe
-  //   if (id == 0 && this.selectedOurPokemon) {
-  //     return [this.selectedOurPokemon];
-  //   }
-  //   return [];
-  // }
-
-  onPokemonButtonClick() {
-    this.currentMenu = 'main';
-    // this.selectedOurPokemon = null;
-    // this.selectedMov = null;
-    // this.selectedTargets = [];
-    // this.actionExecuted = false;
+  executeContextAction(): void {
+    const descriptor = this.contextButtonDescriptor();
+    if (descriptor?.action) {
+      descriptor.action();
+    }
   }
 
-  onAttackSelect(mov: MovKey) {
-    // if (this.actionExecuted) return;
-    // this.selectedMov = mov;
-    // this.currentMenu = 'target-selection';
-    // this.selectedTargets = [];
+
+  onMovSelect(movIdx: number) {
+    const state = this.state();
+    if (state.type !== 'mov-selection') return;
+
+    const pokemonIdx = state.selected;
+    const player = this.player();
+    const mov = player.actives[pokemonIdx]?.movs[movIdx];
+
+    if (!mov || mov.pp == 0) return;
+
+    this.state.set(MOV_MAP[mov.key]({
+      movIdx,
+      playerId: player.id,
+      pokemonIdx
+    }));
   }
 
-  cancelTargetSelection() {
-    this.currentMenu = 'attacks';
-    // this.selectedMov = null;
-    // this.selectedTargets = [];
+  dialogueText = computed<DialogueSequence>(() => {
+    const state = this.state();
+    switch (state.type) {
+      case 'turn-result':
+        return [
+          ...state.turn.flatMap(event => {
+            switch (event.key) {
+              case 'damage': return this.damageDialogue(event);
+              case 'pokemon_fainted': return this.faintedDialogue(event);
+              case 'game_end': return this.gameEndDialogue(event);
+            }
+          }),
+          { type: 'action', action: () => this.state.set({ type: 'play' }) },
+        ];
+      case 'target-selection':
+        return ["Select a target!"];
+      case 'play':
+        return ["Choose your pokemon!"];
+      case 'selection-done':
+        return [state.isReady ? "Waiting for other players..." : "Confirm your selection!"];
+      default: return [];
+    }
+  });
+
+  damageDialogue(event: DamageEvent): DialogueSequence {
+    const mov = this.mov(event.dealer);
+    const dealer = this.pokemon(event.dealer);
+    const target = this.pokemon(event.target);
+
+    const dealerName = dealer.name ?? getPokemon(dealer.pokedexIdx).name;
+    const targetName = target.name ?? getPokemon(target.pokedexIdx).name;
+    const movName = mov.key;
+
+    return [
+      `${dealerName} used ${movName} on ${targetName}!`,
+      {
+        type: 'action', action: () => {
+          target.hp = Math.max(0, target.hp - event.damage.amount);
+        }
+      },
+      { type: 'jump' },
+    ];
+  }
+  faintedDialogue(event: PokemonFainted): DialogueSequence {
+    const pokemon = this.pokemon(event.pokemon);
+    const name = pokemon.name ?? getPokemon(pokemon.pokedexIdx).name;
+
+    return [
+      `${name} was fainted!`,
+      { type: 'jump' },
+    ];
   }
 
-  // Método para confirmar la ejecución de un ataque.
-  // En lugar de un alert, ahora procesa la acción usando las clases de shared_types.
-  confirmAttack() {
-    // if (!this.selectedMov || this.selectedTargets.length === 0) {
-    //   alert('Selecciona al menos un objetivo.');
-    //   return;
-    // }
+  gameEndDialogue(event: GameEnd): DialogueSequence {
 
-    // // El payload almacenará la información del ataque siguiendo la estructura oficial del juego.
-    // let payload: SingleTarget | MultiTarget;
+    const winner = this.game.board.get(event.winner)!.nickname;
 
-    // // // Lógica para ataques de un solo objetivo (SingleTarget).
-    // // if (this.selectedMov.targetCount === 1) {
-    // //   const target = this.selectedTargets[0];
-    // //   // Buscamos al jugador y al Pokémon dentro del array global para obtener sus índices.
-    // //   const playerIdx = this.players.findIndex(p => p.activePokemons.includes(target));
-    // //   const pokemonIdx = this.players[playerIdx].activePokemons.indexOf(target);
-
-    // //   // Construimos el objeto SingleTarget con los índices encontrados.
-    // //   payload = {
-    // //     playerIdx,
-    // //     pokemonIdx
-    // //   };
-
-    // //   console.log(`Confirmando acción de objetivo único: ${this.selectedMov.name}`, payload);
-    // // }
-    // // // Lógica para ataques de múltiples objetivos (MultiTarget).
-    // // else {
-    // //   // Mapeamos cada Pokémon seleccionado a su correspondiente índice de jugador y Pokémon.
-    // //   const targets: SingleTarget[] = this.selectedTargets.map(target => {
-
-    // //     const playerIdx = this.players.findIndex(p => p.activePokemons.includes(target));
-    // //     const pokemonIdx = this.players[playerIdx].activePokemons.indexOf(target);
-    // //     return {
-    // //       playerIdx,
-    // //       pokemonIdx
-    // //     };
-    // //   });
-
-    // //   // Construimos el objeto MultiTarget que agrupa todos los objetivos.
-    // //   payload = {
-    // //     targets
-    // //   };
-
-    // //   console.log(`Confirmando acción multi-objetivo: ${this.selectedMov.name}`, payload);
-    // // }
-
-    // // Activamos el flag para mostrar el botón CANCELAR inmediatamente.
-    // this.actionExecuted = true;
-    // this.currentMenu = 'main';
-
-    // // Forzamos la detección de cambios para que el botón aparezca sin necesidad de otro click
-    // this.cdr.detectChanges();
+    return [
+      'Match has ended!',
+      { type: 'jump', },
+      `${winner} wins!`,
+    ];
   }
 }

@@ -60,6 +60,7 @@ public class Pokemon {
         pokemon.iv.spAttack = 0;
         pokemon.iv.spDefense = 0;
         pokemon.iv.speed = 0;
+        pokemon.movs.add("destructor");
         return pokemon;
     }
 
