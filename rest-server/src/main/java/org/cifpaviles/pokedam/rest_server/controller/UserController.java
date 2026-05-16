@@ -7,9 +7,9 @@ import java.util.Objects;
 import org.cifpaviles.pokedam.rest_server.entity.Pokemon;
 import org.cifpaviles.pokedam.rest_server.exception.ApiException;
 import org.cifpaviles.pokedam.rest_server.models.PokemonResponse;
-import org.cifpaviles.pokedam.rest_server.models.PokemonResponseFull;
+import org.cifpaviles.pokedam.rest_server.models.PokemonTeamResponse;
 import org.cifpaviles.pokedam.rest_server.models.UserChangeRequest;
-import org.cifpaviles.pokedam.rest_server.models.PlayerGameResponse;
+import org.cifpaviles.pokedam.rest_server.models.PlayerTeamResponse;
 import org.cifpaviles.pokedam.rest_server.models.UserResponse;
 import org.cifpaviles.pokedam.rest_server.repository.PokemonRepository;
 import org.cifpaviles.pokedam.rest_server.repository.UserRepository;
@@ -109,17 +109,17 @@ public class UserController {
     }
 
     @GetMapping("/{userId}/game")
-    public ResponseEntity<PlayerGameResponse> getActivePokemons(@PathVariable("userId") Long userId) {
+    public ResponseEntity<PlayerTeamResponse> getActivePokemons(@PathVariable("userId") Long userId) {
         List<Pokemon> list = pokemonRepository.findAllByOwnerIdAndIsActiveTrue(userId);
-        PokemonResponseFull[] pokemons = new PokemonResponseFull[list.size()];
+        PokemonTeamResponse[] pokemons = new PokemonTeamResponse[list.size()];
 
         for (int i = 0; i < list.size(); i++) {
             var pokemon = list.get(i);
-            PokemonResponseFull dto = new PokemonResponseFull(pokemon);
+            PokemonTeamResponse dto = new PokemonTeamResponse(pokemon);
             pokemons[i] = dto;
         }
 
-        PlayerGameResponse response = new PlayerGameResponse();
+        PlayerTeamResponse response = new PlayerTeamResponse();
         response.pokemons = pokemons;
         response.nickname = userRepository.getReferenceById(userId).nickname;
 

@@ -39,9 +39,19 @@
         </div>
       </div>
       }
-      @else{
-      <app-dialogue [sequence]="dialogueText()"></app-dialogue>
+      @else {
+      <app-dialogue [sequence]="dialogueText"></app-dialogue>
       }
     </div>
   </div>
 </div>
+
+@if(winnerName() !== null) {
+<div class="winner-modal-overlay">
+  <div class="retro-box winner-modal-content" [class.loser]="!isWinner()">
+    <div class="winner-title">{{ isWinner() ? 'VICTORY!' : 'DEFEAT!' }}</div>
+    <div class="winner-name">{{ isWinner() ? 'YOU WINS!' : winnerName() + ' WINS!' }}</div>
+    <button class="retro-btn winner-btn" (click)="closeWinnerModal()">CONTINUE</button>
+  </div>
+</div>
+}

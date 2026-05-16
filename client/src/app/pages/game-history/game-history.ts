@@ -1,11 +1,14 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ContentHeader } from '../../components/content-header/content-header';
 import { AuthService } from '../../services/auth.service';
+import { HistoryService } from '../../services/history.service';
+import { ErrorService } from '../../services/error.service';
+import { pokemon as getPokemon } from 'shared_types';
 
 interface GameRecord {
   id: number;
-  opponent: string;
+  message: string;
   result: 'win' | 'loss' | 'draw';
   date: Date;
   pokemonUsed: string[];
@@ -20,27 +23,50 @@ interface GameRecord {
 })
 export class GameHistory implements OnInit {
   authService = inject(AuthService);
+  historyService = inject(HistoryService);
+  error = inject(ErrorService);
 
-  games: GameRecord[] = [
-    // Mock data
-    {
-      id: 1,
-      opponent: 'Ash',
-      result: 'win',
-      date: new Date('2023-10-01'),
-      pokemonUsed: ['Pikachu', 'Charizard']
-    },
-    {
-      id: 2,
-      opponent: 'Misty',
-      result: 'loss',
-      date: new Date('2023-10-02'),
-      pokemonUsed: ['Squirtle', 'Blastoise']
-    },
-    // Add more mock data as needed
-  ];
+  games = signal<GameRecord[]>([]);
+  loading = signal(true);
 
   ngOnInit(): void {
-    // TODO: Fetch real game history from backend
+    this.historyService.getGames().subscribe({
+      next: (summaries) => {
+        const userId = this.authService.auth()?.user.id;
+        if (userId === undefined) return;
+        console.log("found history!");
+        this.games.set(summaries.map((s, index) => {
+          const me = s.initialGame.find(p => p.id === userId);
+          const opponent = s.initialGame.find(p => p.id !== userId);
+
+
+          let result: 'win' | 'loss' | 'draw';
+          let message: string;
+          if (s.end.winner === null) {
+            result = 'draw';
+            message = '';
+          } else if (s.end.winner === userId) {
+            result = 'win';
+            message = 'Winner!';
+          } else {
+            result = 'loss';
+            message = `vs ${s.initialGame.find(p => p.id === s.end.winner)?.nickname ?? 'Unknown'}`;
+          }
+
+          const pokemonUsed = me?.pokemons.slice(0, 3).map(p => p.name || getPokemon(p.pokedexIdx).name) || [];
+
+          return {
+            id: index,
+            message,
+            result,
+            date: s.date ? new Date(s.date) : new Date(),
+            pokemonUsed
+          };
+        }));
+        console.log("UPDATE COMPLETED", this.games());
+        this.loading.set(false);
+      },
+      error: (err) => this.error.show(err.message),
+    });
   }
 }

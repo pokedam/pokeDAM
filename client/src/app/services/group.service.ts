@@ -1,8 +1,22 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { SocketService } from './socket.service';
 import { AuthService } from './auth.service';
-import { GameRequest, GameResponse, GroupId, InGamePokemon, InLobbyEvent, LobbyCreatedResponse, LobbyCreationRequest, LobbyJoinRequest, LobbyResponse, PlayerId, PlayerResponse, TurnHistory } from 'shared_types';
+import {
+    PlayRequest,
+    GameGroupResponse,
+    GroupId,
+    InGamePokemon,
+    InLobbyEvent,
+    LobbyCreationRequest,
+    LobbyJoinRequest,
+    LobbyResponse,
+    PlayerId,
+    TurnHistory,
+    LobbyPlayer,
+    TurnCompletedEvent
+} from 'shared_types';
 import { map, Observable, switchMap, tap } from 'rxjs';
+import { ErrorService } from './error.service';
 
 export type Group = Lobby | Game;
 
@@ -10,8 +24,7 @@ export interface Lobby {
     type: 'lobby';
     id: string;
     name: string;
-    hostId: PlayerId;
-    hostNickname: string;
+    host: LobbyPlayer;
     joiners: Map<PlayerId, Joiner>;
     maxPlayers: number;
 }
@@ -39,14 +52,17 @@ export interface Joiner {
 export class GroupService {
     private auth = inject(AuthService);
     private socket = inject(SocketService);
+    private error = inject(ErrorService);
 
     private _group = signal<Group | null>(null, { equal: (_, __) => false });
-    private _turn = signal<TurnHistory | null>(null);
+    private _turn = signal<TurnCompletedEvent | null>(null);
 
     group = this._group.asReadonly();
     turn = this._turn.asReadonly();
 
-    restoreGame(res: GameResponse) {
+    restoreGame(res: GameGroupResponse) {
+        console.log(res);
+        this.subscribeToLobby(res.id);
         this._group.set({
             type: 'game',
             id: res.id,
@@ -72,7 +88,7 @@ export class GroupService {
         // Since we need to subscribe ourself to the lobby room and we need to have an id to active the subscription
         // 1.- We create the lobby, which returns only the lobby id
         // 2.- We subscribe to the lobby changes using the id
-        // 3.- We retrieve the lobby info to populate after being subscribed, avoiding data races
+        // 3.- We retrieve the lobby from the server since someone else could have joined during previous steps.
         return this.socket.emit<LobbyCreationRequest, Lobby>('lobby.create', { name, password }).pipe(
             switchMap(res => {
                 this.subscribeToLobby(res.id);
@@ -85,6 +101,7 @@ export class GroupService {
         this.subscribeToLobby(lobbyId);
         return this.socket.emit<LobbyJoinRequest, LobbyResponse>('lobby.join', { id: lobbyId, password, }).pipe(
             map(data => {
+
                 const lobby: Lobby = {
                     type: 'lobby',
                     id: lobbyId,
@@ -138,17 +155,34 @@ export class GroupService {
                         if (!lobby || lobby.type === 'game') return lobby;
 
                         lobby.joiners.delete(event.id);
-                        return event.id == this.auth.auth()!.user.id ? null : lobby;
+                        return lobby;
                     });
+                    break;
+
+                case 'kick':
+                    this._group.update(lobby => {
+                        if (!lobby || lobby.type === 'game') return lobby;
+
+                        lobby.joiners.delete(event.id);
+                        if (event.id == this.auth.auth()!.user.id) {
+                            this.error.show("You have been kicked");
+                            this.socket.off(`lobby.${lobby.id}.event`);
+                            return null;
+                        }
+                        return lobby;
+                    });
+
                     break;
                 case 'host left':
                     this._group.update(lobby => {
                         if (!lobby || lobby.type !== 'lobby') return lobby;
                         if (!event.newHostId) return null;
 
-                        const leftId = lobby.hostId;
-                        lobby.hostId = event.newHostId;
-                        lobby.hostNickname = lobby.joiners.get(event.newHostId)!.nickname;
+                        const leftId = lobby.host.id;
+                        lobby.host = {
+                            id: event.newHostId,
+                            nickname: lobby.joiners.get(event.newHostId)!.nickname,
+                        };
                         lobby.joiners.delete(event.newHostId);
                         return leftId == this.auth.auth()!.user.id ? null : lobby;
                     });
@@ -169,7 +203,9 @@ export class GroupService {
                     })
                     break;
                 case 'turn':
-                    this._turn.set(event.turn);
+                    this._turn.set(event);
+                    if (event.gameEnd)
+                        this.socket.off(`lobby.${lobbyId}.event`);
                     break;
             }
         });
@@ -179,10 +215,14 @@ export class GroupService {
         return this.socket.emit<void, void>('lobby.leave').pipe(
             tap(_ => {
                 let id = this._group()?.id;
-                if (id) this.socket.off(id);
+                if (id) this.socket.off(`lobby.${id}.event`);
             })
         );
 
+    }
+
+    leaveEndedGame() {
+        this._group.set(null);
     }
 
     setReady(isReady: boolean): Observable<void> {
@@ -191,7 +231,7 @@ export class GroupService {
     }
 
 
-    play(request: GameRequest): Observable<void> {
+    play(request: PlayRequest): Observable<void> {
         return this.socket.emit('lobby.play', request);
         //this.socket.emit('lobby.ready', isReady, (res: Result<void>) => this.errorService.unwrap<void>(res));
     }

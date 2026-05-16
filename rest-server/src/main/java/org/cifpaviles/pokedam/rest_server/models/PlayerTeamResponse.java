@@ -1,6 +1,6 @@
 package org.cifpaviles.pokedam.rest_server.models;
 
-public class PlayerGameResponse {
+public class PlayerTeamResponse {
     public String nickname;
-    public PokemonResponseFull[] pokemons;
+    public PokemonTeamResponse[] pokemons;
 }

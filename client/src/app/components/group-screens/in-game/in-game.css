@@ -19,7 +19,7 @@
     max-height: 50vh;
   }
 
-  .players-grid > * {
+  .players-grid>* {
     flex-shrink: 0;
   }
 }
@@ -161,3 +161,88 @@
     width: 100%;
   }
 } */
+
+/* Winner Modal Styles */
+.winner-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.75);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.winner-modal-content {
+  width: 90%;
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 40px;
+  gap: 30px;
+  transform: scale(0.8);
+  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes popIn {
+  to {
+    transform: scale(1);
+  }
+}
+
+.winner-title {
+  font-size: 20px;
+  color: var(--pkmn-gb-dark);
+}
+
+.winner-name {
+  font-size: 36px;
+  color: var(--pkmn-red);
+  text-shadow: 2px 2px 0px var(--pkmn-gb-dark);
+  animation: pulseColor 2s infinite alternate;
+}
+
+@keyframes pulseColor {
+  0% {
+    color: var(--pkmn-red);
+  }
+
+  100% {
+    color: var(--pkmn-gold);
+  }
+}
+
+.winner-btn {
+  font-size: 16px;
+  padding: 15px 30px;
+  margin-top: 20px;
+}
+
+
+.winner-modal-content.loser .winner-title {
+  color: #3a4a5a;
+}
+
+.winner-modal-content.loser .winner-name {
+  color: #4a5a6a;
+  text-shadow: 2px 2px 0px #1a2a3a;
+  animation: none;
+  font-size: 22px;
+  /* Slightly smaller for loser */
+}

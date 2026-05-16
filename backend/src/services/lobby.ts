@@ -1,21 +1,20 @@
 import type {
     GroupId,
-    GroupResponse,
     Id,
     LobbyCreationRequest,
     LobbyJoinRequest,
     LobbyResponse,
     LobbyViewResponse as LobbyViewResponse,
     PlayerId,
-    Result
+    Result,
+    LobbyPlayer
 } from 'shared_types';
 import { result } from 'shared_types';
 import * as store from "./store.js";
 export interface Lobby {
     name: string;
     password?: string | null;
-    hostId: PlayerId;
-    hostNickname: string;
+    host: LobbyPlayer;
     joiners: Map<PlayerId, Joiner>;
     maxPlayers: number;
 }
@@ -53,20 +52,19 @@ export function get(id: Id): Result<LobbyResponse> {
 
 
 
-export function create(hostId: PlayerId, nickname: string, request: LobbyCreationRequest, maxPlayers: number = 8): LobbyViewResponse {
-    if (store.groups.get(hostId)) throw result.conflict(`Player is already in a lobby`);
+export function create(host: LobbyPlayer, request: LobbyCreationRequest, maxPlayers: number = 8): LobbyViewResponse {
+    if (store.groups.get(host.id)) throw result.conflict(`Player is already in a lobby`);
 
     const lobby = {
         name: request.name,
         password: request.password,
-        hostId,
-        hostNickname: nickname,
+        host,
         joiners: new Map(),
         maxPlayers
     };
 
     const lobbyId = store.lobbies.set(lobby);
-    store.players.set(hostId, lobbyId);
+    store.players.set(host.id, lobbyId);
     return toViewResponse(lobbyId, lobby);
 }
 
@@ -106,7 +104,7 @@ export function kick(targetId: PlayerId, playerId: PlayerId): LeftResponse {
     const lobby = store.lobbies.get(targetId);
     if (!lobby) throw result.conflict(`Cannot kick player: Associated lobby is not available`);
 
-    if (lobby.hostId !== playerId) throw result.forbidden(`Cannot kick player: You are not the host of their current lobby`);
+    if (lobby.host.id !== playerId) throw result.forbidden(`Cannot kick player: You are not the host of their current lobby`);
 
     return leaveInternal(targetId, lobbyId, lobby);
 }
@@ -115,15 +113,12 @@ export function leaveInternal(playerId: PlayerId, lobbyId: GroupId, lobby: Lobby
 
     store.players.delete(playerId);
 
-    if (lobby.hostId === playerId) {
+    if (lobby.host.id === playerId) {
         const iterator = lobby.joiners.entries().next();
 
         if (!iterator.done) {
             const [newHostId, newHost] = iterator.value;
-
-            lobby.hostId = newHostId;
-            lobby.hostNickname = newHost.nickname;
-
+            lobby.host = { id: newHostId, nickname: newHost.nickname };
             lobby.joiners.delete(newHostId);
             return { type: 'host', newHostId, lobbyId, playerCount: lobby.joiners.size + 1 };
         }
@@ -154,14 +149,11 @@ export function isReady(playerId: PlayerId, isReady: boolean): string {
 
 export function toResponse(lobby: Lobby): LobbyResponse {
     return {
-        name: lobby.name,
-        hostId: lobby.hostId,
-        hostNickname: lobby.hostNickname,
+        ...lobby,
         joiners: Array.from(lobby.joiners.entries()).map(([id, player]) => ({
             id,
             ...player,
         })),
-        maxPlayers: lobby.maxPlayers,
     };
 }
 

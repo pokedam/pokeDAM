@@ -17,7 +17,7 @@
             <li>
                 <div class="player-state host"></div>
                 <span class="player-name">
-                    {{ currentLobby.hostNickname }} <span>[HOST]</span>
+                    {{ currentLobby.host.nickname }} <span>[HOST]</span>
                 </span>
             </li>
             @for (entry of currentLobby.joiners.entries(); track entry[0]) {

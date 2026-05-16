@@ -1,5 +1,18 @@
 import { Component, computed, effect, inject, OnInit, signal } from '@angular/core';
-import { MovKey, PlayerId, TurnHistory, GameRequest, PokemonRef, MovRef, DamageEvent, InGamePokemon, Mov, pokemon as getPokemon, PokemonFainted, GameEnd } from 'shared_types';
+import {
+  MovKey,
+  PlayerId,
+  PlayRequest,
+  PokemonRef,
+  MovRef,
+  DamageEvent,
+  InGamePokemon,
+  Mov,
+  pokemon as getPokemon,
+  PokemonFainted,
+  TurnCompletedEvent,
+  GameEndEvent
+} from 'shared_types';
 import { PlayerTile } from '../../player-tile/player-tile';
 import { Game, GroupService, Player } from '../../../services/group.service';
 import { AuthService } from '../../../services/auth.service';
@@ -42,13 +55,13 @@ interface SelectTargetState {
 
 interface SelectionDoneState {
   type: 'selection-done';
-  request: GameRequest;
+  request: PlayRequest;
   isReady: boolean;
 }
 
 interface TurnAnimationState {
   type: 'turn-result';
-  turn: TurnHistory;
+  event: TurnCompletedEvent;
 }
 
 interface ContextButtonDescriptor {
@@ -95,6 +108,8 @@ export class InGame implements OnInit {
   auth = inject(AuthService);
   error = inject(ErrorService);
   game!: Game;
+  winnerName = signal<string | null>(null);
+  isWinner = signal<boolean>(false);
 
   contextButtonDescriptor = computed<ContextButtonDescriptor | null>(() => {
     const state = this.state();
@@ -136,7 +151,7 @@ export class InGame implements OnInit {
     effect(() => {
       const turn = this.group.turn();
       if (turn) {
-        this.state.set({ type: 'turn-result', turn });
+        this.state.set({ type: 'turn-result', event: turn });
       }
     });
   }
@@ -216,8 +231,6 @@ export class InGame implements OnInit {
       default:
         break;
     }
-    if (this.currentMenu === 'target-selection') {
-    }
   }
 
   executeContextAction(): void {
@@ -250,14 +263,15 @@ export class InGame implements OnInit {
     switch (state.type) {
       case 'turn-result':
         return [
-          ...state.turn.flatMap(event => {
+          ...state.event.history.flatMap(event => {
             switch (event.key) {
               case 'damage': return this.damageDialogue(event);
               case 'pokemon_fainted': return this.faintedDialogue(event);
-              case 'game_end': return this.gameEndDialogue(event);
             }
           }),
-          { type: 'action', action: () => this.state.set({ type: 'play' }) },
+          ...state.event.gameEnd
+            ? this.gameEndDialogue(state.event.gameEnd)
+            : this.playDialogue(),
         ];
       case 'target-selection':
         return ["Select a target!"];
@@ -298,14 +312,33 @@ export class InGame implements OnInit {
     ];
   }
 
-  gameEndDialogue(event: GameEnd): DialogueSequence {
+  gameEndDialogue(event: GameEndEvent): DialogueSequence {
+    if (!event.winner) throw Error("Unimplemented");
 
     const winner = this.game.board.get(event.winner)!.nickname;
+    const isWinner = event.winner === this.player().id;
 
     return [
       'Match has ended!',
       { type: 'jump', },
       `${winner} wins!`,
+      { type: 'action', action: () => this.openWinnerModal(winner, isWinner) }
     ];
   }
+
+  playDialogue(): DialogueSequence {
+    return [{ type: 'action', ignoreOnFlush: true, action: () => this.state.set({ type: 'play' }) }]
+  }
+
+  openWinnerModal(winner: string, isWinner: boolean) {
+    this.winnerName.set(winner);
+    this.isWinner.set(isWinner);
+  }
+
+  closeWinnerModal() {
+    this.winnerName.set(null);
+    this.isWinner.set(false);
+    this.group.leaveEndedGame();
+  }
+
 }

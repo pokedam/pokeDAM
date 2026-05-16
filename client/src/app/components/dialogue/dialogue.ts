@@ -6,8 +6,10 @@ import {
   SimpleChanges,
   OnDestroy,
   signal,
-  ViewChild,
   ElementRef,
+  Signal,
+  effect,
+  viewChild,
 } from '@angular/core';
 
 // ---------------------------------------------------------------------------
@@ -19,7 +21,7 @@ export type DialogueStep =
   | { type: 'text'; value: string; speed?: number }
   | { type: 'pause'; duration: number }
   | { type: 'jump' }
-  | { type: 'action'; action: () => void };
+  | { type: 'action'; ignoreOnFlush?: boolean; action: () => void };
 
 export type DialogueSequence = DialogueStep[];
 
@@ -37,6 +39,7 @@ interface PauseMarker {
 interface ActionMarker {
   charIndex: number;
   action: () => void;
+  ignoreOnFlush: boolean;
 }
 
 /** A speed-change marker within a page's character stream. */
@@ -59,7 +62,7 @@ const DEFAULT_SPEED = 40;
 type Atom =
   | { kind: 'word'; text: string; width: number; speed?: number }
   | { kind: 'pause'; duration: number }
-  | { kind: 'action'; action: () => void };
+  | { kind: 'action'; ignoreOnFlush: boolean; action: () => void };
 
 /** A word placed on a line, remembering its atom index. */
 interface PlacedWord {
@@ -75,11 +78,11 @@ type Line = string[];
   templateUrl: './dialogue.html',
   styleUrl: './dialogue.css',
 })
-export class Dialogue implements OnChanges, OnDestroy {
-  @Input() text: string = '';
-  @Input() sequence: DialogueSequence = [];
+export class Dialogue implements OnDestroy {
 
-  @ViewChild('measureContainer') measureContainer!: ElementRef<HTMLParagraphElement>;
+  @Input() sequence!: Signal<DialogueSequence>;
+
+  measureContainer = viewChild<ElementRef<HTMLParagraphElement>>('measureContainer');
 
   displayedText = signal<string>('');
   isPageComplete = signal<boolean>(false);
@@ -97,12 +100,42 @@ export class Dialogue implements OnChanges, OnDestroy {
   private currentActionIdx: number = 0;
   private currentSpeed: number = DEFAULT_SPEED;
 
-  ngOnChanges(changes: SimpleChanges) {
-    if (changes['sequence'] && this.sequence.length > 0) {
-      setTimeout(() => this.buildAndStart(), 0);
-    } else if (changes['text'] && this.text) {
-      setTimeout(() => this.buildAndStart(), 0);
-    }
+  // ngOnChanges(changes: SimpleChanges) {
+  //   if (changes['sequence'] && this.sequence.length > 0) {
+  //     setTimeout(() => this.buildAndStart(), 0);
+  //   } else if (changes['text'] && this.text) {
+  //     setTimeout(() => this.buildAndStart(), 0);
+  //   }
+  // }
+  private isFlushing = false;
+
+  constructor() {
+    effect(() => {
+      const seq = this.sequence();
+      if (this.isFlushing) {
+        for (const step of seq)
+          if (typeof step === 'object' && step.type === 'action' && !step.ignoreOnFlush)
+            queueMicrotask(() => step.action());
+
+        return;
+      }
+      console.log("Received sequence", seq);
+      this.isFlushing = true;
+
+      const curr = this.pages[this.currentPageIndex];
+      if (curr)
+        for (const action of curr.actions.slice(this.currentActionIdx))
+          if (!action.ignoreOnFlush)
+            queueMicrotask(() => action.action());
+
+      for (const step of this.pages.slice(this.currentPageIndex + 1))
+        for (const action of step.actions)
+          if (!action.ignoreOnFlush)
+            queueMicrotask(() => action.action());
+      this.isFlushing = false;
+      this.buildAndStart(seq);
+
+    });
   }
 
   ngOnDestroy() {
@@ -118,9 +151,9 @@ export class Dialogue implements OnChanges, OnDestroy {
     return typeof step === 'string' ? { type: 'text', value: step } : step;
   }
 
-  private normaliseSequence(): Exclude<DialogueStep, string>[] {
-    if (this.sequence.length > 0) return this.sequence.map(s => this.normaliseStep(s));
-    if (this.text) return [{ type: 'text', value: this.text }];
+  private normaliseSequence(sequence: DialogueSequence): Exclude<DialogueStep, string>[] {
+    if (sequence.length > 0) return sequence.map(s => this.normaliseStep(s));
+    //if (this.text) return [{ type: 'text', value: this.text }];
     return [];
   }
 
@@ -128,11 +161,11 @@ export class Dialogue implements OnChanges, OnDestroy {
   // Build pages from the sequence
   // ---------------------------------------------------------------------------
 
-  buildAndStart() {
-    const el = this.measureContainer?.nativeElement;
+  buildAndStart(sequence: DialogueSequence) {
+    const el = this.measureContainer()?.nativeElement;
     if (!el) return;
 
-    const seq = this.normaliseSequence();
+    const seq = this.normaliseSequence(sequence);
     if (seq.length === 0) return;
 
     // --- Text-measurement setup -------------------------------------------
@@ -183,7 +216,7 @@ export class Dialogue implements OnChanges, OnDestroy {
         } else if (step.type === 'pause') {
           atoms.push({ kind: 'pause', duration: step.duration });
         } else if (step.type === 'action') {
-          atoms.push({ kind: 'action', action: step.action });
+          atoms.push({ kind: 'action', ignoreOnFlush: step.ignoreOnFlush ?? false, action: step.action });
         }
       }
 
@@ -230,7 +263,7 @@ export class Dialogue implements OnChanges, OnDestroy {
           for (let a = 0; a < firstWordIdx; a++) {
             const atom = atoms[a];
             if (atom.kind === 'pause') pauseMarkers.push({ charIndex: 0, duration: atom.duration });
-            else if (atom.kind === 'action') actionMarkers.push({ charIndex: 0, action: atom.action });
+            else if (atom.kind === 'action') actionMarkers.push({ charIndex: 0, ignoreOnFlush: atom.ignoreOnFlush, action: atom.action });
           }
         }
 
@@ -266,7 +299,7 @@ export class Dialogue implements OnChanges, OnDestroy {
               if (atom.kind === 'pause') {
                 pauseMarkers.push({ charIndex: charPos, duration: atom.duration });
               } else if (atom.kind === 'action') {
-                actionMarkers.push({ charIndex: charPos, action: atom.action });
+                actionMarkers.push({ charIndex: charPos, ignoreOnFlush: atom.ignoreOnFlush, action: atom.action });
               }
             }
 
@@ -289,7 +322,7 @@ export class Dialogue implements OnChanges, OnDestroy {
         const actionMarkers: ActionMarker[] = [];
         for (const atom of atoms) {
           if (atom.kind === 'pause') pauseMarkers.push({ charIndex: 0, duration: atom.duration });
-          else if (atom.kind === 'action') actionMarkers.push({ charIndex: 0, action: atom.action });
+          else if (atom.kind === 'action') actionMarkers.push({ charIndex: 0, ignoreOnFlush: atom.ignoreOnFlush, action: atom.action });
         }
         this.pages.push({ content: '', pauses: pauseMarkers, speeds: [], actions: actionMarkers });
       }
@@ -363,7 +396,7 @@ export class Dialogue implements OnChanges, OnDestroy {
         const actionMarker = page.actions[this.currentActionIdx];
         if (this.currentCharIndex >= actionMarker.charIndex) {
           this.currentActionIdx++;
-          actionMarker.action();
+          queueMicrotask(() => actionMarker.action());
         }
       }
 
@@ -395,7 +428,8 @@ export class Dialogue implements OnChanges, OnDestroy {
     if (this.currentPageIndex < this.pages.length) {
       const page = this.pages[this.currentPageIndex];
       for (let i = this.currentActionIdx; i < page.actions.length; i++) {
-        page.actions[i].action();
+        const a = page.actions[i];
+        queueMicrotask(() => a.action());
       }
       this.currentActionIdx = page.actions.length;
     }

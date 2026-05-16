@@ -32,18 +32,6 @@ export interface PokemonResponse {
     isActive: boolean;
 }
 
-export interface PlayerGameResponse {
-    nickname: string;
-    pokemons: PokemonResponseFull[];
-}
-
-export interface PokemonResponseFull {
-    id: number;
-    name: string | null;
-    pokedexIdx: number;
-    movs: MovKey[];
-    iv: Stats;
-}
 
 // @ts-ignore: Auto-generated import.
 import __pokemons from './generated/pokemon.json';

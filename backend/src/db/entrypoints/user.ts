@@ -1,5 +1,5 @@
 import { api } from '../client.js';
-import type { User, UserChangeRequest, PokemonResponse, PokemonResponseFull, PlayerGameResponse } from 'shared_types';
+import type { User, UserChangeRequest, PokemonResponse, StartGamePlayer } from 'shared_types';
 
 export function get(userId: number): Promise<User> {
     return api.get<User>(`/user/${userId}`);
@@ -18,6 +18,6 @@ export function setPokemons(userId: number, req: number[]): Promise<void> {
     return api.patch(`/user/${userId}/pokemons`, req);
 }
 
-export function getGamePlayer(userId: number): Promise<PlayerGameResponse> {
-    return api.get<PlayerGameResponse>(`/user/${userId}/game`);
+export function getStartGamePlayer(userId: number): Promise<StartGamePlayer> {
+    return api.get<StartGamePlayer>(`/user/${userId}/game`);
 }

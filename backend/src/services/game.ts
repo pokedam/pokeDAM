@@ -1,20 +1,22 @@
 import {
     mov,
-    type BoardResponse,
+    type InGame,
     type GameHistory,
-    type GameRequest,
+    type PlayRequest,
     type GroupId,
     type Id,
     type InGamePokemon,
     type MovKey,
     type MovMap,
     type MovRef,
-    type Player,
     type PlayerId,
     type TurnHistory,
     pokemon as getPokemon,
     addStats,
-    type ValidatedRequest,
+    type GameGroupResponse,
+    type GameEndEvent,
+    type StartGame,
+    type StartGamePlayer,
 } from "shared_types";
 
 import * as store from "./store.js";
@@ -28,7 +30,25 @@ export interface Game {
     turn: number;
 }
 
-export function gameToResponse(game: Game): BoardResponse {
+export interface Player {
+    start: StartGamePlayer,
+    nickname: string;
+    pokemons: InGamePokemon[];
+    actives: (InGamePokemon | null)[];
+    request: ValidatedRequest | null;
+}
+export interface ValidatedRequest extends PlayRequest {
+    priority: number;
+}
+
+export interface TurnResult {
+    groupId: GroupId,
+    game: Game,
+    history: TurnHistory,
+    gameEnd: GameEndEvent | undefined,
+}
+
+export function gameToResponse(game: Game): InGame {
     return Array.from(game.board).map(([id, player]) => ({
         id,
         nickname: player.nickname,
@@ -68,19 +88,19 @@ export const MOV_MAP: MovLogicMap = {
             const pkmn = player.actives[ctx.movRef.pokemonIdx]!;
 
             const opp = ctx.board.get(ctx.payload.playerId)!;
-            const oppPkmn = player.actives[ctx.payload.pokemonIdx]!;
+            const oppPkmn = opp.actives[ctx.payload.pokemonIdx]!;
 
             //Pokemon will not attack if it has fainted during the turn
             if (pkmn.hp <= 0) return;
 
-            oppPkmn.hp = Math.max(0, oppPkmn.hp - 20);
+            oppPkmn.hp = Math.max(0, oppPkmn.hp - 150);
             console.log(`Player ${ctx.movRef.playerId} used Destructor on player ${ctx.payload.playerId}, dealing 20 damage. Opponent HP is now ${oppPkmn.hp}`);
             ctx.history.push({
                 key: 'damage',
                 dealer: ctx.movRef,
                 target: ctx.payload,
                 damage: {
-                    amount: 20,
+                    amount: 150,
                     effectiveness: 1,
                     isCrit: false
                 }
@@ -102,7 +122,7 @@ export const MOV_MAP: MovLogicMap = {
 };
 
 
-export async function create(playerId: Id): Promise<[GroupId, BoardResponse]> {
+export async function create(playerId: Id): Promise<GameGroupResponse> {
     const groupId = store.lobbies.id(playerId);
     if (!groupId) throw new Error(`lobby not found`);
 
@@ -110,9 +130,10 @@ export async function create(playerId: Id): Promise<[GroupId, BoardResponse]> {
     if (!lobby) throw new Error(`Lobby not found`);
 
     const buildBoardEntry = async (playerId: PlayerId): Promise<Player> => {
-        const res = await db.user.getGamePlayer(playerId);
-        console.log("Received pokemons from DB for player", playerId, res);
-        const pokemons: InGamePokemon[] = res.pokemons.map(pokemon => {
+        console.log("Building board entry for player", playerId);
+        const start = await db.user.getStartGamePlayer(playerId);
+        console.log("Received pokemons from DB for player", playerId, start);
+        const pokemons: InGamePokemon[] = start.pokemons.map(pokemon => {
             const stats = addStats(pokemon.iv, getPokemon(pokemon.pokedexIdx).statsBase);
             return {
                 ...pokemon,
@@ -123,14 +144,15 @@ export async function create(playerId: Id): Promise<[GroupId, BoardResponse]> {
         });
 
         return {
-            nickname: res.nickname,
+            start,
+            nickname: start.nickname,
             pokemons,
             actives: [pokemons[0] ?? null, pokemons[1] ?? null, pokemons[2] ?? null],
             request: null,
         };
     };
 
-    const playerIds = [lobby.hostId, ...lobby.joiners.keys()];
+    const playerIds = [lobby.host.id, ...lobby.joiners.keys()];
     const boardArray: Player[] = await Promise.all(playerIds.map(playerId => buildBoardEntry(playerId)));
     const game: Game = {
         board: new Map(boardArray.map((data, idx) => [playerIds[idx]!, data])),
@@ -138,11 +160,13 @@ export async function create(playerId: Id): Promise<[GroupId, BoardResponse]> {
         turn: 0
     };
     store.games.set(game, groupId);
-
-    return [groupId, gameToResponse(game)];
+    return {
+        id: groupId,
+        board: gameToResponse(game),
+    };
 }
 
-export function play(id: PlayerId, request: GameRequest): { id: GroupId, turnIdx: number, turn: TurnHistory } | undefined {
+export function play(id: PlayerId, request: PlayRequest): TurnResult | undefined {
     const gameId = store.games.id(id);
     if (!gameId) throw new Error(`Game not found`);
 
@@ -179,16 +203,10 @@ export function play(id: PlayerId, request: GameRequest): { id: GroupId, turnIdx
     for (const p of game.board.values())
         if (!p.request) return;
 
-    const turn = processTurn(game, gameId);
-    return {
-        id: gameId,
-        turnIdx: game.turn,
-        turn,
-    };
+    return processTurn(game, gameId);
 }
 
-export function processTurn(game: Game, id: GroupId): TurnHistory {
-
+export function processTurn(game: Game, id: GroupId): TurnResult {
     game.turn += 1;
 
     const priorityQueue = new FastPriorityQueue<{
@@ -224,12 +242,38 @@ export function processTurn(game: Game, id: GroupId): TurnHistory {
         executeRequest(mov, ctx);
     }
 
+    const gameEnd = isGameCompleted(game);
+    if (gameEnd)
+        store.games.delete(id);
+    else {
+        for (const state of game.board.values())
+            state.request = null;
+    }
+
     game.history.push(history);
 
-    for (const state of game.board.values())
-        state.request = null;
+    return {
+        groupId: id,
+        history,
+        game,
+        gameEnd,
+    };
 
-    return history;
+
+}
+
+function isGameCompleted(game: Game): GameEndEvent | undefined {
+    const alive = Array.from(game.board.entries()).filter(([_, val]) => {
+        for (const pokemon of val.actives)
+            if (pokemon && pokemon.hp > 0)
+                return true;
+
+        return false;
+    });
+
+    if (alive.length > 1) return;
+
+    return { winner: alive[0]?.[0] ?? null }
 
 }
 

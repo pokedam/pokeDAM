@@ -20,7 +20,7 @@ app.use(sanitizer.middleware);
 // Endpoints
 app.use('/auth', endpoints.auth);
 app.use('/user', jwt.middleware, endpoints.user);
-
+app.use('/games', jwt.middleware, endpoints.games);
 // Server inicialization
 const server = http.createServer(app);
 

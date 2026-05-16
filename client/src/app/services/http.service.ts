@@ -1,8 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpContext, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular/common/http';
-import { BehaviorSubject, tap, map, catchError, throwError, Observable, EMPTY, of } from 'rxjs';
-import { ErrorService } from './error.service';
-import shared, { authFactory, JwtAuth, LoginRequest, result, User, UserChangeRequest } from 'shared_types';
+import { catchError, Observable } from 'rxjs';
+import { result } from 'shared_types';
 
 type HttpOptions = {
     headers?: HttpHeaders | Record<string, string | string[]>;

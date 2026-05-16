@@ -1,16 +1,16 @@
 import { Server, Socket } from 'socket.io';
 import { result, type Result, lobbyFactory } from 'shared_types';
 import type {
-    GameRequest,
+    PlayRequest,
     GroupId,
-    GroupResponse,
+    WelcomeResponse,
     LobbyCreatedResponse,
     LobbyCreationRequest,
     LobbyJoinRequest,
     LobbyResponse,
     PlayerId,
     StartGameEvent,
-    TurnCompletedEvent
+    TurnCompletedEvent,
 } from 'shared_types';
 import * as lobbies from './services/lobby.js';
 import * as games from './services/game.js';
@@ -27,7 +27,7 @@ interface Timeout {
     time: number;
 }
 
-const TURN_INTERVAL_MS = 60000;
+const TURN_INTERVAL_MS = 15_000;
 
 const heap = new FastPriorityQueue<Timeout>((a, b) => a.time < b.time);
 let schedulerTimer: NodeJS.Timeout | null = null;
@@ -51,18 +51,30 @@ export function socketsController(io: Server, userId: PlayerId, socket: Socket):
                     continue;
                 }
 
-                const turn = games.processTurn(game, trigger.id);
+                const res = games.processTurn(game, trigger.id);
 
-                heap.add({
-                    id: trigger.id,
-                    time: Date.now() + TURN_INTERVAL_MS,
-                    turn: game.turn,
-                });
                 const event: TurnCompletedEvent = {
                     type: 'turn',
-                    turn,
+                    history: res.history,
+                    gameEnd: res.gameEnd,
                 };
-                io.to(`lobby_${trigger.id}`).emit(`lobby.${trigger.id}.event`, event);
+                const roomId = `lobby_${trigger.id}`;
+                io.to(roomId).emit(`lobby.${trigger.id}.event`, event);
+
+                if (res.gameEnd) {
+                    store.games.delete(trigger.id);
+                    db.games.save({
+                        initialGame: Array.from(game.board.entries()).map(([id, player]) => ({ id, ...player.start })),
+                        history: game.history,
+                        end: res.gameEnd,
+                    });
+                    io.socketsLeave(roomId);
+                } else heap.add({
+                    id: res.groupId,
+                    time: Date.now() + TURN_INTERVAL_MS,
+                    turn: res.game.turn,
+                });
+
             }
             processTimeouts();
 
@@ -73,14 +85,32 @@ export function socketsController(io: Server, userId: PlayerId, socket: Socket):
         callback(lobbies.get(lobbyId))
     );
 
-    socket.on('lobbies.getAll', (callback: Callback<GroupResponse>) =>
-        callback(result.ok(store.welcome(userId)))
-    );
+    socket.on('lobbies.getAll', (callback: Callback<WelcomeResponse>) => {
+        const welcome = store.welcome(userId);
+
+        // If the player is in an active game, re-join the socket room
+        // so they receive turn events after reconnecting.
+
+        if (welcome.game) {
+            const groupId = store.groups.id(userId);
+            if (groupId) {
+                console.log(`[getAll] Re-joining socket ${socket.id} for user ${userId} to room lobby_${groupId}`);
+                socket.join(`lobby_${groupId}`);
+                console.log(`[getAll] Socket rooms:`, Array.from(socket.rooms));
+            } else {
+                console.log(`[getAll] User ${userId} has game but no groupId mapping!`);
+            }
+        } else {
+            console.log(`[getAll] User ${userId} has no active game`);
+        }
+
+        callback(result.ok(welcome));
+    });
 
     socket.on('lobby.create', async (req: LobbyCreationRequest, callback: Callback<LobbyCreatedResponse>) => {
         try {
             const nickname = (await db.user.get(userId)).nickname;
-            const res = lobbies.create(userId, nickname, req);
+            const res = lobbies.create({ id: userId, nickname }, req);
             const lobbyRoom = `lobby_${res.id}`;
             // Subscribimnos al usuario a la socket io room del lobby.
             // Emitimos un evento para notificar que la sala ha sido creada.
@@ -142,18 +172,19 @@ export function socketsController(io: Server, userId: PlayerId, socket: Socket):
     socket.on('lobby.start', async (callback: Callback<void>) => {
         console.log("Game Start requested");
         try {
-            const [id, board] = await games.create(userId);
+            const game = await games.create(userId);
             heap.add({
-                id,
+                id: game.id,
                 time: Date.now() + TURN_INTERVAL_MS,
                 turn: 0,
             });
             processTimeouts();
             const event: StartGameEvent = {
                 type: 'start',
-                board,
+                board: game.board,
             };
-            io.to(`lobby_${id}`).emit(`lobby.${id}.event`, event);
+            io.emit('lobbies.event', lobbyFactory.changedEvent(game.id, 0));
+            io.to(`lobby_${game.id}`).emit(`lobby.${game.id}.event`, event);
             callback(result.ok(undefined));
         } catch (err: any) {
 
@@ -164,21 +195,35 @@ export function socketsController(io: Server, userId: PlayerId, socket: Socket):
         }
     });
 
-    socket.on('lobby.play', (request: GameRequest, callback: Callback<void>) => {
+    socket.on('lobby.play', (request: PlayRequest, callback: Callback<void>) => {
         try {
-            const out = games.play(userId, request);
-            if (out) {
-                heap.add({
-                    id: out.id,
-                    time: Date.now() + TURN_INTERVAL_MS,
-                    turn: out.turnIdx,
-                });
-                processTimeouts();
+            const res = games.play(userId, request);
+            if (res) {
+                const roomId = `lobby_${res.groupId}`;
                 const event: TurnCompletedEvent = {
                     type: 'turn',
-                    turn: out.turn,
+                    history: res.history,
+                    gameEnd: res.gameEnd,
                 };
-                io.to(`lobby_${out.id}`).emit(`lobby.${out.id}.event`, event);
+                const game = res.game;
+                io.to(roomId).emit(`lobby.${res.groupId}.event`, event);
+
+                if (res.gameEnd) {
+                    store.games.delete(res.groupId);
+                    io.socketsLeave(roomId);
+                    db.games.save({
+                        initialGame: Array.from(game.board.entries()).map(([id, player]) => ({ id, ...player.start })),
+                        history: game.history,
+                        end: res.gameEnd,
+                    });
+                    store.games.delete(res.groupId);
+                } else heap.add({
+                    id: res.groupId,
+                    time: Date.now() + TURN_INTERVAL_MS,
+                    turn: game.turn,
+                });
+
+
             }
 
         } catch (e) {

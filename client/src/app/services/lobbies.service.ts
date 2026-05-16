@@ -1,7 +1,7 @@
 import { EffectRef, Injectable, NgZone, effect, inject, signal } from '@angular/core';
 import { Socket } from 'socket.io-client';
 import { Result } from 'shared_types/dist/result';
-import { GroupResponse, LobbiesEvent } from 'shared_types';
+import { WelcomeResponse, LobbiesEvent } from 'shared_types';
 import { ErrorService } from './error.service';
 import { GroupService } from './group.service';
 import { SocketService } from './socket.service';
@@ -65,7 +65,7 @@ export class LobbiesService {
   }
 
   private fetchAll(socket: Socket) {
-    socket.emit('lobbies.getAll', (res: Result<GroupResponse>) => {
+    socket.emit('lobbies.getAll', (res: Result<WelcomeResponse>) => {
       if (res.success) {
         this.zone.run(() => {
           const content = res.content;

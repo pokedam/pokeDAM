@@ -1,7 +1,7 @@
 import { v4 } from "uuid";
 import { toViewResponse, type Lobby } from "./lobby.js";
-import { gameToResponse as toGameResponse, type Game } from "./game.js";
-import type { GameResponse, GroupId, GroupResponse, Id, PlayerId } from "shared_types";
+import { gameToResponse, gameToResponse as toGameResponse, type Game } from "./game.js";
+import type { GameGroupResponse, GroupId, WelcomeResponse, Id, PlayerId } from "shared_types";
 
 export type Group = Lobby | Game;
 
@@ -74,7 +74,7 @@ export const players = {
     delete: (id: PlayerId) => _players.delete(id),
 };
 
-export function welcome(id: Id): GroupResponse {
+export function welcome(id: Id): WelcomeResponse {
 
     return {
         game: getGame(id) ?? null,
@@ -82,13 +82,15 @@ export function welcome(id: Id): GroupResponse {
     };
 }
 
-function getGame(id: Id): GameResponse | undefined {
+function getGame(id: Id): GameGroupResponse | undefined {
     const groupId = groups.id(id);
     if (!groupId) return;
 
     const game = games.get(groupId);
-    if (game) return {
-        id: groupId,
-        board: toGameResponse(game),
-    };
+    if (game) {
+        return {
+            id: groupId,
+            board: gameToResponse(game),
+        };
+    }
 }

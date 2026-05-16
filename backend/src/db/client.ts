@@ -1,6 +1,7 @@
 import axios, { type AxiosRequestConfig, type AxiosResponse } from 'axios';
 import * as auth from './entrypoints/auth.js';
 import * as user from './entrypoints/user.js';
+import * as games from './entrypoints/games.js';
 import { result, type Err, type Result } from 'shared_types';
 
 const REST_SERVER_URL = process.env.MAIN_SERVER_URL ?? fallbackRestServerUrl();
@@ -72,4 +73,5 @@ export const api = {
 export const db = {
     auth,
     user,
+    games,
 };

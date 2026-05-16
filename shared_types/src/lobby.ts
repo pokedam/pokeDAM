@@ -1,25 +1,31 @@
-import { BoardResponse, GroupId, PlayerId, PlayerResponse, TurnHistory } from "./game";
+import { InGame as InGame, GroupId, PlayerId, TurnHistory } from "./game";
 
+// A full lobby state, sent to clients to sync with the server when joining a lobby.
 export interface LobbyResponse {
     name: string;
-    hostId: number;
-    hostNickname: string;
-    joiners: {
-        id: number;
+    host: LobbyPlayer;
+    joiners: (LobbyPlayer & {
         isReady: boolean;
-        nickname: string;
-    }[];
+    })[];
     maxPlayers: number;
 }
 
-export interface GroupResponse {
-    lobbies: LobbyViewResponse[];
-    game: GameResponse | null;
+export interface LobbyPlayer {
+    id: PlayerId;
+    nickname: string;
 }
 
-export interface GameResponse {
+// Initial response when connecting to sockets. 
+// Contains the list of lobbies and the game the player is currently in, if any.
+export interface WelcomeResponse {
+    lobbies: LobbyViewResponse[];
+    game: GameGroupResponse | null;
+}
+
+// A full game response, with it's group id
+export interface GameGroupResponse {
     id: GroupId;
-    board: BoardResponse;
+    board: InGame;
 }
 
 export interface LobbyViewResponse {
@@ -61,6 +67,7 @@ export type InLobbyEvent =
     | PlayerReadyEvent
     | PlayerJoinedEvent
     | PlayerLeftEvent
+    | PlayerKickEvent
     | HostLeftEvent
     | StartGameEvent
     | TurnCompletedEvent;
@@ -82,6 +89,11 @@ export interface PlayerLeftEvent {
     id: PlayerId;
 }
 
+export interface PlayerKickEvent {
+    type: 'kick';
+    id: PlayerId;
+}
+
 export interface HostLeftEvent {
     type: 'host left';
     newHostId: PlayerId | null;
@@ -89,12 +101,17 @@ export interface HostLeftEvent {
 
 export interface StartGameEvent {
     type: "start",
-    board: BoardResponse,
+    board: InGame,
 }
 
 export interface TurnCompletedEvent {
-    type: "turn",
-    turn: TurnHistory
+    type: "turn";
+    history: TurnHistory;
+    gameEnd: GameEndEvent | undefined;
+}
+
+export interface GameEndEvent {
+    winner: PlayerId | null;
 }
 
 export const lobbyFactory = {

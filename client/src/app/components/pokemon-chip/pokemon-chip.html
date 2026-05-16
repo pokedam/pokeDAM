@@ -1,5 +1,4 @@
-<div class="pokemon-entry" [class.selected]="selectionMode === 'selectable'"
-  [class.damageable]="selectionMode === 'damageable'">
+<div class="pokemon-entry" [class.selectable]="selectionMode !== 'none'">
   @if (pokemon) {
   <div class="pokemon-content">
     <div class="pokemon-avatar">
@@ -7,17 +6,10 @@
     </div>
     <div class="pokemon-details">
       <div class="pokemon-name-row">
-        <span class="pokemon-name">{{ name }}</span>
-        <!-- <span class="pokemon-lvl">Lv{{ pokemon.level }}</span> -->
+        <span class="pokemon-name" [class.damageable]="selectionMode === 'damageable'">{{ name }}</span>
       </div>
       <app-life-bar [hp]="pokemon.hp" [maxHp]="pokemon.stats.hp"></app-life-bar>
-      <!-- @if (pokemon.statusConditions.length > 0) {
-      <div class="pokemon-status-row">
-        @for (status of pokemon.statusConditions; track status) {
-        <span class="status-chip" [ngClass]="status.toLowerCase()">{{ status }}</span>
-        }
-      </div>
-      } -->
+
     </div>
   </div>
   }

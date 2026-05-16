@@ -6,8 +6,8 @@ import java.util.List;
 
 import org.cifpaviles.pokedam.rest_server.entity.Stats;
 
-public class PokemonResponseFull {
-    public PokemonResponseFull(Pokemon pokemon) {
+public class PokemonTeamResponse {
+    public PokemonTeamResponse(Pokemon pokemon) {
         id = pokemon.id;
         name = null;
         pokedexIdx = pokemon.pokedexIdx;
