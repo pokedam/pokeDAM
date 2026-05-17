@@ -56,9 +56,27 @@ export class GroupService {
 
     private _group = signal<Group | null>(null, { equal: (_, __) => false });
     private _turn = signal<TurnCompletedEvent | null>(null);
+    private _timeLeft = signal<number>(60);
 
     group = this._group.asReadonly();
     turn = this._turn.asReadonly();
+    timeLeft = this._timeLeft.asReadonly();
+
+    private timerInterval: any;
+
+    private resetTimer() {
+        this._timeLeft.set(59);
+        if (this.timerInterval) clearInterval(this.timerInterval);
+        this.timerInterval = setInterval(() => {
+            if (this._timeLeft() > 0) {
+                this._timeLeft.update(t => t - 1);
+            }
+        }, 1000);
+    }
+
+    private clearTimer() {
+        if (this.timerInterval) clearInterval(this.timerInterval);
+    }
 
     restoreGame(res: GameGroupResponse) {
         console.log(res);
@@ -68,6 +86,7 @@ export class GroupService {
             id: res.id,
             board: new Map(res.board.map(p => [p.id, p])),
         });
+        this.resetTimer();
     }
 
     asLobby(): Lobby {
@@ -200,18 +219,24 @@ export class GroupService {
                         type: 'game',
                         id: lobbyId,
                         board: new Map(event.board.map(p => [p.id, p])),
-                    })
+                    });
+                    this.resetTimer();
                     break;
                 case 'turn':
                     this._turn.set(event);
-                    if (event.gameEnd)
+                    if (event.gameEnd) {
                         this.socket.off(`lobby.${lobbyId}.event`);
+                        this.clearTimer();
+                    } else {
+                        this.resetTimer();
+                    }
                     break;
             }
         });
     }
 
     leave(): Observable<void> {
+        this.clearTimer();
         return this.socket.emit<void, void>('lobby.leave').pipe(
             tap(_ => {
                 let id = this._group()?.id;
@@ -223,6 +248,8 @@ export class GroupService {
 
     leaveEndedGame() {
         this._group.set(null);
+        this._turn.set(null);
+        this.clearTimer();
     }
 
     setReady(isReady: boolean): Observable<void> {

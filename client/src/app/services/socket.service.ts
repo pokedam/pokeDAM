@@ -1,7 +1,7 @@
-import { effect, EffectRef, inject, Injectable, signal } from '@angular/core';
+import { effect, EffectRef, inject, Injectable, Injector, signal } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
 import { Observable } from 'rxjs';
-import { Result } from 'shared_types/dist/result';
+import { Result, INVALID_JWT_MESSAGE } from 'shared_types';
 import { AuthService } from './auth.service';
 import { ErrorService } from './error.service';
 
@@ -9,6 +9,7 @@ import { ErrorService } from './error.service';
 export class SocketService {
   private auth = inject(AuthService);
   private error = inject(ErrorService);
+  private injector = inject(Injector);
   private effect: EffectRef | null = null;
   private _socket = signal<Socket | null>(null);
 
@@ -23,7 +24,7 @@ export class SocketService {
         this.connect(auth.idToken)
           .subscribe({
             error: (err) => {
-              if (err.message === 'jwt expired') {
+              if (err.message === INVALID_JWT_MESSAGE) {
                 this.auth.refreshTokens().subscribe({
                   error: (err) => this.error.show(err)
                 })
@@ -31,7 +32,7 @@ export class SocketService {
             }
           })
       }
-    });
+    }, { injector: this.injector });
   }
 
   dispose() {
@@ -47,10 +48,7 @@ export class SocketService {
   private connect(token: string): Observable<void> {
     return new Observable((observer) => {
       this._socket.update((oldSocket) => {
-        if (oldSocket) {
-          if ((oldSocket.auth as any).token === token) return oldSocket; //already connected
-          oldSocket.disconnect();
-        }
+        if (oldSocket) return oldSocket;
 
         const backendUrl = 'http://localhost:8080';
         const socket = io(backendUrl, {
@@ -63,7 +61,7 @@ export class SocketService {
           observer.next(undefined);
         });
 
-        socket.on('connect_error', (err) => {
+        socket.on('connect_error', async (err) => {
           this._socket.set(null);
           observer.error(err);
           observer.complete();

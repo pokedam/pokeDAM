@@ -1,6 +1,7 @@
 
 import type { Request, Response, NextFunction } from 'express';
 import coreJwt from 'jsonwebtoken';
+import { INVALID_JWT_MESSAGE } from 'shared_types';
 
 export const jwt = {
     socketMiddleware,
@@ -9,23 +10,21 @@ export const jwt = {
 };
 
 const SECRET = process.env.JWT_SECRET || fallbackJwt();
-const EXPIRE_TIME_SECS = 60 * 15;
+const EXPIRE_TIME_SECS = 60 * 5;
 
 function fallbackJwt(): string {
-    const jwt = 'mi_secreto_super_seguro_para_jwt_aqui_va';
     console.warn(`[WARNING] process.env.JWT_SECRET is not defined. Using dev fallback.`);
-    return jwt;
+    return 'mi_secreto_super_seguro_para_jwt_aqui_va';
 }
 
 // Middleware para Socket.IO
 function socketMiddleware(socket: any, next: (err?: any) => void) {
     const token = socket.handshake.auth.token || socket.handshake.query.token;
-    if (!token) {
-        return next(new Error("Authentication error: No token provided"));
-    }
+    if (!token) return next(new Error("No token provided"));
+
     coreJwt.verify(token as string, SECRET, (err, decoded: any) => {
         if (err) {
-            return next(new Error("Authentication error: Invalid token"));
+            return next(new Error(INVALID_JWT_MESSAGE));
         }
         (socket as any).userId = parseInt(decoded.sub as string, 10);
         next();
@@ -53,6 +52,7 @@ function middleware(req: Request, res: Response, next: NextFunction): void {
 
     coreJwt.verify(token, SECRET, (err, decoded: any) => {
         if (err) {
+            console.log("failed!");
             res.sendStatus(401);
             return;
         }

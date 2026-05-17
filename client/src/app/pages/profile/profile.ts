@@ -9,6 +9,7 @@ import { ContentHeader } from '../../components/content-header/content-header';
 import { AsyncButton } from '../../components/async-button/async-button';
 import { catchError, EMPTY, map, Observable, of, tap } from 'rxjs';
 import { Router, RouterLink } from '@angular/router';
+import { PokemonGrid } from '../../components/pokemon-grid/pokemon-grid';
 
 export interface ProfileData {
   username: string;
@@ -31,7 +32,8 @@ function contentOrNull(str: string | null): string | null {
     ReactiveFormsModule,
     ContentHeader,
     RouterLink,
-    AvatarCircle
+    AvatarCircle,
+    PokemonGrid
   ],
   templateUrl: './profile.html',
   styleUrl: './profile.css',
@@ -76,10 +78,6 @@ export class Profile implements OnInit, DoCheck {
     const idx = this.avatarId!;
     const pokemon = POKEMONS.find(P => P.id === idx);
     return pokemon ? pokemonSpriteUrl(pokemon.id) : '';
-  }
-
-  sprite(pokemon: Pokemon): string {
-    return pokemonSpriteUrl(pokemon.id);
   }
 
   hasChanged(): boolean {
@@ -142,9 +140,8 @@ export class Profile implements OnInit, DoCheck {
     });
   }
 
-  selectAvatar(id: number) {
-    if (this.avatarId === id) this.avatarId = null;
-    else this.avatarId = id;
+  selectAvatar(ids: number[]) {
+    this.avatarId = ids.length > 0 ? ids[0] : null;
   }
 
   validate() {

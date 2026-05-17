@@ -1,0 +1,215 @@
+.detail-container {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ─── Players Grid (matching in-game layout) ─── */
+.players-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+}
+
+@media (max-width: 768px) {
+  .players-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+    max-height: 50vh;
+  }
+
+  .players-grid>* {
+    flex-shrink: 0;
+  }
+}
+
+/* ─── Timeline Container ─── */
+.timeline-container {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  max-height: 400px;
+  overflow: hidden;
+}
+
+.timeline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #222;
+  margin-bottom: 10px;
+}
+
+.timeline-title {
+  font-size: 14px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.reset-btn {
+  font-size: 11px;
+  padding: 4px 12px;
+  background: #f0f0f0;
+}
+
+.reset-btn:hover {
+  background: #e0e0e0;
+}
+
+.timeline-scroll {
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-right: 4px;
+}
+
+/* Scrollbar styling */
+.timeline-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.timeline-scroll::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 3px;
+}
+
+.timeline-scroll::-webkit-scrollbar-thumb {
+  background: #999;
+  border-radius: 3px;
+}
+
+.timeline-scroll::-webkit-scrollbar-thumb:hover {
+  background: #666;
+}
+
+/* ─── Turn Groups ─── */
+.turn-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.turn-label {
+  font-size: 11px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: #666;
+  padding: 4px 0;
+  border-bottom: 1px dashed #ccc;
+}
+
+.end-label {
+  color: #b8860b;
+}
+
+.turn-events {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-left: 12px;
+}
+
+/* ─── Event Items ─── */
+.event-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  font-size: 11px;
+  text-align: left;
+  background: #fafafa;
+  border: 1px solid #ddd;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.08);
+}
+
+.event-item:hover {
+  background: #f0f0ff;
+  border-color: #aaa;
+  transform: translateX(3px);
+}
+
+.event-item.active {
+  background: #e8f0fe;
+  border-color: var(--pkmn-gb-mid2, #4a7c59);
+  box-shadow: 3px 3px 0px rgba(74, 124, 89, 0.3);
+  font-weight: bold;
+}
+
+.event-item.damage .event-icon {
+  font-size: 13px;
+}
+
+.event-item.fainted {
+  opacity: 0.85;
+}
+
+.event-item.fainted .event-text {
+  color: #a33;
+}
+
+.event-icon {
+  flex-shrink: 0;
+  width: 20px;
+  text-align: center;
+}
+
+.event-text {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ─── Game End ─── */
+.game-end-group {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 2px solid #b8860b;
+}
+
+.end-event {
+  background: linear-gradient(135deg, #fffde7, #fff8e1);
+  border-color: #b8860b;
+  cursor: default;
+  padding: 10px 14px;
+}
+
+.end-event:hover {
+  transform: none;
+}
+
+.winner-text {
+  font-weight: bold;
+  color: #b8860b;
+  font-size: 13px;
+}
+
+/* ─── Back Button ─── */
+.back-btn {
+  align-self: flex-start;
+  padding: 8px 20px;
+  font-size: 12px;
+  background: #f8f8f8;
+}
+
+.back-btn:hover {
+  background: #e8e8e8;
+}
+
+/* ─── Message Container ─── */
+.message-container {
+  padding: 20px;
+  text-align: center;
+  font-size: 16px;
+  background: #fff;
+}

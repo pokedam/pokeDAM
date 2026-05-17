@@ -41,12 +41,21 @@
   display: flex;
 }
 
-.main-action {
+.tool-panel {
   flex: 0 0 120px;
-  gap: 12px;
-  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   height: 100%;
+}
+
+
+
+.main-action {
+  flex: 1;
+  width: 100%;
   color: white;
+
 }
 
 .main-action:not(:disabled) {
@@ -114,17 +123,31 @@
   width: 100%;
 }
 
-.mov-btn:hover {
+.mov-btn:hover:not(:disabled) {
   background-color: #f0f0f0;
   transform: translateY(-2px);
   box-shadow: 4px 6px 0px rgba(0, 0, 0, 0.2);
+}
+
+.mov-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #e8e8e8;
+  transform: none;
+  box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.2);
 }
 
 .attack-name {
   font-weight: bold;
   font-size: 10px;
   text-transform: uppercase;
-  margin-bottom: 1px;
+  margin-bottom: 2px;
+}
+
+.attack-pp {
+  font-size: 8px;
+  color: #666;
+  font-family: monospace;
 }
 
 .attack-type {

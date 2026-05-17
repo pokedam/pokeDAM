@@ -7,7 +7,7 @@ export interface Pokemon {
     statsBase: Stats;
 }
 
-export type PokemonType = 'normal' | 'fire' | 'water' | 'grass' | 'electric' | 'ice' | 'fighting' | 'poison' | 'ground' | 'flying' | 'psychic' | 'bug' | 'rock' | 'ghost' | 'dragon' | 'steel' | 'fairy';
+export type PokemonType = 'normal' | 'fire' | 'water' | 'grass' | 'electric' | 'ice' | 'fighting' | 'poison' | 'ground' | 'flying' | 'psychic' | 'bug' | 'rock' | 'ghost' | 'dragon' | 'steel' | 'fairy' | 'dark';
 
 export type Gender = 'male' | 'female' | 'genderless';
 
@@ -25,10 +25,15 @@ export interface Stats {
     speed: number;
 }
 
-export interface PokemonResponse {
+export interface PlayerPokemon {
     id: number;
     name: string | null;
     pokedexIdx: number;
+    movs: MovKey[];
+    iv: Stats;
+}
+
+export interface PcPlayerPokemon extends PlayerPokemon {
     isActive: boolean;
 }
 

@@ -1,8 +1,9 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject, Injector } from '@angular/core';
 import { catchError, switchMap, throwError } from 'rxjs';
-import { AuthService } from '../services/auth.service';
-import { storage } from '../services/storage.service';
+import { AuthService } from './services/auth.service';
+import { storage } from './services/storage.service';
+import { result } from 'shared_types';
 
 const PUBLIC_ENDPOINTS = [
   '/auth/anonymous',
@@ -29,12 +30,12 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       if (error.status === 401) {
         const authService = injector.get(AuthService);
         return authService.refreshTokens().pipe(
-          switchMap((newToken) => next(req.clone({
-            setHeaders: { Authorization: `Bearer ${newToken}` },
+          switchMap((auth) => next(req.clone({
+            setHeaders: { Authorization: `Bearer ${auth.idToken}` },
           }))),
         );
       }
       return throwError(() => error);
-    })
+    }),
   );
 };

@@ -6,10 +6,11 @@ import java.util.Objects;
 
 import org.cifpaviles.pokedam.rest_server.entity.Pokemon;
 import org.cifpaviles.pokedam.rest_server.exception.ApiException;
+import org.cifpaviles.pokedam.rest_server.models.PcPokemonResponse;
 import org.cifpaviles.pokedam.rest_server.models.PokemonResponse;
-import org.cifpaviles.pokedam.rest_server.models.PokemonTeamResponse;
 import org.cifpaviles.pokedam.rest_server.models.UserChangeRequest;
 import org.cifpaviles.pokedam.rest_server.models.PlayerTeamResponse;
+import org.cifpaviles.pokedam.rest_server.models.PokemonChangeRequest;
 import org.cifpaviles.pokedam.rest_server.models.UserResponse;
 import org.cifpaviles.pokedam.rest_server.repository.PokemonRepository;
 import org.cifpaviles.pokedam.rest_server.repository.UserRepository;
@@ -67,13 +68,13 @@ public class UserController {
     }
 
     @GetMapping("/{userId}/pokemons")
-    public ResponseEntity<PokemonResponse[]> getPokemons(@PathVariable("userId") Long userId) {
+    public ResponseEntity<PcPokemonResponse[]> getPokemons(@PathVariable("userId") Long userId) {
         var pokemons = pokemonRepository.findAllByOwnerId(userId);
-        PokemonResponse[] response = new PokemonResponse[pokemons.size()];
+        PcPokemonResponse[] response = new PcPokemonResponse[pokemons.size()];
 
         for (int i = 0; i < pokemons.size(); i++) {
             var pokemon = pokemons.get(i);
-            PokemonResponse dto = new PokemonResponse(pokemon);
+            PcPokemonResponse dto = new PcPokemonResponse(pokemon);
             response[i] = dto;
         }
 
@@ -108,14 +109,14 @@ public class UserController {
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/{userId}/game")
-    public ResponseEntity<PlayerTeamResponse> getActivePokemons(@PathVariable("userId") Long userId) {
+    @GetMapping("/{userId}/team")
+    public ResponseEntity<PlayerTeamResponse> getTeam(@PathVariable("userId") Long userId) {
         List<Pokemon> list = pokemonRepository.findAllByOwnerIdAndIsActiveTrue(userId);
-        PokemonTeamResponse[] pokemons = new PokemonTeamResponse[list.size()];
+        PokemonResponse[] pokemons = new PokemonResponse[list.size()];
 
         for (int i = 0; i < list.size(); i++) {
             var pokemon = list.get(i);
-            PokemonTeamResponse dto = new PokemonTeamResponse(pokemon);
+            PokemonResponse dto = new PokemonResponse(pokemon);
             pokemons[i] = dto;
         }
 
@@ -124,5 +125,25 @@ public class UserController {
         response.nickname = userRepository.getReferenceById(userId).nickname;
 
         return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/{userId}/pokemons/{pokemonId}")
+    @Transactional
+    public ResponseEntity<Void> renamePokemon(
+            @PathVariable("userId") Long userId,
+            @PathVariable("pokemonId") Long pokemonId,
+            @RequestBody PokemonChangeRequest data) {
+        // Si el nombre es null, vacío o solo espacios, no se cambia
+        if (data.name == null || data.name.isBlank()) {
+            return ResponseEntity.ok().build();
+        }
+
+        int updated = pokemonRepository.renamePokemon(userId, pokemonId, data.name.trim());
+
+        if (updated == 0) {
+            throw new ApiException("Pokemon not found or does not belong to the user", HttpStatus.NOT_FOUND);
+        }
+
+        return ResponseEntity.ok().build();
     }
 }

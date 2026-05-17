@@ -69,15 +69,7 @@
           autocomplete="off" />
       </div>
 
-      <div class="avatar-grid">
-        @for (pokemon of available; track pokemon.id) {
-        <button type="button" class="avatar-option" [class.selected]="avatarId === pokemon.id"
-          (click)="selectAvatar(pokemon.id)" [title]="pokemon.name">
-          <img [src]="sprite(pokemon)" [alt]="pokemon.name" />
-          <span class="avatar-id">#{{ pokemon.id }}</span>
-        </button>
-        }
-      </div>
+      <app-pokemon-grid [available]="available" [selectedIndexes]="avatarId !== null ? [avatarId] : []" [maxSelection]="1" (onSelect)="selectAvatar($event)"></app-pokemon-grid>
 
     </div>
   </div>

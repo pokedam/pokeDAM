@@ -1,0 +1,65 @@
+<div class="pc-page-container">
+  <app-content-header [title]='"PC"'>
+    <app-async-button [disabled]="!hasChanged() || !hasValidSelection()" #saveBtn [type]="'button'"
+      [callback]="onSave.bind(this)" [buttonClass]="'save-btn'">
+      Save Team
+      <span loading> Loading...</span>
+      <span done>Saved!</span>
+    </app-async-button>
+  </app-content-header>
+
+  @let selected = selectedPokemons();
+  @if(selected){
+  <!-- Mobile Tabbar -->
+  <div class="mobile-tabbar">
+    <button class="retro-btn tab-btn" [class.active]="activeTab === 'pc'" (click)="setTab('pc')">PC</button>
+    <button class="retro-btn tab-btn" [class.active]="activeTab === 'team'" (click)="setTab('team')">Team ({{
+      selected.length }}/3)</button>
+  </div>
+
+
+  <div class="content">
+    <!-- PC Menu Section -->
+    <div class="section pc-section" [class.hidden-mobile]="activeTab !== 'pc'">
+      <!-- Search Input -->
+      <div class="form-group search-container">
+        <label class="retro-label">Choose your Team (Max 3)</label>
+        <input type="text" class="retro-input" placeholder="Search by name or ID..." [(ngModel)]="searchTerm"
+          (ngModelChange)="filterPokemons()" name="pokemonSearch" autocomplete="off" />
+      </div>
+
+      <div class="avatar-grid">
+        @for (item of filtered; track item.idx) {
+        <button type="button" class="avatar-option" [class.selected]="selected.find(p => p?.idx ===item.idx)"
+          (click)="selectPokemon(item.idx)" [title]="nameOf(item)">
+          <img [src]="sprite(item.pokemon.pokedexIdx)" [alt]="nameOf(item)" />
+          <span class="avatar-id">#{{ item.pokemon.id }}</span>
+        </button>
+        }
+      </div>
+    </div>
+
+    <!-- Team Sidebar Section -->
+    <div class="section team-section" [class.hidden-mobile]="activeTab !== 'team'">
+      <h3 class="team-title desktop-only">Your Team ({{ selected.length }}/3)</h3>
+      <div class="team-slots">
+        @for (pkmn of selected; track pkmn?.idx) {
+        <div class="team-slot" [class.empty]="!pkmn">
+          @if (pkmn) {
+          @let name = nameOf(pkmn);
+          <button class="team-slot-btn" (click)="viewPokemon(pkmn.idx)">
+            <img [src]="sprite(pkmn.pokemon.pokedexIdx)" [alt]="name" />
+            <span class="slot-name">{{ name }}</span>
+          </button>
+          } @else {
+          <div class="empty-slot">
+            <span>Empty</span>
+          </div>
+          }
+        </div>
+        }
+      </div>
+    </div>
+  </div>
+  }
+</div>

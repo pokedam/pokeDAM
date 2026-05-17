@@ -59,17 +59,12 @@ export class Play {
   private uiState = signal<GameState>({ type: 'browser' });
   readonly state = computed<GameState>(() => {
     const group = this.group.group();
-    if (group) {
-      console.log('Has group!');
-      return { type: group.type == 'game' ? 'inGame' : 'inLobby' };
-    }
-    const lobbies = this.lobbiesService.lobbies();
-    if (lobbies) {
-      console.log('Has lobbies!');
-      return this.uiState();
-    }
+    if (group) return { type: group.type == 'game' ? 'inGame' : 'inLobby' };
 
-    console.log('loading');
+    const lobbies = this.lobbiesService.lobbies();
+    if (lobbies) return this.uiState();
+
+
     return { type: 'loading' };
   });
 

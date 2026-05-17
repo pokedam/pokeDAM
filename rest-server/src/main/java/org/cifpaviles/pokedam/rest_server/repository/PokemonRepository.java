@@ -34,4 +34,17 @@ public interface PokemonRepository extends JpaRepository<Pokemon, Long> {
 	int activateByOwnerIdAndIds(
 			@Param("ownerId") Long ownerId,
 			@Param("ids") Collection<Long> ids);
+
+	@Modifying
+	@Transactional
+	@Query("""
+				UPDATE Pokemon p
+				SET p.alias = :alias
+				WHERE p.id = :pokemonId
+				AND p.owner.id = :ownerId
+			""")
+	int renamePokemon(
+			@Param("ownerId") Long ownerId,
+			@Param("pokemonId") Long pokemonId,
+			@Param("alias") String alias);
 }

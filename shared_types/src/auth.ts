@@ -1,3 +1,5 @@
+export const INVALID_JWT_MESSAGE = 'Invalid jwt token';
+
 export interface User {
     id: number;
     nickname: string;

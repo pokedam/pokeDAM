@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
+import org.cifpaviles.pokedam.rest_server.dataset.PokemonDataset;
+
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -26,8 +28,8 @@ public class Pokemon {
     @ManyToOne
     public User owner;
 
-    // @Column(nullable = true)
-    // public String alias;
+    @Column(nullable = true)
+    public String alias;
 
     @Column(nullable = false)
     public int pokedexIdx;
@@ -57,10 +59,10 @@ public class Pokemon {
         pokemon.iv.hp = 0;
         pokemon.iv.attack = 0;
         pokemon.iv.defense = 0;
-        pokemon.iv.spAttack = 0;
-        pokemon.iv.spDefense = 0;
+        pokemon.iv.specialAttack = 0;
+        pokemon.iv.specialDefense = 0;
         pokemon.iv.speed = 0;
-        pokemon.movs.add("destructor");
+        pokemon.movs.addAll(PokemonDataset.getRandomMovesForPokemon(pokemon.pokedexIdx, 4));
         return pokemon;
     }
 

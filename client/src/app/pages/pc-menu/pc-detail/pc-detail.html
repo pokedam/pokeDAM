@@ -1,0 +1,110 @@
+<app-content-header [title]="'PC'">
+  <button class="retro-btn back-btn" (click)="goBack()">
+    Back
+  </button>
+</app-content-header>
+
+@let p = pokemon();
+@let base = basePokemon();
+@let stats = totalStats();
+
+@if (!p || !base || !stats) {
+<div class="message-container retro-box">
+  Cargando datos del Pokémon...
+</div>
+} @else {
+<div class="section pokemon-card retro-box">
+  <div class="pokemon-header">
+    <img [src]="spriteUrl()" [alt]="base.name" class="pokemon-sprite" />
+    <div class="pokemon-title">
+      <h2>{{ p.name || base.name }}</h2>
+      <div class="pokemon-meta">
+        <span class="pokemon-id">#{{ p.id }}</span>
+        <div class="types-container">
+          <span class="type-badge" [attr.data-type]="base.types.main">{{ base.types.main }}</span>
+          @if (base.types.secondary) {
+          <span class="type-badge" [attr.data-type]="base.types.secondary">{{ base.types.secondary }}</span>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-group rename-container">
+    <label for="nickname-input" class="retro-label">Nickname</label>
+    <div class="rename-input-stack">
+      <input id="nickname-input" type="text" class="retro-input rename-input" placeholder="Enter nickname..."
+        [(ngModel)]="newName" autocomplete="off" />
+      <app-async-button [disabled]="!hasChanged()" #saveBtn [type]="'button'" [callback]="onSave.bind(this)"
+        [buttonClass]="'save-btn rename-btn'">
+        Save
+        <span loading> Saving...</span>
+        <span done>Saved!</span>
+      </app-async-button>
+    </div>
+  </div>
+
+  <div class="stats-section">
+    <h3>Stats</h3>
+    <div class="stats-grid">
+      <div class="stat-row">
+        <span class="stat-label">HP</span>
+        <div class="stat-bar-bg">
+          <div class="stat-bar-fill" [style.width.%]="getStatPercentage(stats.hp)"></div>
+        </div>
+        <span class="stat-value">{{ stats.hp }}</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Attack</span>
+        <div class="stat-bar-bg">
+          <div class="stat-bar-fill" [style.width.%]="getStatPercentage(stats.attack)"></div>
+        </div>
+        <span class="stat-value">{{ stats.attack }}</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Defense</span>
+        <div class="stat-bar-bg">
+          <div class="stat-bar-fill" [style.width.%]="getStatPercentage(stats.defense)"></div>
+        </div>
+        <span class="stat-value">{{ stats.defense }}</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Sp. Atk</span>
+        <div class="stat-bar-bg">
+          <div class="stat-bar-fill" [style.width.%]="getStatPercentage(stats.specialAttack)"></div>
+        </div>
+        <span class="stat-value">{{ stats.specialAttack }}</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Sp. Def</span>
+        <div class="stat-bar-bg">
+          <div class="stat-bar-fill" [style.width.%]="getStatPercentage(stats.specialDefense)"></div>
+        </div>
+        <span class="stat-value">{{ stats.specialDefense }}</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Speed</span>
+        <div class="stat-bar-bg">
+          <div class="stat-bar-fill" [style.width.%]="getStatPercentage(stats.speed)"></div>
+        </div>
+        <span class="stat-value">{{ stats.speed }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="movs-section">
+    <h3>Moves</h3>
+    <div class="movs-grid">
+      @for (m of moves(); track m.key) {
+      <div class="mov-card retro-box">
+        <div class="mov-header">
+          <span class="mov-name">{{ m.displayName }}</span>
+          <span class="mov-pp">{{ m.pp }}/{{ m.pp }} PP</span>
+        </div>
+        <div class="mov-desc">{{ m.description }}</div>
+      </div>
+      }
+    </div>
+  </div>
+</div>
+}

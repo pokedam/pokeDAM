@@ -14,11 +14,13 @@
   <div class="bottom-panel">
     <!-- Action Menu (Left) -->
 
-
-    <button class="retro-btn action-btn main-action" (click)="executeContextAction()"
-      [disabled]="!(contextButtonDescriptor()?.action)">
-      {{ contextButtonDescriptor()?.label ?? 'Ready' }}
-    </button>
+    <div class="tool-panel">
+      <app-clock></app-clock>
+      @let btn = contextButtonDescriptor();
+      <button class="retro-btn action-btn main-action" (click)="btn?.action()" [disabled]="!btn?.action">
+        {{ btn?.label ?? 'Ready' }}
+      </button>
+    </div>
 
 
 
@@ -31,9 +33,9 @@
       <div class="retro-box attacks-box">
         <div class="attacks-grid">
           @for (mov of player().pokemons[s.selected].movs.entries(); track mov[1]){
-          <button class="retro-btn mov-btn" (click)="onMovSelect(mov[0])">
-            <span class="attack-name">{{ mov[1].key }}</span>
-
+          <button class="retro-btn mov-btn" (click)="onMovSelect(mov[0])" [title]="mov[1].description" [disabled]="mov[1].pp === 0">
+            <span class="attack-name">{{ mov[1].displayName }}</span>
+            <span class="attack-pp">{{ mov[1].pp }}/{{ getMaxPp(mov[1].key) }} PP</span>
           </button>
           }
         </div>

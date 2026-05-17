@@ -1,12 +1,18 @@
 <div class="pokemon-entry" [class.selectable]="selectionMode !== 'none'">
   @if (pokemon) {
   <div class="pokemon-content">
-    <div class="pokemon-avatar">
+    <div class="pokemon-avatar" [class.selectable]="selectionMode !== 'none'" [style.animation-delay]="animationDelay">
       <img [src]="sprite" [alt]="name" />
     </div>
     <div class="pokemon-details">
       <div class="pokemon-name-row">
         <span class="pokemon-name" [class.damageable]="selectionMode === 'damageable'">{{ name }}</span>
+        <div class="chip-types">
+          <span class="type-badge" [attr.data-type]="types.main">{{ types.main }}</span>
+          @if (types.secondary) {
+          <span class="type-badge" [attr.data-type]="types.secondary">{{ types.secondary }}</span>
+          }
+        </div>
       </div>
       <app-life-bar [hp]="pokemon.hp" [maxHp]="pokemon.stats.hp"></app-life-bar>
 

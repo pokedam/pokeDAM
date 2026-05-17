@@ -185,3 +185,37 @@ body {
   display: flex;
   flex-direction: column;
 }
+
+/* Global Type Badges */
+.type-badge {
+  font-family: var(--font-retro);
+  font-size: 0.65rem;
+  padding: 4px 8px;
+  border: 2px solid var(--border-main);
+  border-radius: 4px;
+  text-transform: uppercase;
+  color: white;
+  text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.7);
+  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.2);
+  line-height: 1;
+  display: inline-block;
+}
+
+.type-badge[data-type="normal"] { background-color: #A8A878; }
+.type-badge[data-type="fire"] { background-color: #F08030; }
+.type-badge[data-type="water"] { background-color: #6890F0; }
+.type-badge[data-type="grass"] { background-color: #78C850; }
+.type-badge[data-type="electric"] { background-color: #F8D030; }
+.type-badge[data-type="ice"] { background-color: #98D8D8; }
+.type-badge[data-type="fighting"] { background-color: #C03028; }
+.type-badge[data-type="poison"] { background-color: #A040A0; }
+.type-badge[data-type="ground"] { background-color: #E0C068; }
+.type-badge[data-type="flying"] { background-color: #A890F0; }
+.type-badge[data-type="psychic"] { background-color: #F85888; }
+.type-badge[data-type="bug"] { background-color: #A8B820; }
+.type-badge[data-type="rock"] { background-color: #B8A038; }
+.type-badge[data-type="ghost"] { background-color: #705898; }
+.type-badge[data-type="dragon"] { background-color: #7038F8; }
+.type-badge[data-type="steel"] { background-color: #B8B8D0; }
+.type-badge[data-type="fairy"] { background-color: #EE99AC; }
+.type-badge[data-type="dark"] { background-color: #705848; }

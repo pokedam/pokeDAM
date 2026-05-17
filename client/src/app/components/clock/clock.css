@@ -1,0 +1,22 @@
+.clock {
+  flex: 1;
+  width: 100%;
+  padding: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 20px;
+  font-weight: bold;
+  color: var(--text-main);
+  transition: color 0.3s, transform 0.1s;
+}
+
+.clock.hurry {
+  color: var(--pkmn-red);
+  animation: pulse-clock 0.5s infinite alternate;
+}
+
+@keyframes pulse-clock {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.1); }
+}

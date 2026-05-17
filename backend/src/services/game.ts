@@ -15,13 +15,14 @@ import {
     addStats,
     type GameGroupResponse,
     type GameEndEvent,
-    type StartGame,
     type StartGamePlayer,
 } from "shared_types";
 
 import * as store from "./store.js";
 import { db } from "../db/client.js";
 import FastPriorityQueue from "fastpriorityqueue";
+import { dealDamage, validateDamage } from "./sim.js";
+import { MOV_MAP } from "./movs.js";
 
 
 export interface Game {
@@ -58,69 +59,15 @@ export function gameToResponse(game: Game): InGame {
     }));
 }
 
-interface ValidationContext<T extends MovKey> {
+interface ValidationContext<T> {
     board: Map<PlayerId, Player>;
     movRef: MovRef,
-    payload: MovMap[T];
+    payload: T;
 }
 
-interface ExecutionContext<T extends MovKey> extends ValidationContext<T> {
+interface ExecutionContext<T> extends ValidationContext<T> {
     history: TurnHistory;
 }
-
-type MovLogicMap = {
-    [K in MovKey]: {
-        validate: (ctx: ValidationContext<K>) => number;
-        execute: (ctx: ExecutionContext<K>) => void;
-    };
-};
-
-export const MOV_MAP: MovLogicMap = {
-    destructor: {
-        validate: (ctx): number => {
-            if (ctx.payload.playerId === ctx.movRef.playerId) throw Error("Player can't attack himself");
-            const player = ctx.board.get(ctx.movRef.playerId)!;
-            const pkmn = player.actives[ctx.movRef.pokemonIdx]!;
-            return pkmn.stats.speed;
-        },
-        execute: (ctx): void => {
-            const player = ctx.board.get(ctx.movRef.playerId)!;
-            const pkmn = player.actives[ctx.movRef.pokemonIdx]!;
-
-            const opp = ctx.board.get(ctx.payload.playerId)!;
-            const oppPkmn = opp.actives[ctx.payload.pokemonIdx]!;
-
-            //Pokemon will not attack if it has fainted during the turn
-            if (pkmn.hp <= 0) return;
-
-            oppPkmn.hp = Math.max(0, oppPkmn.hp - 150);
-            console.log(`Player ${ctx.movRef.playerId} used Destructor on player ${ctx.payload.playerId}, dealing 20 damage. Opponent HP is now ${oppPkmn.hp}`);
-            ctx.history.push({
-                key: 'damage',
-                dealer: ctx.movRef,
-                target: ctx.payload,
-                damage: {
-                    amount: 150,
-                    effectiveness: 1,
-                    isCrit: false
-                }
-            })
-
-            if (oppPkmn.hp <= 0) {
-                console.log(`Player ${ctx.payload.playerId}'s Pokemon fainted!`);
-                ctx.history.push({
-                    key: 'pokemon_fainted',
-                    pokemon: ctx.payload,
-                });
-            }
-        }
-    },
-    other: {
-        validate: (): number => { throw Error("unimplemented"); },
-        execute: (): void => { }
-    }
-};
-
 
 export async function create(playerId: Id): Promise<GameGroupResponse> {
     const groupId = store.lobbies.id(playerId);
@@ -186,7 +133,7 @@ export function play(id: PlayerId, request: PlayRequest): TurnResult | undefined
     // const movPp = pokemon.pps[request.movIdx];
     // if (movPp == undefined) throw new Error(`Move PP not found`);
     if (mov.pp <= 0) throw new Error(`No PP left`);
-    const ctx: ValidationContext<typeof mov.key> = {
+    const ctx: ValidationContext<MovMap[typeof mov.key]> = {
         board: game.board,
         movRef: {
             playerId: id,
@@ -201,7 +148,14 @@ export function play(id: PlayerId, request: PlayRequest): TurnResult | undefined
     player.request = { ...request, priority };
 
     for (const p of game.board.values())
-        if (!p.request) return;
+        if (p.actives.find(p => p && p.hp > 0)) {
+            console.log(p.nickname, 'is active');
+            if (!p.request || !p.request.isReady) {
+                console.log("and his request is not ready, waiting: ", p.request);
+                return;
+            }
+        }
+
 
     return processTurn(game, gameId);
 }
@@ -215,10 +169,8 @@ export function processTurn(game: Game, id: GroupId): TurnResult {
     }>((a, b) => a.request.priority > b.request.priority);
 
     for (const [id, player] of game.board) {
-        if (!player.request) {
-            console.log("Waiting for players...")
+        if (!player.request)
             continue;
-        }
 
         priorityQueue.add({ request: player.request, id });
     }
@@ -228,7 +180,7 @@ export function processTurn(game: Game, id: GroupId): TurnResult {
     while (state = priorityQueue.poll()) {
         let mov = (game.board.get(state.id)?.pokemons[state.request.pokemonIdx]?.movs[state.request.movIdx])!.key;
         let payload = state.request.payload;
-        let ctx: ExecutionContext<typeof mov> = {
+        let ctx: ExecutionContext<MovMap[typeof mov]> = {
             history,
             board: game.board,
             movRef: {
@@ -243,12 +195,9 @@ export function processTurn(game: Game, id: GroupId): TurnResult {
     }
 
     const gameEnd = isGameCompleted(game);
-    if (gameEnd)
-        store.games.delete(id);
-    else {
-        for (const state of game.board.values())
-            state.request = null;
-    }
+    if (gameEnd) store.games.delete(id);
+    else for (const state of game.board.values())
+        state.request = null;
 
     game.history.push(history);
 
@@ -277,10 +226,10 @@ function isGameCompleted(game: Game): GameEndEvent | undefined {
 
 }
 
-function validateRequest<K extends MovKey>(movKey: K, ctx: ValidationContext<K>): number {
+function validateRequest<K extends MovKey>(movKey: K, ctx: ValidationContext<MovMap[K]>): number {
     return MOV_MAP[movKey].validate(ctx);
 }
 
-function executeRequest<K extends MovKey>(movKey: K, ctx: ExecutionContext<K>) {
+function executeRequest<K extends MovKey>(movKey: K, ctx: ExecutionContext<MovMap[K]>) {
     MOV_MAP[movKey].execute(ctx);
 }

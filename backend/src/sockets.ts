@@ -27,7 +27,7 @@ interface Timeout {
     time: number;
 }
 
-const TURN_INTERVAL_MS = 15_000;
+const TURN_INTERVAL_MS = 61_000; //one sec as grace period
 
 const heap = new FastPriorityQueue<Timeout>((a, b) => a.time < b.time);
 let schedulerTimer: NodeJS.Timeout | null = null;
@@ -53,27 +53,7 @@ export function socketsController(io: Server, userId: PlayerId, socket: Socket):
 
                 const res = games.processTurn(game, trigger.id);
 
-                const event: TurnCompletedEvent = {
-                    type: 'turn',
-                    history: res.history,
-                    gameEnd: res.gameEnd,
-                };
-                const roomId = `lobby_${trigger.id}`;
-                io.to(roomId).emit(`lobby.${trigger.id}.event`, event);
-
-                if (res.gameEnd) {
-                    store.games.delete(trigger.id);
-                    db.games.save({
-                        initialGame: Array.from(game.board.entries()).map(([id, player]) => ({ id, ...player.start })),
-                        history: game.history,
-                        end: res.gameEnd,
-                    });
-                    io.socketsLeave(roomId);
-                } else heap.add({
-                    id: res.groupId,
-                    time: Date.now() + TURN_INTERVAL_MS,
-                    turn: res.game.turn,
-                });
+                handleTurnResult(io, res);
 
             }
             processTimeouts();
@@ -196,42 +176,9 @@ export function socketsController(io: Server, userId: PlayerId, socket: Socket):
     });
 
     socket.on('lobby.play', (request: PlayRequest, callback: Callback<void>) => {
-        try {
-            const res = games.play(userId, request);
-            if (res) {
-                const roomId = `lobby_${res.groupId}`;
-                const event: TurnCompletedEvent = {
-                    type: 'turn',
-                    history: res.history,
-                    gameEnd: res.gameEnd,
-                };
-                const game = res.game;
-                io.to(roomId).emit(`lobby.${res.groupId}.event`, event);
-
-                if (res.gameEnd) {
-                    store.games.delete(res.groupId);
-                    io.socketsLeave(roomId);
-                    db.games.save({
-                        initialGame: Array.from(game.board.entries()).map(([id, player]) => ({ id, ...player.start })),
-                        history: game.history,
-                        end: res.gameEnd,
-                    });
-                    store.games.delete(res.groupId);
-                } else heap.add({
-                    id: res.groupId,
-                    time: Date.now() + TURN_INTERVAL_MS,
-                    turn: game.turn,
-                });
-
-
-            }
-
-        } catch (e) {
-            if (e instanceof Error) {
-                callback(result.badRequest(e.message));
-            } else {
-                callback(result.internal('Internal server error'));
-            }
+        const res = games.play(userId, request);
+        if (res) {
+            handleTurnResult(io, res);
         }
 
         callback(result.ok(undefined));
@@ -268,3 +215,32 @@ export function socketsController(io: Server, userId: PlayerId, socket: Socket):
     }
 }
 
+function handleTurnResult(io: Server, res: games.TurnResult) {
+    const roomId = `lobby_${res.groupId}`;
+    const event: TurnCompletedEvent = {
+        type: 'turn',
+        history: res.history,
+        gameEnd: res.gameEnd,
+    };
+
+    io.to(roomId).emit(`lobby.${res.groupId}.event`, event);
+
+    if (res.gameEnd) {
+        store.games.delete(res.groupId);
+        io.socketsLeave(roomId);
+
+        for (const p of res.game.board.keys())
+            store.players.delete(p);
+
+
+        db.games.save({
+            initialGame: Array.from(res.game.board.entries()).map(([id, player]) => ({ id, ...player.start })),
+            history: res.game.history,
+            end: res.gameEnd,
+        });
+    } else heap.add({
+        id: res.groupId,
+        time: Date.now() + TURN_INTERVAL_MS,
+        turn: res.game.turn,
+    });
+}

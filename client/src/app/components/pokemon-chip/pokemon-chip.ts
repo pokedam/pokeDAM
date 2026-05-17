@@ -1,7 +1,7 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LifeBar } from '../life-bar/life-bar';
-import { InGamePokemon, pokemonSpriteUrl, pokemon as getPokemon } from 'shared_types';
+import { InGamePokemon, pokemonSpriteUrl, pokemon as getPokemon, PokemonTypes } from 'shared_types';
 import { SelectionMode } from '../group-screens/in-game/in-game';
 
 @Component({
@@ -15,11 +15,16 @@ export class PokemonChip {
   @Input({ required: true }) pokemon: InGamePokemon | null = null;
   @Input() selectionMode: SelectionMode = 'none';
 
-
+  animationDelay = `-${Math.random()}s`;
 
   get name(): string {
     const id = this.pokemon!.pokedexIdx;
     return getPokemon(id).name;
+  }
+
+  get types(): PokemonTypes {
+    const id = this.pokemon!.pokedexIdx;
+    return getPokemon(id).types;
   }
 
   get sprite(): string {

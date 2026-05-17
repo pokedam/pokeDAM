@@ -31,7 +31,7 @@ export class AsyncButton {
   }
 
   async click() {
-    if (this.disabled) {
+    if (this.disabled || this.state === 'loading') {
       return;
     }
 

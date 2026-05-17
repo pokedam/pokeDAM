@@ -1,4 +1,4 @@
-import { EffectRef, Injectable, NgZone, effect, inject, signal } from '@angular/core';
+import { EffectRef, Injectable, Injector, NgZone, effect, inject, signal } from '@angular/core';
 import { Socket } from 'socket.io-client';
 import { Result } from 'shared_types/dist/result';
 import { WelcomeResponse, LobbiesEvent } from 'shared_types';
@@ -19,6 +19,7 @@ export class LobbiesService {
   private error = inject(ErrorService);
   private group = inject(GroupService);
   private zone = inject(NgZone);
+  private injector = inject(Injector);
   private effectRef: EffectRef | null = null;
 
   private _lobbies = signal<Map<string, LobbiesEntry> | null>(null, { equal: () => false });
@@ -52,7 +53,7 @@ export class LobbiesService {
         socket.off('disconnect', onDisconnect);
         socket.off('lobbies.event', this.onLobbiesEvent);
       });
-    });
+    }, { injector: this.injector });
   }
 
   dispose() {
@@ -69,21 +70,17 @@ export class LobbiesService {
       if (res.success) {
         this.zone.run(() => {
           const content = res.content;
-          if (content.game) {
-            console.log("restoring game...");
+          if (content.game)
             this.group.restoreGame(content.game);
-          }
+
 
           const map = new Map<string, LobbiesEntry>();
-          for (const lobby of content.lobbies) {
+          for (const lobby of content.lobbies)
             map.set(lobby.id, lobby);
-          }
-          console.log("setting lobbies...");
+
           this._lobbies.set(map);
         });
-      } else {
-        this.error.show(res.message);
-      }
+      } else this.error.show(res.message);
     });
   }
 

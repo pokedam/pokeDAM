@@ -1,25 +1,28 @@
 <app-content-header [title]="'Historial de Partidas'"></app-content-header>
 <div class="content">
-    @if (loading()) {
+    @let games = getGames();
+    @if (!games) {
     <div class="message-container retro-box">
         Cargando el historial de partidas...
     </div>
     } @else {
-    @for (game of games(); track game.id) {
-    @let resultLabel = game.result === 'win' ? 'Victoria' : game.result === 'loss' ? 'Derrota' : 'Empate';
-    <div class="game-item retro-box">
+    @for (game of games; track game.id) {
+    <div class="game-item retro-box clickable" (click)="openGame(game)">
         <div class="game-info">
             <div class="opponent">{{ game.message }}</div>
             <div class="result" [class.win]="game.result === 'win'" [class.loss]="game.result === 'loss'"
                 [class.draw]="game.result === 'draw'">
-                {{ resultLabel }}
+                {{ game.result === 'win' ? 'Victoria' : game.result === 'loss' ? 'Derrota' : 'Empate' }}
             </div>
             <div class="date">{{ game.date | date:'short' }}</div>
         </div>
-        <div class="pokemons-used">
-            @for (pokemon of game.pokemonUsed; track $index) {
-            <span>{{ pokemon }}</span>
-            }
+        <div class="game-right">
+            <div class="pokemons-used">
+                @for (pokemon of game.pokemonUsed; track $index) {
+                <span>{{ pokemon }}</span>
+                }
+            </div>
+            <span class="chevron">▶</span>
         </div>
     </div>
     } @empty {

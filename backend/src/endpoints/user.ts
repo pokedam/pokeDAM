@@ -24,6 +24,11 @@ router.get('/pokemons', async (req: Request, res: Response): Promise<void> => {
 });
 
 router.patch('/pokemons', async (req: Request, res: Response): Promise<void> => {
-    const request: number[] = req.body;
+    const request: (number | null)[] = req.body;
     checked(res, () => db.user.setPokemons(req.userId, request));
+});
+
+router.patch('/pokemons/:pokemonId', async (req: Request, res: Response): Promise<void> => {
+    const { name } = req.body;
+    checked(res, () => db.user.renamePokemon(req.userId, Number(req.params.pokemonId), name));
 });

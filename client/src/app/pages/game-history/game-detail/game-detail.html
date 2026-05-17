@@ -1,0 +1,74 @@
+<app-content-header [title]="'Resumen de Partida'"></app-content-header>
+
+<div class="detail-container">
+  @let s = summary();
+  @if (!s) {
+  <div class="message-container retro-box">
+    Cargando resumen de la partida...
+  </div>
+  } @else {
+
+  <!-- Players Grid (same visual as in-game) -->
+  <div class="players-grid">
+    @for (player of players(); track player.id) {
+    <app-player-tile [player]="player" [isUser]="false" [selectableFn]="noSelection">
+    </app-player-tile>
+    }
+  </div>
+
+  <!-- Turn Timeline -->
+  <div class="timeline-container retro-box">
+    <div class="timeline-header">
+      <span class="timeline-title">📜 Historial de Turnos</span>
+      <button class="retro-btn reset-btn" (click)="resetToInitial()">
+        ⟲ Reset
+      </button>
+    </div>
+    <div class="timeline-scroll">
+      @for (group of turnGroups(); track group.turnNumber) {
+      <div class="turn-group">
+        <div class="turn-label">Turno {{ group.turnNumber }}</div>
+        <div class="turn-events">
+          @for (ie of group.events; track ie.eventIdx) {
+          <button class="event-item retro-btn"
+            [class.active]="isEventActive(ie)"
+            [class.damage]="ie.event.key === 'content'"
+            [class.fainted]="ie.event.key === 'pokemon_fainted'"
+            (click)="onEventClick(ie)">
+            <span class="event-icon">
+              @if (ie.event.key === 'content') { ⚔️ }
+              @else if (ie.event.key === 'pokemon_fainted') { 💀 }
+            </span>
+            <span class="event-text">{{ ie.label }}</span>
+          </button>
+          }
+        </div>
+      </div>
+      }
+
+      <!-- Game End -->
+      @if (s.end) {
+      <div class="turn-group game-end-group">
+        <div class="turn-label end-label">🏆 Resultado</div>
+        <div class="turn-events">
+          <div class="event-item end-event retro-box">
+            @if (s.end.winner !== null) {
+            <span class="event-text winner-text">
+              🎉 {{ winnerName() }} gana la partida!
+            </span>
+            } @else {
+            <span class="event-text">Empate</span>
+            }
+          </div>
+        </div>
+      </div>
+      }
+    </div>
+  </div>
+
+  <button class="retro-btn back-btn" (click)="goBack()">
+    ← Volver al historial
+  </button>
+
+  }
+</div>
