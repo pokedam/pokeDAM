@@ -2,7 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { tap, map, throwError, Observable, } from 'rxjs';
 import shared, { JwtAuth, LoginRequest, User, UserChangeRequest } from 'shared_types';
 import { HttpService } from './http.service';
-import { storage } from './storage.service';
+import { StorageService } from './storage.service';
 
 export interface Auth {
   idToken: string,
@@ -14,6 +14,7 @@ export interface Auth {
 })
 export class AuthService {
   private http = inject(HttpService);
+  private storage = inject(StorageService);
 
   private _auth = signal<Auth | null>(null, { equal: (_, __) => false });
 
@@ -22,15 +23,15 @@ export class AuthService {
   }
 
   public refreshTokens(): Observable<Auth> {
-    var refreshToken = storage.refreshToken;
+    var refreshToken = this.storage.refreshToken;
     if (!refreshToken) {
       return throwError(() => new Error('No refresh token available'));
     }
 
     return this.http.post<JwtAuth>(`/auth/refresh`, { refreshToken }).pipe(
       tap((res) => {
-        storage.idToken = res.idToken;
-        storage.refreshToken = res.refreshToken;
+        this.storage.idToken = res.idToken;
+        this.storage.refreshToken = res.refreshToken;
         this._auth.set(res);
       }),
     );
@@ -39,8 +40,8 @@ export class AuthService {
   public loginAnonymous(): Observable<Auth> {
     return this.http.post<shared.JwtAuth>(`/auth/anonymous`, {}).pipe(
       tap((res) => {
-        storage.idToken = res.idToken;
-        storage.refreshToken = res.refreshToken;
+        this.storage.idToken = res.idToken;
+        this.storage.refreshToken = res.refreshToken;
         this._auth.set(res);
       }),
     );
@@ -49,16 +50,16 @@ export class AuthService {
   public login(req: LoginRequest): Observable<Auth> {
     return this.http.post<shared.JwtAuth>(`/auth/login`, req).pipe(
       tap((res) => {
-        storage.idToken = res.idToken;
-        storage.refreshToken = res.refreshToken;
+        this.storage.idToken = res.idToken;
+        this.storage.refreshToken = res.refreshToken;
         this._auth.set(res);
       }),
     );
   }
 
   public logout(): void {
-    storage.idToken = null;
-    storage.refreshToken = null;
+    this.storage.idToken = null;
+    this.storage.refreshToken = null;
     this._auth.set(null);
   }
 
@@ -66,7 +67,7 @@ export class AuthService {
     return this.http.get<User>(`/user`).pipe(
       map((user) => {
         let auth: Auth = {
-          idToken: storage.idToken || '',
+          idToken: this.storage.idToken || '',
           user
         };
         this._auth.set(auth);

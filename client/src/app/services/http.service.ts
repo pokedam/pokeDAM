@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpContext, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular/common/http';
 import { catchError, Observable } from 'rxjs';
 import { result } from 'shared_types';
+import { EnvironmentService } from './environment.service';
 
 type HttpOptions = {
     headers?: HttpHeaders | Record<string, string | string[]>;
@@ -27,9 +28,10 @@ type HttpOptions = {
 })
 export class HttpService {
     private http = inject(HttpClient);
+    private env = inject(EnvironmentService);
+
     private get apiUrl(): string {
-        const isTauri = !!(window as any).__TAURI__ || !!(window as any).__TAURI_INTERNALS__;
-        return isTauri ? 'http://51.103.210.63' : (window.location.hostname === 'localhost' ? 'http://localhost:8080' : window.location.origin);
+        return this.env.backendUrl;
     }
 
     public get<T>(url: string, options?: HttpOptions): Observable<T> {

@@ -2,7 +2,7 @@ import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject, Injector } from '@angular/core';
 import { catchError, switchMap, throwError } from 'rxjs';
 import { AuthService } from './services/auth.service';
-import { storage } from './services/storage.service';
+import { StorageService } from './services/storage.service';
 import { result } from 'shared_types';
 
 const PUBLIC_ENDPOINTS = [
@@ -16,6 +16,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     return next(req);
   }
 
+  const storage = inject(StorageService);
   const token = storage.idToken;
   if (!token) throw Error("User not authenticated");
 

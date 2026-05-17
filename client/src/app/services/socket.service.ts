@@ -4,12 +4,14 @@ import { Observable } from 'rxjs';
 import { Result, INVALID_JWT_MESSAGE } from 'shared_types';
 import { AuthService } from './auth.service';
 import { ErrorService } from './error.service';
+import { EnvironmentService } from './environment.service';
 
 @Injectable({ providedIn: 'root' })
 export class SocketService {
   private auth = inject(AuthService);
   private error = inject(ErrorService);
   private injector = inject(Injector);
+  private env = inject(EnvironmentService);
   private effect: EffectRef | null = null;
   private _socket = signal<Socket | null>(null);
 
@@ -50,9 +52,7 @@ export class SocketService {
       this._socket.update((oldSocket) => {
         if (oldSocket) return oldSocket;
 
-        const isTauri = !!(window as any).__TAURI__ || !!(window as any).__TAURI_INTERNALS__;
-        const backendUrl = isTauri ? 'http://51.103.210.63' : (window.location.hostname === 'localhost' ? 'http://localhost:8080' : window.location.origin);
-        const socket = io(backendUrl, {
+        const socket = io(this.env.backendUrl, {
           auth: { token },
           transports: ['websocket', 'polling'],
         });
