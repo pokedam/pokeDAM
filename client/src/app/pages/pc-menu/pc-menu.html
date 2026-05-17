@@ -33,7 +33,7 @@
         <button type="button" class="avatar-option" [class.selected]="selected.find(p => p?.idx ===item.idx)"
           (click)="selectPokemon(item.idx)" [title]="nameOf(item)">
           <img [src]="sprite(item.pokemon.pokedexIdx)" [alt]="nameOf(item)" />
-          <span class="avatar-id">#{{ item.pokemon.id }}</span>
+          <span class="avatar-id">#{{ item.pokemon.pokedexIdx }}</span>
         </button>
         }
       </div>

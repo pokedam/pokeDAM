@@ -1,7 +1,6 @@
 import type { MovKey, MovMap } from "shared_types";
 import {
     dealDamage,
-    dealDamageRandomly,
     heal,
     healAllies,
     healSelf,

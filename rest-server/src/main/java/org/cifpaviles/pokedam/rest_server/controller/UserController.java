@@ -69,7 +69,7 @@ public class UserController {
 
     @GetMapping("/{userId}/pokemons")
     public ResponseEntity<PcPokemonResponse[]> getPokemons(@PathVariable("userId") Long userId) {
-        var pokemons = pokemonRepository.findAllByOwnerId(userId);
+        var pokemons = pokemonRepository.findAllByOwnerIdOrderByPokedexIdxAsc(userId);
         PcPokemonResponse[] response = new PcPokemonResponse[pokemons.size()];
 
         for (int i = 0; i < pokemons.size(); i++) {

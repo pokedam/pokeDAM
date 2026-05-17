@@ -19,7 +19,7 @@
     <div class="pokemon-title">
       <h2>{{ p.name || base.name }}</h2>
       <div class="pokemon-meta">
-        <span class="pokemon-id">#{{ p.id }}</span>
+        <span class="pokemon-id">#{{ p.pokedexIdx }}</span>
         <div class="types-container">
           <span class="type-badge" [attr.data-type]="base.types.main">{{ base.types.main }}</span>
           @if (base.types.secondary) {

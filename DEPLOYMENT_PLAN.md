@@ -11,6 +11,7 @@ Server IP: 51.103.210.63
 - [x] Base packages installed: nginx, openjdk-21-jdk, git, curl, unzip, build-essential, python3
 - [x] NodeSource repo configured for Node 22
 - [x] Client adjusted to use same-origin API and sockets
+- [x] Universal dynamic routing enabled for Tauri desktop apps and public IPs
 - [x] Rest-server auth key read from config/env
 
 ## Remaining steps

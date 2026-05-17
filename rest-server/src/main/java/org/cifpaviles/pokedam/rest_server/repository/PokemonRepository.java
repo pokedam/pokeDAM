@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 public interface PokemonRepository extends JpaRepository<Pokemon, Long> {
 	List<Pokemon> findAllByOwnerId(Long ownerId);
+	List<Pokemon> findAllByOwnerIdOrderByPokedexIdxAsc(Long ownerId);
 	List<Pokemon> findAllByOwnerIdAndIsActiveTrue(Long ownerId);
 
 	@Modifying
