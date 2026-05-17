@@ -27,10 +27,10 @@ export class PcService {
   }
 
   public set(idxs: (number | null)[]): Observable<void> {
-    // const pokemons = this._pokemons();
-    // if (pokemons == null) return throwError(() => new Error("No pokemons loaded"));    
-    // const ids = idxs.map(id => pokemons[id]?.id);
-    return this.http.patch<void>('/user/pokemons', idxs).pipe(
+    const pokemons = this._pokemons();
+    if (pokemons == null) return throwError(() => new Error("No pokemons loaded"));    
+    const ids = idxs.map(idx => idx !== null && pokemons[idx] ? pokemons[idx].id : null);
+    return this.http.patch<void>('/user/pokemons', ids).pipe(
       tap(() => {
         this._pokemons.update(pokemons => {
           if (pokemons) {

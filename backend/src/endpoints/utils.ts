@@ -3,7 +3,8 @@ import type { Response } from "express";
 
 export async function checked<T = any>(res: Response<T | string>, callback: (() => Promise<T>)): Promise<void> {
     try {
-        res.json(await callback());
+        let data = await callback();
+        res.json(data === "" || data === undefined ? { success: true } : data);
     } catch (err: any) {
         let e = result.err(err);
         res.status(e.status).json(e.message);
