@@ -27,7 +27,7 @@ type HttpOptions = {
 })
 export class HttpService {
     private http = inject(HttpClient);
-    private apiUrl = 'http://localhost:8080';
+    private apiUrl = window.location.hostname === 'localhost' ? 'http://localhost:8080' : window.location.origin;
 
     public get<T>(url: string, options?: HttpOptions): Observable<T> {
         return this._handleHttpErr(this.http.get<T>(`${this.apiUrl}${url}`, options));

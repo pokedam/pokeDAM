@@ -50,7 +50,7 @@ export class SocketService {
       this._socket.update((oldSocket) => {
         if (oldSocket) return oldSocket;
 
-        const backendUrl = 'http://localhost:8080';
+        const backendUrl = window.location.hostname === 'localhost' ? 'http://localhost:8080' : window.location.origin;
         const socket = io(backendUrl, {
           auth: { token },
           transports: ['websocket', 'polling'],
