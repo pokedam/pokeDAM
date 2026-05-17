@@ -27,7 +27,10 @@ type HttpOptions = {
 })
 export class HttpService {
     private http = inject(HttpClient);
-    private apiUrl = window.location.hostname === 'localhost' ? 'http://localhost:8080' : window.location.origin;
+    private get apiUrl(): string {
+        const isTauri = !!(window as any).__TAURI__ || !!(window as any).__TAURI_INTERNALS__;
+        return isTauri ? 'http://51.103.210.63' : (window.location.hostname === 'localhost' ? 'http://localhost:8080' : window.location.origin);
+    }
 
     public get<T>(url: string, options?: HttpOptions): Observable<T> {
         return this._handleHttpErr(this.http.get<T>(`${this.apiUrl}${url}`, options));

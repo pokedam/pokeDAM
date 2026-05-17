@@ -50,7 +50,8 @@ export class SocketService {
       this._socket.update((oldSocket) => {
         if (oldSocket) return oldSocket;
 
-        const backendUrl = window.location.hostname === 'localhost' ? 'http://localhost:8080' : window.location.origin;
+        const isTauri = !!(window as any).__TAURI__ || !!(window as any).__TAURI_INTERNALS__;
+        const backendUrl = isTauri ? 'http://51.103.210.63' : (window.location.hostname === 'localhost' ? 'http://localhost:8080' : window.location.origin);
         const socket = io(backendUrl, {
           auth: { token },
           transports: ['websocket', 'polling'],
