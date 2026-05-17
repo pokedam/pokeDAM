@@ -38,10 +38,16 @@ public class AuthController {
         userRepository.save(user);
 
         List<Pokemon> starters = new ArrayList<>();
-        for (int i = 0; i < 6; i++) {
+        for (int i = 0; i < 3; i++) {
             Pokemon pokemon = Pokemon.random();
             pokemon.owner = user;
             pokemon.isActive = true;
+            starters.add(pokemon);
+        }
+        for (int i = 0; i < 3; i++) {
+            Pokemon pokemon = Pokemon.random();
+            pokemon.owner = user;
+            pokemon.isActive = false;
             starters.add(pokemon);
         }
         pkmnRepository.saveAll(starters);

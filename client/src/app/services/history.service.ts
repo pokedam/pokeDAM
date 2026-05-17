@@ -1,8 +1,7 @@
-import { Injectable, inject, signal } from '@angular/core';
-import { tap, map, throwError, Observable, } from 'rxjs';
-import shared, { GameHistory, GameSummary, JwtAuth, LoginRequest, User, UserChangeRequest } from 'shared_types';
+import { Injectable, inject } from '@angular/core';
+import { Observable, } from 'rxjs';
+import { GameSummary, User, } from 'shared_types';
 import { HttpService } from './http.service';
-import { storage } from './storage.service';
 
 export interface Auth {
   idToken: string,
